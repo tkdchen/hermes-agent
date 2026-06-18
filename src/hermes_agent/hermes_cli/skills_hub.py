@@ -22,8 +22,8 @@ from rich.table import Table
 
 # Lazy imports to avoid circular dependencies and slow startup.
 # tools.skills_hub and tools.skills_guard are imported inside functions.
-from hermes_constants import display_hermes_home
-from agent.skill_utils import is_excluded_skill_path
+from hermes_agent.hermes_constants import display_hermes_home
+from hermes_agent.agent.skill_utils import is_excluded_skill_path
 
 _console = Console()
 
@@ -39,7 +39,7 @@ def _resolve_short_name(name: str, sources, console: Console) -> str:
     matches exist, shows them and asks the user to use the full identifier.
     Returns empty string if nothing found or ambiguous.
     """
-    from tools.skills_hub import unified_search
+    from hermes_agent.tools.skills_hub import unified_search
 
     c = console or _console
     c.print(f"[dim]Resolving '{name}'...[/]")
@@ -170,7 +170,7 @@ def _existing_categories() -> List[str]:
     Used to suggest reusable categories when interactively installing from a
     URL. Hidden dirs (``.hub``, ``.trash``) are skipped.
     """
-    from tools.skills_hub import SKILLS_DIR
+    from hermes_agent.tools.skills_hub import SKILLS_DIR
     out: List[str] = []
     try:
         for entry in SKILLS_DIR.iterdir():
@@ -255,7 +255,7 @@ def do_search(query: str, source: str = "all", limit: int = 10,
     the scripting / copy-paste handle: the full identifier is always
     intact, even for browse-sh slugs that the table would otherwise wrap.
     """
-    from tools.skills_hub import GitHubAuth, create_source_router, unified_search
+    from hermes_agent.tools.skills_hub import GitHubAuth, create_source_router, unified_search
 
     c = console or _console
 
@@ -320,7 +320,7 @@ def do_browse(page: int = 1, page_size: int = 20, source: str = "all",
 
     Official skills are always shown first, regardless of source filter.
     """
-    from tools.skills_hub import (
+    from hermes_agent.tools.skills_hub import (
         GitHubAuth, create_source_router, parallel_search_sources,
     )
 
@@ -488,11 +488,11 @@ def do_install(identifier: str, category: str = "", force: bool = False,
     (so pair it with ``name_override`` when installing from a URL that has
     no frontmatter).
     """
-    from tools.skills_hub import (
+    from hermes_agent.tools.skills_hub import (
         GitHubAuth, create_source_router, ensure_hub_dirs,
         quarantine_bundle, install_from_quarantine, HubLockFile,
     )
-    from tools.skills_guard import scan_skill, should_allow_install, format_scan_report
+    from hermes_agent.tools.skills_guard import scan_skill, should_allow_install, format_scan_report
 
     c = console or _console
     ensure_hub_dirs()
@@ -608,7 +608,7 @@ def do_install(identifier: str, category: str = "", force: bool = False,
         q_path = quarantine_bundle(bundle)
     except ValueError as exc:
         c.print(f"[bold red]Installation blocked:[/] {exc}\n")
-        from tools.skills_hub import append_audit_log
+        from hermes_agent.tools.skills_hub import append_audit_log
         append_audit_log("BLOCKED", bundle.name, bundle.source,
                          bundle.trust_level, "invalid_path", str(exc))
         return
@@ -633,7 +633,7 @@ def do_install(identifier: str, category: str = "", force: bool = False,
         c.print(f"\n[bold red]Installation blocked:[/] {reason}")
         # Clean up quarantine
         shutil.rmtree(q_path, ignore_errors=True)
-        from tools.skills_hub import append_audit_log
+        from hermes_agent.tools.skills_hub import append_audit_log
         append_audit_log("BLOCKED", bundle.name, bundle.source,
                          bundle.trust_level, result.verdict,
                          f"{len(result.findings)}_findings")
@@ -683,11 +683,11 @@ def do_install(identifier: str, category: str = "", force: bool = False,
     except ValueError as exc:
         c.print(f"[bold red]Installation blocked:[/] {exc}\n")
         shutil.rmtree(q_path, ignore_errors=True)
-        from tools.skills_hub import append_audit_log
+        from hermes_agent.tools.skills_hub import append_audit_log
         append_audit_log("BLOCKED", bundle.name, bundle.source,
                          bundle.trust_level, "invalid_path", str(exc))
         return
-    from tools.skills_hub import SKILLS_DIR
+    from hermes_agent.tools.skills_hub import SKILLS_DIR
     c.print(f"[bold green]Installed:[/] {install_dir.relative_to(SKILLS_DIR)}")
     c.print(f"[dim]Files: {', '.join(bundle.files.keys())}[/]\n")
 
@@ -697,7 +697,7 @@ def do_install(identifier: str, category: str = "", force: bool = False,
     # silently creates a recurring job; the user accepts it via /suggestions.
     # This is the single surface every automation proposal flows through.
     try:
-        from tools.blueprints import BlueprintError, blueprint_spec_for_installed, register_blueprint_suggestion
+        from hermes_agent.tools.blueprints import BlueprintError, blueprint_spec_for_installed, register_blueprint_suggestion
 
         try:
             spec = blueprint_spec_for_installed(bundle.name)
@@ -735,7 +735,7 @@ def do_install(identifier: str, category: str = "", force: bool = False,
     if invalidate_cache:
         # Invalidate the skills prompt cache so the new skill appears immediately
         try:
-            from agent.prompt_builder import clear_skills_system_prompt_cache
+            from hermes_agent.agent.prompt_builder import clear_skills_system_prompt_cache
             clear_skills_system_prompt_cache(clear_snapshot=True)
         except Exception:
             pass
@@ -746,7 +746,7 @@ def do_install(identifier: str, category: str = "", force: bool = False,
 
 def do_inspect(identifier: str, console: Optional[Console] = None) -> None:
     """Preview a skill's SKILL.md content without installing."""
-    from tools.skills_hub import GitHubAuth, create_source_router
+    from hermes_agent.tools.skills_hub import GitHubAuth, create_source_router
 
     c = console or _console
     auth = GitHubAuth()
@@ -799,7 +799,7 @@ def browse_skills(page: int = 1, page_size: int = 20, source: str = "all") -> di
 
     Returns ``{"items": [...], "page": int, "total_pages": int, "total": int}``.
     """
-    from tools.skills_hub import (
+    from hermes_agent.tools.skills_hub import (
         GitHubAuth, create_source_router, parallel_search_sources,
     )
 
@@ -845,7 +845,7 @@ def browse_skills(page: int = 1, page_size: int = 20, source: str = "all") -> di
 
 def inspect_skill(identifier: str) -> Optional[dict]:
     """Skill metadata (+ SKILL.md preview) for programmatic callers."""
-    from tools.skills_hub import GitHubAuth, create_source_router
+    from hermes_agent.tools.skills_hub import GitHubAuth, create_source_router
 
     class _Q:
         def print(self, *a, **k):
@@ -895,10 +895,10 @@ def do_list(source_filter: str = "all",
     ``skills.disabled`` list because ``-p`` swaps ``HERMES_HOME`` at process
     start.  No explicit profile flag needed here.
     """
-    from tools.skills_hub import HubLockFile, ensure_hub_dirs
-    from tools.skills_sync import _read_manifest
-    from tools.skills_tool import _find_all_skills
-    from agent.skill_utils import get_disabled_skill_names
+    from hermes_agent.tools.skills_hub import HubLockFile, ensure_hub_dirs
+    from hermes_agent.tools.skills_sync import _read_manifest
+    from hermes_agent.tools.skills_tool import _find_all_skills
+    from hermes_agent.agent.skill_utils import get_disabled_skill_names
 
     c = console or _console
     ensure_hub_dirs()
@@ -982,7 +982,7 @@ def do_list(source_filter: str = "all",
 
 def do_check(name: Optional[str] = None, console: Optional[Console] = None) -> None:
     """Check hub-installed skills for upstream updates."""
-    from tools.skills_hub import check_for_skill_updates
+    from hermes_agent.tools.skills_hub import check_for_skill_updates
 
     c = console or _console
     results = check_for_skill_updates(name=name)
@@ -1005,7 +1005,7 @@ def do_check(name: Optional[str] = None, console: Optional[Console] = None) -> N
 
 def do_update(name: Optional[str] = None, console: Optional[Console] = None) -> None:
     """Update hub-installed skills with upstream changes."""
-    from tools.skills_hub import HubLockFile, check_for_skill_updates
+    from hermes_agent.tools.skills_hub import HubLockFile, check_for_skill_updates
 
     c = console or _console
     lock = HubLockFile()
@@ -1031,8 +1031,8 @@ def do_audit(name: Optional[str] = None, console: Optional[Console] = None,
     files (review aid only — not a security gate; skills_guard.py verdicts
     are unchanged).
     """
-    from tools.skills_hub import HubLockFile, SKILLS_DIR
-    from tools.skills_guard import scan_skill, format_scan_report
+    from hermes_agent.tools.skills_hub import HubLockFile, SKILLS_DIR
+    from hermes_agent.tools.skills_guard import scan_skill, format_scan_report
 
     c = console or _console
     lock = HubLockFile()
@@ -1052,7 +1052,7 @@ def do_audit(name: Optional[str] = None, console: Optional[Console] = None,
     c.print(f"\n[bold]Auditing {len(targets)} skill(s)...[/]\n")
 
     if deep:
-        from tools.skills_ast_audit import ast_scan_path, format_ast_report
+        from hermes_agent.tools.skills_ast_audit import ast_scan_path, format_ast_report
 
     for entry in targets:
         skill_path = SKILLS_DIR / entry["install_path"]
@@ -1073,7 +1073,7 @@ def do_uninstall(name: str, console: Optional[Console] = None,
                  skip_confirm: bool = False,
                  invalidate_cache: bool = True) -> None:
     """Remove a hub-installed skill with confirmation."""
-    from tools.skills_hub import uninstall_skill
+    from hermes_agent.tools.skills_hub import uninstall_skill
 
     c = console or _console
 
@@ -1093,7 +1093,7 @@ def do_uninstall(name: str, console: Optional[Console] = None,
         c.print(f"[bold green]{msg}[/]\n")
         if invalidate_cache:
             try:
-                from agent.prompt_builder import clear_skills_system_prompt_cache
+                from hermes_agent.agent.prompt_builder import clear_skills_system_prompt_cache
                 clear_skills_system_prompt_cache(clear_snapshot=True)
             except Exception:
                 pass
@@ -1109,7 +1109,7 @@ def do_reset(name: str, restore: bool = False,
              skip_confirm: bool = False,
              invalidate_cache: bool = True) -> None:
     """Reset a bundled skill's manifest tracking (+ optionally restore from bundled)."""
-    from tools.skills_sync import reset_bundled_skill
+    from hermes_agent.tools.skills_sync import reset_bundled_skill
 
     c = console or _console
 
@@ -1140,7 +1140,7 @@ def do_reset(name: str, restore: bool = False,
 
     if invalidate_cache:
         try:
-            from agent.prompt_builder import clear_skills_system_prompt_cache
+            from hermes_agent.agent.prompt_builder import clear_skills_system_prompt_cache
             clear_skills_system_prompt_cache(clear_snapshot=True)
         except Exception:
             pass
@@ -1160,7 +1160,7 @@ def do_opt_out(remove: bool = False,
     (manifest-tracked AND unmodified); user-edited and non-bundled skills are
     never touched.
     """
-    from tools.skills_sync import (
+    from hermes_agent.tools.skills_sync import (
         set_bundled_skills_opt_out,
         remove_pristine_bundled_skills,
     )
@@ -1213,7 +1213,7 @@ def do_opt_out(remove: bool = False,
 
     if invalidate_cache:
         try:
-            from agent.prompt_builder import clear_skills_system_prompt_cache
+            from hermes_agent.agent.prompt_builder import clear_skills_system_prompt_cache
             clear_skills_system_prompt_cache(clear_snapshot=True)
         except Exception:
             pass
@@ -1227,7 +1227,7 @@ def do_opt_in(sync: bool = False,
     With ``sync``, immediately re-seed bundled skills instead of waiting for
     the next ``hermes update``.
     """
-    from tools.skills_sync import set_bundled_skills_opt_out, sync_skills
+    from hermes_agent.tools.skills_sync import set_bundled_skills_opt_out, sync_skills
 
     c = console or _console
 
@@ -1243,7 +1243,7 @@ def do_opt_in(sync: bool = False,
         c.print(f"[dim]Re-seeded {copied} bundled skill(s).[/]")
         if invalidate_cache:
             try:
-                from agent.prompt_builder import clear_skills_system_prompt_cache
+                from hermes_agent.agent.prompt_builder import clear_skills_system_prompt_cache
                 clear_skills_system_prompt_cache(clear_snapshot=True)
             except Exception:
                 pass
@@ -1255,7 +1255,7 @@ def do_repair_official(name: str, restore: bool = False,
                        skip_confirm: bool = False,
                        invalidate_cache: bool = True) -> None:
     """Backfill or restore official optional skills from repo source."""
-    from tools.skills_sync import restore_official_optional_skill
+    from hermes_agent.tools.skills_sync import restore_official_optional_skill
 
     c = console or _console
     if restore and not skip_confirm:
@@ -1286,7 +1286,7 @@ def do_repair_official(name: str, restore: bool = False,
 
     if invalidate_cache:
         try:
-            from agent.prompt_builder import clear_skills_system_prompt_cache
+            from hermes_agent.agent.prompt_builder import clear_skills_system_prompt_cache
             clear_skills_system_prompt_cache(clear_snapshot=True)
         except Exception:
             pass
@@ -1294,7 +1294,7 @@ def do_repair_official(name: str, restore: bool = False,
 
 def do_tap(action: str, repo: str = "", console: Optional[Console] = None) -> None:
     """Manage taps (custom GitHub repo sources)."""
-    from tools.skills_hub import TapsManager
+    from hermes_agent.tools.skills_hub import TapsManager
 
     c = console or _console
     mgr = TapsManager()
@@ -1338,8 +1338,8 @@ def do_tap(action: str, repo: str = "", console: Optional[Console] = None) -> No
 def do_publish(skill_path: str, target: str = "github", repo: str = "",
                console: Optional[Console] = None) -> None:
     """Publish a local skill to a registry (GitHub PR or ClawHub submission)."""
-    from tools.skills_hub import GitHubAuth, SKILLS_DIR
-    from tools.skills_guard import scan_skill, format_scan_report
+    from hermes_agent.tools.skills_hub import GitHubAuth, SKILLS_DIR
+    from hermes_agent.tools.skills_guard import scan_skill, format_scan_report
 
     c = console or _console
     path = Path(skill_path)
@@ -1503,7 +1503,7 @@ def _github_publish(skill_path: Path, skill_name: str, target_repo: str,
 
 def do_snapshot_export(output_path: str, console: Optional[Console] = None) -> None:
     """Export current hub skill configuration to a portable JSON file."""
-    from tools.skills_hub import HubLockFile, TapsManager
+    from hermes_agent.tools.skills_hub import HubLockFile, TapsManager
 
     c = console or _console
     lock = HubLockFile()
@@ -1544,7 +1544,7 @@ def do_snapshot_export(output_path: str, console: Optional[Console] = None) -> N
 def do_snapshot_import(input_path: str, force: bool = False,
                        console: Optional[Console] = None) -> None:
     """Re-install skills from a snapshot file."""
-    from tools.skills_hub import TapsManager
+    from hermes_agent.tools.skills_hub import TapsManager
 
     c = console or _console
     inp = Path(input_path)

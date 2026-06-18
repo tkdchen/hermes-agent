@@ -45,7 +45,7 @@ def isolated_home(tmp_path, monkeypatch):
         for mod in list(sys.modules.keys()):
             if mod.startswith(("hermes_cli", "gateway")):
                 del sys.modules[mod]
-        return importlib.import_module("gateway.run")
+        return importlib.import_module("hermes_agent.gateway.run")
 
     try:
         yield write_cfg, fresh_gateway
@@ -162,7 +162,7 @@ def test_lift_helper_accepts_alias_and_rejects_garbage(isolated_home):
     for mod in list(sys.modules.keys()):
         if mod.startswith("hermes_cli"):
             del sys.modules[mod]
-    rp = importlib.import_module("hermes_cli.runtime_provider")
+    rp = importlib.import_module("hermes_agent.hermes_cli.runtime_provider")
 
     out: dict = {}
     rp._lift_max_output_tokens({"max_output_tokens": 8192}, out)

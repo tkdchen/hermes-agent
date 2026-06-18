@@ -10,10 +10,10 @@ Batch delays are read from ``config.extra`` (config.yaml), not env vars.
 
 import asyncio
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import MessageEvent, MessageType
-from gateway.platforms.whatsapp import WhatsAppAdapter
-from gateway.session import SessionSource
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import MessageEvent, MessageType
+from hermes_agent.gateway.platforms.whatsapp import WhatsAppAdapter
+from hermes_agent.gateway.session import SessionSource
 
 
 def _make_adapter(**extra):

@@ -41,7 +41,7 @@ def _hermes_version() -> str:
     never happen in a real install — guarded for defensive testing).
     """
     try:
-        from hermes_cli import __version__
+        from hermes_agent.hermes_cli import __version__
         return __version__
     except Exception:
         return "unknown"

@@ -51,19 +51,19 @@ def _load_fal_client() -> Any:
     global fal_client
     if fal_client is not None:
         return fal_client
-    from tools.fal_common import import_fal_client
+    from hermes_agent.tools.fal_common import import_fal_client
     fal_client = import_fal_client()
     return fal_client
 
 
-from tools.debug_helpers import DebugSession
-from tools.fal_common import (
+from hermes_agent.tools.debug_helpers import DebugSession
+from hermes_agent.tools.fal_common import (
     _ManagedFalSyncClient,
     _extract_http_status,
     _normalize_fal_queue_url_format,  # noqa: F401 — re-exported for tests
 )
-from tools.managed_tool_gateway import resolve_managed_tool_gateway
-from tools.tool_backend_helpers import (
+from hermes_agent.tools.managed_tool_gateway import resolve_managed_tool_gateway
+from hermes_agent.tools.tool_backend_helpers import (
     fal_key_is_configured,
     managed_nous_tools_enabled,
     nous_tool_gateway_unavailable_message,
@@ -484,7 +484,7 @@ def _resolve_fal_model() -> tuple:
     """
     model_id = ""
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         cfg = load_config()
         img_cfg = cfg.get("image_gen") if isinstance(cfg, dict) else None
         if isinstance(img_cfg, dict):
@@ -619,7 +619,7 @@ def _looks_like_absolute_file_path(value: str) -> bool:
 
 def _active_terminal_env(task_id: str | None):
     try:
-        from tools.terminal_tool import get_active_env
+        from hermes_agent.tools.terminal_tool import get_active_env
 
         return get_active_env(task_id or "default")
     except Exception as exc:  # noqa: BLE001 - artifact hinting must not break generation
@@ -671,7 +671,7 @@ def _agent_visible_cache_path(host_path: str, env: Any) -> str | None:
         return None
 
     try:
-        from tools.credential_files import map_cache_path_to_container
+        from hermes_agent.tools.credential_files import map_cache_path_to_container
 
         return map_cache_path_to_container(host_path, container_base=cache_base)
     except Exception as exc:  # noqa: BLE001
@@ -943,8 +943,8 @@ def check_image_generation_requirements() -> bool:
 
     # Probe plugin providers. Discovery is idempotent and cheap.
     try:
-        from agent.image_gen_registry import list_providers
-        from hermes_cli.plugins import _ensure_plugins_discovered
+        from hermes_agent.agent.image_gen_registry import list_providers
+        from hermes_agent.hermes_cli.plugins import _ensure_plugins_discovered
 
         _ensure_plugins_discovered()
         for provider in list_providers():
@@ -997,7 +997,7 @@ if __name__ == "__main__":
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
-from tools.registry import registry, tool_error
+from hermes_agent.tools.registry import registry, tool_error
 
 IMAGE_GENERATE_SCHEMA = {
     "name": "image_generate",
@@ -1033,7 +1033,7 @@ IMAGE_GENERATE_SCHEMA = {
 def _read_configured_image_model():
     """Return the value of ``image_gen.model`` from config.yaml, or None."""
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         cfg = load_config()
         section = cfg.get("image_gen") if isinstance(cfg, dict) else None
         if isinstance(section, dict):
@@ -1057,7 +1057,7 @@ def _read_configured_image_provider():
     issue #26241).
     """
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         cfg = load_config()
         section = cfg.get("image_gen") if isinstance(cfg, dict) else None
         if isinstance(section, dict):
@@ -1091,8 +1091,8 @@ def _dispatch_to_plugin_provider(prompt: str, aspect_ratio: str):
     try:
         # Import locally so plugin discovery isn't triggered just by
         # importing this module (tests rely on that).
-        from agent.image_gen_registry import get_provider
-        from hermes_cli.plugins import _ensure_plugins_discovered
+        from hermes_agent.agent.image_gen_registry import get_provider
+        from hermes_agent.hermes_cli.plugins import _ensure_plugins_discovered
 
         _ensure_plugins_discovered()
         provider = get_provider(configured)

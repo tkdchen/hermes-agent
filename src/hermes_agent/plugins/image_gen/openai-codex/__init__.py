@@ -23,7 +23,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from agent.image_gen_provider import (
+from hermes_agent.agent.image_gen_provider import (
     DEFAULT_ASPECT_RATIO,
     ImageGenProvider,
     error_response,
@@ -89,7 +89,7 @@ _CODEX_INSTRUCTIONS = (
 def _load_image_gen_config() -> Dict[str, Any]:
     """Read ``image_gen`` from config.yaml (returns {} on any failure)."""
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
 
         cfg = load_config()
         section = cfg.get("image_gen") if isinstance(cfg, dict) else None
@@ -132,7 +132,7 @@ def _read_codex_access_token() -> Optional[str]:
     expiry, credential pool selection, and JWT decoding stay in one place.
     """
     try:
-        from agent.auxiliary_client import _read_codex_access_token as _reader
+        from hermes_agent.agent.auxiliary_client import _read_codex_access_token as _reader
 
         token = _reader()
         if isinstance(token, str) and token.strip():
@@ -245,7 +245,7 @@ def _iter_sse_json(response: Any):
 def _collect_image_b64(token: str, *, prompt: str, size: str, quality: str) -> Optional[str]:
     """Stream a Codex Responses image_generation call and return the b64 image."""
     import httpx
-    from agent.auxiliary_client import _codex_cloudflare_headers
+    from hermes_agent.agent.auxiliary_client import _codex_cloudflare_headers
 
     headers = _codex_cloudflare_headers(token)
     headers.update({

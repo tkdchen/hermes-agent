@@ -3,7 +3,7 @@ import pytest
 
 from pathlib import Path
 from types import SimpleNamespace
-from hermes_cli import kanban_db as kb
+from hermes_agent.hermes_cli import kanban_db as kb
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
@@ -31,9 +31,9 @@ async def test_notifier_unsubs_after_completed_event(kanban_home):
     """
     Subscription should be remove after completed event
     """
-    import hermes_cli.kanban_db as kb
-    from gateway.run import GatewayRunner
-    from gateway.config import Platform
+    import hermes_agent.hermes_cli.kanban_db as kb
+    from hermes_agent.gateway.run import GatewayRunner
+    from hermes_agent.gateway.config import Platform
 
     conn = kb.connect()
     try:
@@ -60,7 +60,7 @@ async def test_notifier_unsubs_after_completed_event(kanban_home):
     async def _fast_sleep(_):
         await _orig_sleep(0)
 
-    with patch("gateway.run.asyncio.sleep", side_effect=_fast_sleep):
+    with patch("hermes_agent.gateway.run.asyncio.sleep", side_effect=_fast_sleep):
         await asyncio.wait_for(
             runner._kanban_notifier_watcher(interval=1),
             timeout=10.0,
@@ -90,9 +90,9 @@ async def test_notifier_unsubs_after_abnormal_events(kind, kanban_home):
     a truly final status (done / archived) — see the comment on
     TERMINAL_KINDS in gateway/run.py and PR #21398.
     """
-    import hermes_cli.kanban_db as kb
-    from gateway.run import GatewayRunner
-    from gateway.config import Platform
+    import hermes_agent.hermes_cli.kanban_db as kb
+    from hermes_agent.gateway.run import GatewayRunner
+    from hermes_agent.gateway.config import Platform
 
     conn = kb.connect()
 
@@ -120,7 +120,7 @@ async def test_notifier_unsubs_after_abnormal_events(kind, kanban_home):
     async def _fast_sleep(_):
         await _orig_sleep(0)
 
-    with patch("gateway.run.asyncio.sleep", side_effect=_fast_sleep):
+    with patch("hermes_agent.gateway.run.asyncio.sleep", side_effect=_fast_sleep):
         await asyncio.wait_for(
             runner._kanban_notifier_watcher(interval=1),
             timeout=10.0,
@@ -154,9 +154,9 @@ async def test_notifier_second_blocked_delivers(kanban_home):
     """
     After the first blocked, should receive second blocked notification.
     """
-    import hermes_cli.kanban_db as kb
-    from gateway.run import GatewayRunner
-    from gateway.config import Platform
+    import hermes_agent.hermes_cli.kanban_db as kb
+    from hermes_agent.gateway.run import GatewayRunner
+    from hermes_agent.gateway.config import Platform
 
     runner = object.__new__(GatewayRunner)
     runner._running = True
@@ -191,7 +191,7 @@ async def test_notifier_second_blocked_delivers(kanban_home):
     finally:
         conn.close()
 
-    with patch("gateway.run.asyncio.sleep", side_effect=_fast_sleep):
+    with patch("hermes_agent.gateway.run.asyncio.sleep", side_effect=_fast_sleep):
         await asyncio.wait_for(
             runner._kanban_notifier_watcher(interval=1),
             timeout=10.0,
@@ -208,7 +208,7 @@ async def test_notifier_second_blocked_delivers(kanban_home):
     finally:
         conn.close()
 
-    with patch("gateway.run.asyncio.sleep", side_effect=_fast_sleep):
+    with patch("hermes_agent.gateway.run.asyncio.sleep", side_effect=_fast_sleep):
         await asyncio.wait_for(
             runner._kanban_notifier_watcher(interval=1),
             timeout=10.0,
@@ -245,9 +245,9 @@ async def test_notifier_second_blocked_delivers(kanban_home):
 @pytest.mark.asyncio
 async def test_notifier_does_not_call_init_db(kanban_home):
     """Notifier watcher path must not invoke `_kb.init_db` (issue #21378)."""
-    import hermes_cli.kanban_db as kb
-    from gateway.run import GatewayRunner
-    from gateway.config import Platform
+    import hermes_agent.hermes_cli.kanban_db as kb
+    from hermes_agent.gateway.run import GatewayRunner
+    from hermes_agent.gateway.config import Platform
 
     runner = object.__new__(GatewayRunner)
     runner._running = True
@@ -274,8 +274,8 @@ async def test_notifier_does_not_call_init_db(kanban_home):
         init_db_calls.append((args, kwargs))
         return real_init_db(*args, **kwargs)
 
-    with patch("gateway.run.asyncio.sleep", side_effect=_fast_sleep), \
-         patch("hermes_cli.kanban_db.init_db", side_effect=_spy_init_db):
+    with patch("hermes_agent.gateway.run.asyncio.sleep", side_effect=_fast_sleep), \
+         patch("hermes_agent.hermes_cli.kanban_db.init_db", side_effect=_spy_init_db):
         await asyncio.wait_for(
             runner._kanban_notifier_watcher(interval=1),
             timeout=10.0,
@@ -296,8 +296,8 @@ def test_dispatcher_tick_does_not_call_init_db(kanban_home, monkeypatch):
     per process. The explicit `init_db()` call was redundant and triggered a
     second migration on a second connection that raced the first.
     """
-    import hermes_cli.kanban_db as kb
-    from gateway.run import GatewayRunner
+    import hermes_agent.hermes_cli.kanban_db as kb
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = object.__new__(GatewayRunner)
 
@@ -329,9 +329,9 @@ def test_dispatcher_tick_does_not_call_init_db(kanban_home, monkeypatch):
 @pytest.mark.asyncio
 async def test_notifier_skips_subscription_owned_by_other_profile(kanban_home):
     """Each gateway keeps its watcher on, but only the subscribing profile claims."""
-    import hermes_cli.kanban_db as kb
-    from gateway.run import GatewayRunner
-    from gateway.config import Platform
+    import hermes_agent.hermes_cli.kanban_db as kb
+    from hermes_agent.gateway.run import GatewayRunner
+    from hermes_agent.gateway.config import Platform
 
     conn = kb.connect()
     try:
@@ -366,7 +366,7 @@ async def test_notifier_skips_subscription_owned_by_other_profile(kanban_home):
         if tick_count >= 3:
             runner._running = False
 
-    with patch("gateway.run.asyncio.sleep", side_effect=_fast_sleep):
+    with patch("hermes_agent.gateway.run.asyncio.sleep", side_effect=_fast_sleep):
         await asyncio.wait_for(
             runner._kanban_notifier_watcher(interval=1),
             timeout=10.0,
@@ -385,9 +385,9 @@ async def test_notifier_skips_subscription_owned_by_other_profile(kanban_home):
 @pytest.mark.asyncio
 async def test_notifier_delivers_subscription_owned_by_current_profile(kanban_home):
     """The gateway for the profile that created/subscribed the task reports it."""
-    import hermes_cli.kanban_db as kb
-    from gateway.run import GatewayRunner
-    from gateway.config import Platform
+    import hermes_agent.hermes_cli.kanban_db as kb
+    from hermes_agent.gateway.run import GatewayRunner
+    from hermes_agent.gateway.config import Platform
 
     conn = kb.connect()
     try:
@@ -421,7 +421,7 @@ async def test_notifier_delivers_subscription_owned_by_current_profile(kanban_ho
     async def _fast_sleep(_):
         await _orig_sleep(0)
 
-    with patch("gateway.run.asyncio.sleep", side_effect=_fast_sleep):
+    with patch("hermes_agent.gateway.run.asyncio.sleep", side_effect=_fast_sleep):
         await asyncio.wait_for(
             runner._kanban_notifier_watcher(interval=1),
             timeout=10.0,
@@ -445,8 +445,8 @@ async def test_gateway_create_autosubscribes_on_explicit_board(kanban_home):
     flag appears before the subcommand, and the subscription must land in
     that board's DB rather than the ambient/default board.
     """
-    from gateway.run import GatewayRunner
-    from gateway.config import Platform
+    from hermes_agent.gateway.run import GatewayRunner
+    from hermes_agent.gateway.config import Platform
 
     kb.create_board("projx")
 
@@ -493,10 +493,10 @@ async def test_notifier_uploads_artifacts_on_completion(kanban_home, tmp_path, m
     route through send_document. See the artifacts wiring in
     gateway/run.py._deliver_kanban_artifacts.
     """
-    import hermes_cli.kanban_db as kb
-    from gateway.run import GatewayRunner
-    from gateway.config import Platform
-    from tools import kanban_tools as kt
+    import hermes_agent.hermes_cli.kanban_db as kb
+    from hermes_agent.gateway.run import GatewayRunner
+    from hermes_agent.gateway.config import Platform
+    from hermes_agent.tools import kanban_tools as kt
 
     # ``_deliver_kanban_artifacts`` routes candidates through
     # ``BasePlatformAdapter.filter_local_delivery_paths``, which only accepts
@@ -558,7 +558,7 @@ async def test_notifier_uploads_artifacts_on_completion(kanban_home, tmp_path, m
     fake_adapter.send_document = AsyncMock(side_effect=_send_document)
     # extract_local_files is used internally for legacy path fallback;
     # the real BasePlatformAdapter implementation lives there, so wire it.
-    from gateway.platforms.base import BasePlatformAdapter
+    from hermes_agent.gateway.platforms.base import BasePlatformAdapter
     fake_adapter.extract_local_files = BasePlatformAdapter.extract_local_files
 
     runner.adapters = {Platform.TELEGRAM: fake_adapter}
@@ -568,7 +568,7 @@ async def test_notifier_uploads_artifacts_on_completion(kanban_home, tmp_path, m
     async def _fast_sleep(_):
         await _orig_sleep(0)
 
-    with patch("gateway.run.asyncio.sleep", side_effect=_fast_sleep):
+    with patch("hermes_agent.gateway.run.asyncio.sleep", side_effect=_fast_sleep):
         await asyncio.wait_for(
             runner._kanban_notifier_watcher(interval=1),
             timeout=10.0,
@@ -587,10 +587,10 @@ async def test_notifier_artifact_delivery_skips_missing_files(kanban_home, tmp_p
     """Missing artifact paths are silently skipped — they may have been
     referenced by name only. The notifier must not crash and must still
     deliver any artifacts that do exist."""
-    import hermes_cli.kanban_db as kb
-    from gateway.run import GatewayRunner
-    from gateway.config import Platform
-    from tools import kanban_tools as kt
+    import hermes_agent.hermes_cli.kanban_db as kb
+    from hermes_agent.gateway.run import GatewayRunner
+    from hermes_agent.gateway.config import Platform
+    from hermes_agent.tools import kanban_tools as kt
 
     # Allow ``tmp_path`` through the media-delivery safety filter. See the
     # companion test for the full explanation.
@@ -634,7 +634,7 @@ async def test_notifier_artifact_delivery_skips_missing_files(kanban_home, tmp_p
     fake_adapter.send = AsyncMock(side_effect=_send)
     fake_adapter.send_document = AsyncMock(side_effect=_send_document)
     fake_adapter.send_multiple_images = AsyncMock()
-    from gateway.platforms.base import BasePlatformAdapter
+    from hermes_agent.gateway.platforms.base import BasePlatformAdapter
     fake_adapter.extract_local_files = BasePlatformAdapter.extract_local_files
 
     runner.adapters = {Platform.TELEGRAM: fake_adapter}
@@ -644,7 +644,7 @@ async def test_notifier_artifact_delivery_skips_missing_files(kanban_home, tmp_p
     async def _fast_sleep(_):
         await _orig_sleep(0)
 
-    with patch("gateway.run.asyncio.sleep", side_effect=_fast_sleep):
+    with patch("hermes_agent.gateway.run.asyncio.sleep", side_effect=_fast_sleep):
         await asyncio.wait_for(
             runner._kanban_notifier_watcher(interval=1),
             timeout=10.0,

@@ -24,7 +24,7 @@ import yaml
 
 @pytest.fixture(autouse=True)
 def _reset_registry():
-    from agent import video_gen_registry
+    from hermes_agent.agent import video_gen_registry
     video_gen_registry._reset_for_tests()
     yield
     video_gen_registry._reset_for_tests()
@@ -84,17 +84,17 @@ def matrix_env(tmp_path, monkeypatch):
                 "video": {"url": "https://xai-cdn/out.mp4", "duration": 8},
                 "model": xai_calls[-1]["json"].get("model", "grok-imagine-video"),
             })
-    import plugins.video_gen.xai as xai_plugin
+    import hermes_agent.plugins.video_gen.xai as xai_plugin
     monkeypatch.setattr(xai_plugin.httpx, "AsyncClient", lambda: _Client())
     async def _no_sleep(*a, **k): return None
     monkeypatch.setattr(asyncio, "sleep", _no_sleep)
 
     # Reset FAL plugin's lazy fal_client cache so it picks up the stub
-    from plugins.video_gen import fal as fal_plugin
+    from hermes_agent.plugins.video_gen import fal as fal_plugin
     fal_plugin._fal_client = None
 
     # Force discovery
-    from hermes_cli.plugins import _ensure_plugins_discovered
+    from hermes_agent.hermes_cli.plugins import _ensure_plugins_discovered
     _ensure_plugins_discovered(force=True)
 
     return tmp_path, fal_calls, xai_calls
@@ -103,11 +103,11 @@ def matrix_env(tmp_path, monkeypatch):
 def _invoke_tool(home, cfg: dict, args: dict) -> dict:
     """Write config, invoke the registered tool handler, return parsed JSON."""
     (home / "config.yaml").write_text(yaml.safe_dump(cfg))
-    import hermes_cli.config as cfg_mod
+    import hermes_agent.hermes_cli.config as cfg_mod
     if hasattr(cfg_mod, "_invalidate_load_config_cache"):
         cfg_mod._invalidate_load_config_cache()
 
-    from tools.registry import discover_builtin_tools, registry
+    from hermes_agent.tools.registry import discover_builtin_tools, registry
     if "video_generate" not in registry._tools:
         discover_builtin_tools()
     handler = registry._tools["video_generate"].handler
@@ -122,14 +122,14 @@ def _invoke_tool(home, cfg: dict, args: dict) -> dict:
 # automatically. If someone adds 'sora-2' to FAL_FAMILIES, this matrix
 # picks it up — no test changes needed beyond confirming the endpoints.
 def _all_fal_families():
-    from plugins.video_gen.fal import FAL_FAMILIES
+    from hermes_agent.plugins.video_gen.fal import FAL_FAMILIES
     return list(FAL_FAMILIES.keys())
 
 
 @pytest.mark.parametrize("family_id", _all_fal_families())
 def test_fal_text_only_routes_to_text_endpoint(matrix_env, family_id):
     home, fal_calls, _ = matrix_env
-    from plugins.video_gen.fal import FAL_FAMILIES
+    from hermes_agent.plugins.video_gen.fal import FAL_FAMILIES
 
     result = _invoke_tool(
         home,
@@ -155,7 +155,7 @@ def test_fal_text_only_routes_to_text_endpoint(matrix_env, family_id):
 @pytest.mark.parametrize("family_id", _all_fal_families())
 def test_fal_text_plus_image_routes_to_image_endpoint(matrix_env, family_id):
     home, fal_calls, _ = matrix_env
-    from plugins.video_gen.fal import FAL_FAMILIES
+    from hermes_agent.plugins.video_gen.fal import FAL_FAMILIES
 
     result = _invoke_tool(
         home,

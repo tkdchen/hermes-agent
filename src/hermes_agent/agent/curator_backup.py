@@ -48,8 +48,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from hermes_constants import get_hermes_home
-from agent.skill_utils import is_excluded_skill_path
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.agent.skill_utils import is_excluded_skill_path
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +142,7 @@ def _utc_id(now: Optional[datetime] = None) -> str:
 
 def _load_config() -> Dict[str, Any]:
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         cfg = load_config()
     except Exception as e:
         logger.debug("Failed to load config for curator backup: %s", e)
@@ -466,7 +466,7 @@ def _restore_cron_skill_links(snapshot_dir: Path) -> Dict[str, Any]:
 
     # Load and rewrite the live jobs under the scheduler's cross-process lock.
     try:
-        from cron.jobs import load_jobs, save_jobs, _jobs_lock
+        from hermes_agent.cron.jobs import load_jobs, save_jobs, _jobs_lock
     except ImportError as e:
         report["error"] = f"cron module unavailable: {e}"
         return report

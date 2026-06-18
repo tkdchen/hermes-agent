@@ -17,10 +17,10 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 
-from gateway.config import PlatformConfig
-from gateway.platforms.api_server import APIServerAdapter, cors_middleware
+from hermes_agent.gateway.config import PlatformConfig
+from hermes_agent.gateway.platforms.api_server import APIServerAdapter, cors_middleware
 
-_MOD = "gateway.platforms.api_server"
+_MOD = "hermes_agent.gateway.platforms.api_server"
 
 
 # ---------------------------------------------------------------------------
@@ -291,7 +291,7 @@ class TestGetJob:
     async def test_invalid_job_id_logs_source_context(self, adapter, caplog):
         """Invalid job-id probes log source metadata for later investigation."""
         app = _create_app(adapter)
-        caplog.set_level(logging.WARNING, logger="gateway.platforms.api_server")
+        caplog.set_level(logging.WARNING, logger="hermes_agent.gateway.platforms.api_server")
         async with TestClient(TestServer(app)) as cli:
             with patch(f"{_MOD}._CRON_AVAILABLE", True):
                 resp = await cli.get(

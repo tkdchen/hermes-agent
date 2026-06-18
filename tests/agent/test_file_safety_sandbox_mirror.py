@@ -27,7 +27,7 @@ import pytest
 class TestClassifySandboxMirrorTarget:
     def test_docker_mirror_soul_md_classified(self, tmp_path):
         """The exact path shape reported in #32049."""
-        from agent.file_safety import classify_sandbox_mirror_target
+        from hermes_agent.agent.file_safety import classify_sandbox_mirror_target
 
         target = (
             tmp_path
@@ -56,7 +56,7 @@ class TestClassifySandboxMirrorTarget:
     )
     def test_other_backends_and_inner_files_match(self, tmp_path, backend, inner):
         """The detector is backend-agnostic — sandbox-mirror shape is what matters."""
-        from agent.file_safety import classify_sandbox_mirror_target
+        from hermes_agent.agent.file_safety import classify_sandbox_mirror_target
 
         target = (
             tmp_path
@@ -73,7 +73,7 @@ class TestClassifySandboxMirrorTarget:
 
     def test_path_outside_sandbox_returns_none(self, tmp_path):
         """A plain Hermes path is not a mirror."""
-        from agent.file_safety import classify_sandbox_mirror_target
+        from hermes_agent.agent.file_safety import classify_sandbox_mirror_target
 
         target = tmp_path / ".hermes" / "profiles" / "group1" / "SOUL.md"
         target.parent.mkdir(parents=True)
@@ -84,7 +84,7 @@ class TestClassifySandboxMirrorTarget:
     def test_sandboxes_segment_without_home_hermes_returns_none(self, tmp_path):
         """A ``sandboxes/`` directory unrelated to Hermes-state mirroring (e.g.
         the sandbox workspace itself) is not flagged."""
-        from agent.file_safety import classify_sandbox_mirror_target
+        from hermes_agent.agent.file_safety import classify_sandbox_mirror_target
 
         target = (
             tmp_path
@@ -97,7 +97,7 @@ class TestClassifySandboxMirrorTarget:
 
     def test_sandboxes_segment_with_home_but_no_hermes_returns_none(self, tmp_path):
         """``sandboxes/<backend>/<task>/home/anything-not-hermes`` is not a mirror."""
-        from agent.file_safety import classify_sandbox_mirror_target
+        from hermes_agent.agent.file_safety import classify_sandbox_mirror_target
 
         target = (
             tmp_path
@@ -110,7 +110,7 @@ class TestClassifySandboxMirrorTarget:
 
     def test_truncated_sandbox_path_returns_none(self, tmp_path):
         """``…/sandboxes/<backend>/<task>`` without ``home/.hermes/<thing>`` is not a mirror."""
-        from agent.file_safety import classify_sandbox_mirror_target
+        from hermes_agent.agent.file_safety import classify_sandbox_mirror_target
 
         target = tmp_path / "sandboxes" / "docker" / "task-42"
         target.mkdir(parents=True)
@@ -120,7 +120,7 @@ class TestClassifySandboxMirrorTarget:
     def test_non_existent_path_still_classifies_by_shape(self, tmp_path):
         """Detection is path-shape only — it must not require the file to exist
         (the agent is about to CREATE the mirror file, that's the bug)."""
-        from agent.file_safety import classify_sandbox_mirror_target
+        from hermes_agent.agent.file_safety import classify_sandbox_mirror_target
 
         target = (
             tmp_path
@@ -145,7 +145,7 @@ class TestClassifySandboxMirrorTarget:
 
 class TestGetSandboxMirrorWarning:
     def test_non_mirror_returns_none(self, tmp_path):
-        from agent.file_safety import get_sandbox_mirror_warning
+        from hermes_agent.agent.file_safety import get_sandbox_mirror_warning
 
         target = tmp_path / ".hermes" / "profiles" / "group1" / "SOUL.md"
         target.parent.mkdir(parents=True)
@@ -154,7 +154,7 @@ class TestGetSandboxMirrorWarning:
         assert get_sandbox_mirror_warning(str(target)) is None
 
     def test_mirror_warning_names_mirror_root_and_inner_path(self, tmp_path):
-        from agent.file_safety import get_sandbox_mirror_warning
+        from hermes_agent.agent.file_safety import get_sandbox_mirror_warning
 
         target = (
             tmp_path
@@ -175,7 +175,7 @@ class TestGetSandboxMirrorWarning:
         assert "cross_profile=True" in warn
 
     def test_warning_is_defense_in_depth_not_boundary(self, tmp_path):
-        from agent.file_safety import get_sandbox_mirror_warning
+        from hermes_agent.agent.file_safety import get_sandbox_mirror_warning
 
         target = (
             tmp_path
@@ -203,7 +203,7 @@ class TestSandboxMirrorIsOrthogonalToCrossProfile:
     profile mismatch."""
 
     def test_same_profile_mirror_still_flagged(self, tmp_path, monkeypatch):
-        import agent.file_safety as fs
+        import hermes_agent.agent.file_safety as fs
         monkeypatch.setattr(fs, "_hermes_root_path", lambda: tmp_path)
         monkeypatch.setattr(fs, "_hermes_home_path", lambda: tmp_path / "profiles" / "group1")
 

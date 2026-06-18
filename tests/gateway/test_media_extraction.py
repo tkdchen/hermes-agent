@@ -105,7 +105,7 @@ class TestMediaExtraction:
 
     def test_gateway_auto_append_ignores_media_examples_in_skill_docs(self):
         """Skill/documentation examples must not be appended as real attachments."""
-        from gateway.run import _collect_auto_append_media_tags
+        from hermes_agent.gateway.run import _collect_auto_append_media_tags
 
         messages = [
             {"role": "user", "content": "How should I format gateway media?"},
@@ -138,7 +138,7 @@ caption
 
     def test_gateway_auto_append_keeps_real_tts_media_tag(self):
         """TTS tool media tags are still auto-appended when the model omits them."""
-        from gateway.run import _collect_auto_append_media_tags
+        from hermes_agent.gateway.run import _collect_auto_append_media_tags
 
         messages = [
             {"role": "user", "content": "Say this as audio"},
@@ -163,7 +163,7 @@ caption
     def test_gateway_auto_append_image_generate_json_path(self):
         """image_generate returns a local path in JSON (no MEDIA: tag); it is
         auto-appended so delivery doesn't depend on the model restating it."""
-        from gateway.run import _collect_auto_append_media_tags
+        from hermes_agent.gateway.run import _collect_auto_append_media_tags
 
         messages = [
             {"role": "user", "content": "Make me a cat"},
@@ -187,7 +187,7 @@ caption
 
     def test_gateway_auto_append_image_generate_prefers_host_path(self):
         """When host and sandbox paths differ, the host-deliverable path wins."""
-        from gateway.run import _collect_auto_append_media_tags
+        from hermes_agent.gateway.run import _collect_auto_append_media_tags
 
         messages = [
             {"role": "user", "content": "Make me a dog"},
@@ -209,7 +209,7 @@ caption
 
     def test_gateway_auto_append_image_generate_failure_and_url_ignored(self):
         """Failed generations and remote URLs are not auto-delivered."""
-        from gateway.run import _collect_auto_append_media_tags
+        from hermes_agent.gateway.run import _collect_auto_append_media_tags
 
         def _img_msgs(content):
             return [
@@ -238,7 +238,7 @@ caption
 
     def test_gateway_auto_append_image_generate_dedupes_history(self):
         """A generated image path already in history is not re-sent."""
-        from gateway.run import _collect_auto_append_media_tags
+        from hermes_agent.gateway.run import _collect_auto_append_media_tags
 
         messages = [
             {

@@ -18,7 +18,7 @@ import uuid
 from types import SimpleNamespace
 from typing import Any, Dict, List, Optional
 
-from agent.prompt_builder import DEFAULT_AGENT_IDENTITY
+from hermes_agent.agent.prompt_builder import DEFAULT_AGENT_IDENTITY
 
 logger = logging.getLogger(__name__)
 
@@ -935,7 +935,7 @@ def _preflight_codex_api_kwargs(
     is_xai_model = model_name_for_provider_check.startswith(("grok-", "x-ai/grok-"))
     if is_xai_model and normalized.get("tools"):
         try:
-            from tools.schema_sanitizer import strip_slash_enum
+            from hermes_agent.tools.schema_sanitizer import strip_slash_enum
             normalized["tools"], _ = strip_slash_enum(normalized["tools"])
         except Exception:
             pass  # Best-effort — the caller-level sanitization should have handled it

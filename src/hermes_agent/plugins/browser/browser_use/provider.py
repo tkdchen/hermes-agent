@@ -36,7 +36,7 @@ from typing import Any, Dict, Optional
 
 import requests
 
-from agent.browser_provider import BrowserProvider
+from hermes_agent.agent.browser_provider import BrowserProvider
 
 logger = logging.getLogger(__name__)
 
@@ -129,11 +129,11 @@ class BrowserUseBrowserProvider(BrowserProvider):
         # Import here to avoid a hard dependency at module-import time —
         # managed_tool_gateway pulls in the Nous auth stack which can be
         # heavy and is not needed for direct-API-key users.
-        from tools.managed_tool_gateway import (
+        from hermes_agent.tools.managed_tool_gateway import (
             peek_nous_access_token,
             resolve_managed_tool_gateway,
         )
-        from tools.tool_backend_helpers import prefers_gateway
+        from hermes_agent.tools.tool_backend_helpers import prefers_gateway
 
         # Direct API key wins unless the user has explicitly opted into the
         # managed Nous gateway via ``tool_gateway.browser: gateway``.
@@ -160,7 +160,7 @@ class BrowserUseBrowserProvider(BrowserProvider):
         }
 
     def _get_config(self) -> Dict[str, Any]:
-        from tools.tool_backend_helpers import managed_nous_tools_enabled
+        from hermes_agent.tools.tool_backend_helpers import managed_nous_tools_enabled
 
         config = self._get_config_or_none()
         if config is None:

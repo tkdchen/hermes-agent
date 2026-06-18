@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, patch, MagicMock
 
 import pytest
 
-from trajectory_compressor import (
+from hermes_agent.trajectory_compressor import (
     CompressionConfig,
     TrajectoryMetrics,
     AggregateMetrics,

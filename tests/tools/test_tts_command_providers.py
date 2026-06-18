@@ -20,7 +20,7 @@ from unittest.mock import patch
 
 import pytest
 
-from tools.tts_tool import (
+from hermes_agent.tools.tts_tool import (
     BUILTIN_TTS_PROVIDERS,
     COMMAND_TTS_OUTPUT_FORMATS,
     DEFAULT_COMMAND_TTS_MAX_TEXT_LENGTH,
@@ -442,7 +442,7 @@ class TestTextToSpeechToolWithCommandProvider:
         def fake_load():
             return cfg["tts"]
 
-        with patch("tools.tts_tool._load_tts_config", fake_load):
+        with patch("hermes_agent.tools.tts_tool._load_tts_config", fake_load):
             result = text_to_speech_tool(text="hi", output_path=str(out))
         data = json.loads(result)
         assert data["success"] is True, data
@@ -466,7 +466,7 @@ class TestTextToSpeechToolWithCommandProvider:
         }
         out = tmp_path / "clip.ogg"
 
-        with patch("tools.tts_tool._load_tts_config", return_value=cfg):
+        with patch("hermes_agent.tools.tts_tool._load_tts_config", return_value=cfg):
             result = text_to_speech_tool(text="hi", output_path=str(out))
         data = json.loads(result)
         assert data["success"] is True
@@ -483,7 +483,7 @@ class TestTextToSpeechToolWithCommandProvider:
                 "broken": {"type": "command", "command": "   "},
             },
         }
-        with patch("tools.tts_tool._load_tts_config", return_value=cfg):
+        with patch("hermes_agent.tools.tts_tool._load_tts_config", return_value=cfg):
             result = text_to_speech_tool(text="hi", output_path=str(tmp_path / "x.mp3"))
         data = json.loads(result)
         # The response should not carry the command-provider error text.
@@ -494,5 +494,5 @@ class TestTextToSpeechToolWithCommandProvider:
 class TestCheckTtsRequirements:
     def test_configured_command_provider_satisfies_requirement(self):
         cfg = {"providers": {"x": {"type": "command", "command": "echo x"}}}
-        with patch("tools.tts_tool._load_tts_config", return_value=cfg):
+        with patch("hermes_agent.tools.tts_tool._load_tts_config", return_value=cfg):
             assert check_tts_requirements() is True

@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 import pytest
 
-from agent.turn_context import TurnContext, build_turn_context
+from hermes_agent.agent.turn_context import TurnContext, build_turn_context
 
 
 class _FakeTodoStore:
@@ -104,7 +104,7 @@ def _stub_runtime_main():
     resolution) when the per-test process isolation plugin is disabled. Stub
     it out so the prologue tests stay hermetic.
     """
-    with patch("agent.auxiliary_client.set_runtime_main", lambda *a, **k: None):
+    with patch("hermes_agent.agent.auxiliary_client.set_runtime_main", lambda *a, **k: None):
         yield
 
 

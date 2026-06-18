@@ -32,8 +32,8 @@ def _build_inspection_agent(platform: str) -> Any:
     ``run_agent.py`` (no provider auto-detection, no network). Toolsets and
     platform come from the caller so the breakdown matches a real session.
     """
-    from run_agent import AIAgent
-    from hermes_cli.config import load_config
+    from hermes_agent.run_agent import AIAgent
+    from hermes_agent.hermes_cli.config import load_config
 
     cfg = load_config()
     model_cfg = cfg.get("model", {}) if isinstance(cfg.get("model"), dict) else {}
@@ -56,7 +56,7 @@ def compute_prompt_breakdown(platform: str = "cli") -> Dict[str, Any]:
     ``user_profile``, ``tools`` (count + json bytes), and ``sections`` (a list
     of (label, chars, bytes) for the three prompt tiers).
     """
-    from agent.system_prompt import build_system_prompt, build_system_prompt_parts
+    from hermes_agent.agent.system_prompt import build_system_prompt, build_system_prompt_parts
 
     agent = _build_inspection_agent(platform)
 

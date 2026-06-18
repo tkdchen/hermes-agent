@@ -74,7 +74,7 @@ def _record_codex_app_server_usage(agent, turn) -> dict[str, Any]:
                 )
         return {}
 
-    from agent.usage_pricing import CanonicalUsage, estimate_usage_cost
+    from hermes_agent.agent.usage_pricing import CanonicalUsage, estimate_usage_cost
 
     input_tokens = _coerce_usage_int(usage.get("inputTokens"))
     cache_read_tokens = _coerce_usage_int(usage.get("cachedInputTokens"))
@@ -189,7 +189,7 @@ def run_codex_app_server_turn(
     Called from run_conversation() when agent.api_mode == "codex_app_server".
     Returns the same dict shape as the chat_completions path.
     """
-    from agent.transports.codex_app_server_session import CodexAppServerSession
+    from hermes_agent.agent.transports.codex_app_server_session import CodexAppServerSession
 
     # Lazy session: one CodexAppServerSession per AIAgent instance.
     # Spawned on first turn, reused across turns, closed at AIAgent
@@ -200,7 +200,7 @@ def run_codex_app_server_turn(
         # CLI thread has installed one. Gateway / cron contexts get the
         # codex-side fail-closed default.
         try:
-            from tools.terminal_tool import _get_approval_callback
+            from hermes_agent.tools.terminal_tool import _get_approval_callback
             approval_callback = _get_approval_callback()
         except Exception:
             approval_callback = None
@@ -368,7 +368,7 @@ def _raise_stream_error(event: Any) -> None:
     Imported lazily so this module stays importable from places that don't
     pull in ``run_agent`` (e.g. plugin code, doc tools).
     """
-    from run_agent import _StreamErrorEvent
+    from hermes_agent.run_agent import _StreamErrorEvent
     message = (_event_field(event, "message", "") or "stream emitted error event").strip()
     raise _StreamErrorEvent(
         message,

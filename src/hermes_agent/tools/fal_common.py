@@ -42,7 +42,7 @@ def import_fal_client() -> Any:
     Raises :class:`ImportError` if the package is genuinely unavailable.
     """
     try:
-        from tools.lazy_deps import ensure as _lazy_ensure
+        from hermes_agent.tools.lazy_deps import ensure as _lazy_ensure
         _lazy_ensure("image.fal", prompt=False)
     except ImportError:
         pass

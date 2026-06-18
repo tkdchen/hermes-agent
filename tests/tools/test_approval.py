@@ -8,9 +8,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch as mock_patch
 
-import tools.approval as approval_module
-from hermes_constants import get_hermes_home
-from tools.approval import (
+import hermes_agent.tools.approval as approval_module
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.tools.approval import (
     _get_approval_mode,
     _smart_approve,
     approve_session,
@@ -23,11 +23,11 @@ from tools.approval import (
 
 class TestApprovalModeParsing:
     def test_unquoted_yaml_off_boolean_false_maps_to_off(self):
-        with mock_patch("hermes_cli.config.load_config", return_value={"approvals": {"mode": False}}):
+        with mock_patch("hermes_agent.hermes_cli.config.load_config", return_value={"approvals": {"mode": False}}):
             assert _get_approval_mode() == "off"
 
     def test_string_off_still_maps_to_off(self):
-        with mock_patch("hermes_cli.config.load_config", return_value={"approvals": {"mode": "off"}}):
+        with mock_patch("hermes_agent.hermes_cli.config.load_config", return_value={"approvals": {"mode": "off"}}):
             assert _get_approval_mode() == "off"
 
 
@@ -36,7 +36,7 @@ class TestSmartApproval:
         response = SimpleNamespace(
             choices=[SimpleNamespace(message=SimpleNamespace(content="APPROVE"))]
         )
-        with mock_patch("agent.auxiliary_client.call_llm", return_value=response) as mock_call:
+        with mock_patch("hermes_agent.agent.auxiliary_client.call_llm", return_value=response) as mock_call:
             result = _smart_approve("python -c \"print('hello')\"", "script execution via -c flag")
 
         assert result == "approve"
@@ -165,7 +165,7 @@ class TestSessionKeyContext:
                 run_sync = node
                 break
 
-        assert run_sync is not None, "gateway.run.run_sync not found"
+        assert run_sync is not None, "hermes_agent.gateway.run.run_sync not found"
 
         called_names = set()
         for node in ast.walk(run_sync):
@@ -868,7 +868,7 @@ class TestGatewayProtection:
         assert dangerous is True
 
     def test_gateway_run_with_setsid_detected(self):
-        cmd = "hermes_cli.main gateway run --replace &disown"
+        cmd = "hermes_agent.hermes_cli.main gateway run --replace &disown"
         dangerous, key, desc = detect_dangerous_command(cmd)
         assert dangerous is True
 
@@ -887,7 +887,7 @@ class TestGatewayProtection:
 
     def test_pkill_hermes_detected(self):
         """pkill targeting hermes/gateway processes must be caught."""
-        cmd = 'pkill -f "cli.py --gateway"'
+        cmd = 'pkill -f "hermes_agent.cli.py --gateway"'
         dangerous, key, desc = detect_dangerous_command(cmd)
         assert dangerous is True
         assert "self-termination" in desc
@@ -1574,7 +1574,7 @@ class TestApprovalTimeoutIsNotConsent:
 
     def setup_method(self):
         """Reset module state and force tight gateway_timeout for fast tests."""
-        from tools import approval as mod
+        from hermes_agent.tools import approval as mod
         mod._gateway_queues.clear()
         mod._gateway_notify_cbs.clear()
         mod._session_approved.clear()
@@ -1597,7 +1597,7 @@ class TestApprovalTimeoutIsNotConsent:
         os.environ["HERMES_SESSION_KEY"] = self.SESSION_KEY
 
     def teardown_method(self):
-        from tools import approval as mod
+        from hermes_agent.tools import approval as mod
         mod._gateway_queues.clear()
         mod._gateway_notify_cbs.clear()
         for k, v in self._saved_env.items():
@@ -1607,7 +1607,7 @@ class TestApprovalTimeoutIsNotConsent:
                 os.environ[k] = v
 
     def _force_short_timeout(self, monkeypatch, seconds=1):
-        from tools import approval as mod
+        from hermes_agent.tools import approval as mod
         monkeypatch.setattr(
             mod, "_get_approval_config",
             lambda: {"mode": "manual", "gateway_timeout": seconds, "timeout": seconds},
@@ -1615,7 +1615,7 @@ class TestApprovalTimeoutIsNotConsent:
 
     def test_timeout_returns_approved_false_with_no_consent(self, monkeypatch):
         """The reported #24912 scenario — user never responds, agent must see BLOCKED."""
-        from tools import approval as mod
+        from hermes_agent.tools import approval as mod
 
         self._force_short_timeout(monkeypatch, seconds=1)
 
@@ -1637,7 +1637,7 @@ class TestApprovalTimeoutIsNotConsent:
         Without this, the agent treats 'Do NOT retry this command' as
         permission to try a different command achieving the same outcome.
         """
-        from tools import approval as mod
+        from hermes_agent.tools import approval as mod
         self._force_short_timeout(monkeypatch, seconds=1)
         mod.register_gateway_notify(self.SESSION_KEY, lambda data: None)
 
@@ -1656,7 +1656,7 @@ class TestApprovalTimeoutIsNotConsent:
     def test_explicit_deny_carries_same_no_consent_shape(self):
         """An explicit /deny must produce the same shape as timeout —
         the agent should treat both identically."""
-        from tools import approval as mod
+        from hermes_agent.tools import approval as mod
 
         notified = []
         mod.register_gateway_notify(self.SESSION_KEY, lambda data: notified.append(data))
@@ -1691,7 +1691,7 @@ class TestApprovalTimeoutIsNotConsent:
         This is what an audit / notification plugin needs to alert
         operators on 'agent asked, user never replied' incidents like #24912.
         """
-        from tools import approval as mod
+        from hermes_agent.tools import approval as mod
         self._force_short_timeout(monkeypatch, seconds=1)
         mod.register_gateway_notify(self.SESSION_KEY, lambda data: None)
 

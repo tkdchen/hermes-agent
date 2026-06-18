@@ -7,7 +7,7 @@ import os
 
 import pytest
 
-from gateway.runtime_footer import (
+from hermes_agent.gateway.runtime_footer import (
     _home_relative_cwd,
     _model_short,
     build_footer_line,

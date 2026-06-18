@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any, List
 
-from hermes_cli.auth import get_auth_status
-from plugins.spotify.client import (
+from hermes_agent.hermes_cli.auth import get_auth_status
+from hermes_agent.plugins.spotify.client import (
     SpotifyAPIError,
     SpotifyAuthRequiredError,
     SpotifyClient,
@@ -14,7 +14,7 @@ from plugins.spotify.client import (
     normalize_spotify_uri,
     normalize_spotify_uris,
 )
-from tools.registry import tool_error, tool_result
+from hermes_agent.tools.registry import tool_error, tool_result
 
 
 def _check_spotify_available() -> bool:

@@ -19,8 +19,8 @@ import time
 
 import pytest
 
-from agent.memory_provider import MemoryProvider
-from agent.memory_manager import MemoryManager
+from hermes_agent.agent.memory_provider import MemoryProvider
+from hermes_agent.agent.memory_manager import MemoryManager
 
 
 class _SlowProvider(MemoryProvider):

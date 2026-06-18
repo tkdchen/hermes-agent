@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from agent.codex_responses_adapter import (
+from hermes_agent.agent.codex_responses_adapter import (
     _format_responses_error,
     _normalize_codex_response,
 )

@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
-from run_agent import AIAgent
+from hermes_agent.run_agent import AIAgent
 
 
 @pytest.fixture(autouse=True)
@@ -57,5 +57,5 @@ def test_session_id_contextvar_set():
         skip_context_files=True,
         skip_memory=True,
     )
-    from gateway.session_context import get_session_env
+    from hermes_agent.gateway.session_context import get_session_env
     assert get_session_env("HERMES_SESSION_ID") == custom_id

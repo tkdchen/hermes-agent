@@ -4,13 +4,13 @@ import json
 import pytest
 from types import SimpleNamespace
 
-from agent.transports import get_transport
-from agent.transports.types import NormalizedResponse
+from hermes_agent.agent.transports import get_transport
+from hermes_agent.agent.transports.types import NormalizedResponse
 
 
 @pytest.fixture
 def transport():
-    import agent.transports.codex  # noqa: F401
+    import hermes_agent.agent.transports.codex  # noqa: F401
     return get_transport("codex_responses")
 
 
@@ -588,7 +588,7 @@ class TestCodexTransportXaiServiceTierStrip:
 
     @pytest.fixture
     def transport(self):
-        from agent.transports.codex import ResponsesApiTransport
+        from hermes_agent.agent.transports.codex import ResponsesApiTransport
         return ResponsesApiTransport()
 
     def test_xai_strips_service_tier_from_request_overrides(self, transport):
@@ -674,7 +674,7 @@ class TestPreflightSlashEnumStrip:
     def test_grok_model_strips_slash_enum_values(self):
         """When the model name is Grok-family, slash-containing enum
         values are stripped so xAI doesn't 400 on the tool schema."""
-        from agent.codex_responses_adapter import _preflight_codex_api_kwargs
+        from hermes_agent.agent.codex_responses_adapter import _preflight_codex_api_kwargs
         kwargs = self._make_kwargs(
             "grok-4.3",
             ["Qwen/Qwen3.5-0.8B", "openai/gpt-oss-20b", "plain-id"],
@@ -690,7 +690,7 @@ class TestPreflightSlashEnumStrip:
 
     def test_aggregator_prefixed_grok_also_strips(self):
         """Aggregator-prefixed (x-ai/grok-*) names hit the same path."""
-        from agent.codex_responses_adapter import _preflight_codex_api_kwargs
+        from hermes_agent.agent.codex_responses_adapter import _preflight_codex_api_kwargs
         kwargs = self._make_kwargs(
             "x-ai/grok-4.3",
             ["Qwen/Qwen3.5-0.8B"],
@@ -703,7 +703,7 @@ class TestPreflightSlashEnumStrip:
         enums.  The safety-net must NOT strip there or we silently
         degrade tool-schema constraints on every codex_responses
         provider that isn't xAI."""
-        from agent.codex_responses_adapter import _preflight_codex_api_kwargs
+        from hermes_agent.agent.codex_responses_adapter import _preflight_codex_api_kwargs
         kwargs = self._make_kwargs(
             "gpt-5.5",
             ["Qwen/Qwen3.5-0.8B", "plain-id"],

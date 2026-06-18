@@ -69,7 +69,7 @@ class TestSendTelegramStandaloneProxy:
         instances whose ``proxy=`` kwarg is the configured URL — applied to
         both ``request`` and ``get_updates_request``.
         """
-        from tools.send_message_tool import _send_telegram
+        from hermes_agent.tools.send_message_tool import _send_telegram
 
         proxy_url = "socks5://127.0.0.1:1080"
         monkeypatch.setenv("TELEGRAM_PROXY", proxy_url)
@@ -78,7 +78,7 @@ class TestSendTelegramStandaloneProxy:
         monkeypatch.delenv("NO_PROXY", raising=False)
         monkeypatch.delenv("no_proxy", raising=False)
         # Ensure the test does not depend on the in-process gateway runner.
-        monkeypatch.setattr("gateway.run._gateway_runner_ref", lambda: None)
+        monkeypatch.setattr("hermes_agent.gateway.run._gateway_runner_ref", lambda: None)
 
         bot = _make_bot()
         bot_factory = MagicMock(return_value=bot)
@@ -116,7 +116,7 @@ class TestSendTelegramStandaloneProxy:
         is constructed plainly — no ``request``/``get_updates_request``
         kwargs, and HTTPXRequest is not invoked at all.
         """
-        from tools.send_message_tool import _send_telegram
+        from hermes_agent.tools.send_message_tool import _send_telegram
 
         # Wipe every env var resolve_proxy_url() inspects so the host's
         # ambient proxy settings can't flip this test green-or-red.
@@ -132,7 +132,7 @@ class TestSendTelegramStandaloneProxy:
             "no_proxy",
         ):
             monkeypatch.delenv(var, raising=False)
-        monkeypatch.setattr("gateway.run._gateway_runner_ref", lambda: None)
+        monkeypatch.setattr("hermes_agent.gateway.run._gateway_runner_ref", lambda: None)
         # Make sure macOS system-proxy auto-detection (scutil) can't kick in.
         monkeypatch.setattr(sys, "platform", "linux")
 

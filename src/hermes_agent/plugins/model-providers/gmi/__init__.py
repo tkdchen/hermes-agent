@@ -1,8 +1,8 @@
 """GMI Cloud provider profile."""
 
-from hermes_cli import __version__ as _HERMES_VERSION
-from providers import register_provider
-from providers.base import ProviderProfile
+from hermes_agent.hermes_cli import __version__ as _HERMES_VERSION
+from hermes_agent.providers import register_provider
+from hermes_agent.providers.base import ProviderProfile
 
 gmi = ProviderProfile(
     name="gmi",

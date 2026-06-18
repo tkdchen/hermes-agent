@@ -63,7 +63,7 @@ class TestAnthropicMcpPrefixStrip:
     """Verify strip_tool_prefix reverses the ``mcp__`` wire prefix correctly."""
 
     def _get_transport(self):
-        from agent.transports.anthropic import AnthropicTransport
+        from hermes_agent.agent.transports.anthropic import AnthropicTransport
         return AnthropicTransport()
 
     def test_strips_prefix_for_oauth_injected_native_tool(self):
@@ -73,7 +73,7 @@ class TestAnthropicMcpPrefixStrip:
         response = _make_response(block)
 
         registry = _FakeRegistry({"read_file", "terminal", "web_search"})
-        with patch("tools.registry.registry", registry):
+        with patch("hermes_agent.tools.registry.registry", registry):
             result = transport.normalize_response(response, strip_tool_prefix=True)
 
         assert len(result.tool_calls) == 1
@@ -92,7 +92,7 @@ class TestAnthropicMcpPrefixStrip:
         response = _make_response(block)
 
         registry = _FakeRegistry({"mcp_linear_get_issue", "read_file"})
-        with patch("tools.registry.registry", registry):
+        with patch("hermes_agent.tools.registry.registry", registry):
             result = transport.normalize_response(response, strip_tool_prefix=True)
 
         assert len(result.tool_calls) == 1
@@ -105,7 +105,7 @@ class TestAnthropicMcpPrefixStrip:
         response = _make_response(block)
 
         registry = _FakeRegistry({"read_file"})
-        with patch("tools.registry.registry", registry):
+        with patch("hermes_agent.tools.registry.registry", registry):
             result = transport.normalize_response(response, strip_tool_prefix=False)
 
         assert len(result.tool_calls) == 1
@@ -118,7 +118,7 @@ class TestAnthropicMcpPrefixStrip:
         response = _make_response(block)
 
         registry = _FakeRegistry({"web_search"})
-        with patch("tools.registry.registry", registry):
+        with patch("hermes_agent.tools.registry.registry", registry):
             result = transport.normalize_response(response, strip_tool_prefix=True)
 
         assert len(result.tool_calls) == 1
@@ -134,7 +134,7 @@ class TestAnthropicMcpPrefixStrip:
         response = _make_response(block)
 
         registry = _FakeRegistry({"read_file"})  # no matching original
-        with patch("tools.registry.registry", registry):
+        with patch("hermes_agent.tools.registry.registry", registry):
             result = transport.normalize_response(response, strip_tool_prefix=True)
 
         assert len(result.tool_calls) == 1
@@ -148,7 +148,7 @@ class TestAnthropicMcpPrefixStrip:
         response = _make_response(block1, block2)
 
         registry = _FakeRegistry({"read_file", "mcp_linear_get_issue"})
-        with patch("tools.registry.registry", registry):
+        with patch("hermes_agent.tools.registry.registry", registry):
             result = transport.normalize_response(response, strip_tool_prefix=True)
 
         assert len(result.tool_calls) == 2
@@ -165,7 +165,7 @@ class TestAnthropicMcpPrefixStrip:
         response = _make_response(block)
 
         registry = _FakeRegistry({"foo", "mcp__foo"})
-        with patch("tools.registry.registry", registry):
+        with patch("hermes_agent.tools.registry.registry", registry):
             result = transport.normalize_response(response, strip_tool_prefix=True)
 
         assert len(result.tool_calls) == 1
@@ -181,7 +181,7 @@ class TestAnthropicOAuthOutgoingPrefix:
     the OAuth wire — bare names and MCP server names both land on ``mcp__``."""
 
     def _build(self, tools, is_oauth=True):
-        from agent.anthropic_adapter import build_anthropic_kwargs
+        from hermes_agent.agent.anthropic_adapter import build_anthropic_kwargs
         return build_anthropic_kwargs(
             model="claude-sonnet-4-6",
             messages=[{"role": "user", "content": "Hi"}],

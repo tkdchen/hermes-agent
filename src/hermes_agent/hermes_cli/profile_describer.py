@@ -33,8 +33,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from hermes_cli import profiles as profiles_mod
-from agent.skill_utils import is_excluded_skill_path
+from hermes_agent.hermes_cli import profiles as profiles_mod
+from hermes_agent.agent.skill_utils import is_excluded_skill_path
 
 logger = logging.getLogger(__name__)
 
@@ -179,7 +179,7 @@ def describe_profile(
 
     try:
         if canon == "default":
-            from hermes_constants import get_hermes_home  # type: ignore
+            from hermes_agent.hermes_constants import get_hermes_home  # type: ignore
             profile_dir = Path(get_hermes_home())
         else:
             profile_dir = profiles_mod.get_profile_dir(canon)
@@ -210,7 +210,7 @@ def describe_profile(
         model, provider = None, None
 
     try:
-        from agent.auxiliary_client import (  # type: ignore
+        from hermes_agent.agent.auxiliary_client import (  # type: ignore
             get_auxiliary_extra_body,
             get_text_auxiliary_client,
         )

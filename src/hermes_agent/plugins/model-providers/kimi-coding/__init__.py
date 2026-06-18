@@ -9,8 +9,8 @@ This module covers the chat_completions path (/v1 endpoint).
 
 from typing import Any
 
-from providers import register_provider
-from providers.base import OMIT_TEMPERATURE, ProviderProfile
+from hermes_agent.providers import register_provider
+from hermes_agent.providers.base import OMIT_TEMPERATURE, ProviderProfile
 
 
 class KimiProfile(ProviderProfile):

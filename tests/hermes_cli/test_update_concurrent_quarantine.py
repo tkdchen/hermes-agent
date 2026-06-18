@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from hermes_cli import main as cli_main
+from hermes_agent.hermes_cli import main as cli_main
 
 
 # Tests in this module either exercise the REAL _detect_concurrent_hermes_instances
@@ -459,8 +459,8 @@ def test_pause_windows_gateways_for_update_stops_profile_and_unmapped_pids(
     tmp_path,
     capsys,
 ):
-    import gateway.status as status_mod
-    import hermes_cli.gateway as gateway_mod
+    import hermes_agent.gateway.status as status_mod
+    import hermes_agent.hermes_cli.gateway as gateway_mod
 
     profile_home = tmp_path / "profiles" / "work"
     profile_home.mkdir(parents=True)
@@ -513,7 +513,7 @@ def test_resume_windows_gateways_after_update_relaunches_paused_profiles(
     monkeypatch,
     capsys,
 ):
-    import hermes_cli.gateway as gateway_mod
+    import hermes_agent.hermes_cli.gateway as gateway_mod
 
     relaunched = []
     monkeypatch.setattr(

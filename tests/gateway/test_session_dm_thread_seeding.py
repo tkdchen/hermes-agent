@@ -16,8 +16,8 @@ Covers:
 
 import pytest
 
-from gateway.config import Platform, GatewayConfig
-from gateway.session import SessionSource, SessionStore
+from hermes_agent.gateway.config import Platform, GatewayConfig
+from hermes_agent.gateway.session import SessionSource, SessionStore
 
 
 @pytest.fixture()
@@ -29,7 +29,7 @@ def store(tmp_path, monkeypatch):
     at hermes_state import time, before pytest's HERMES_HOME monkeypatch
     fires — the autouse fixture's HERMES_HOME override doesn't help here.)
     """
-    import hermes_state
+    import hermes_agent.hermes_state as hermes_state
     monkeypatch.setattr(hermes_state, "DEFAULT_DB_PATH", tmp_path / "state.db")
     config = GatewayConfig()
     s = SessionStore(sessions_dir=tmp_path, config=config)

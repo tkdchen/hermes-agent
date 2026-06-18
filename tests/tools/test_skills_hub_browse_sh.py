@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import patch
 
-from tools.skills_hub import BrowseShSource, SkillMeta, SkillBundle
+from hermes_agent.tools.skills_hub import BrowseShSource, SkillMeta, SkillBundle
 
 
 # Catalog shape mirrors the real ``GET https://browse.sh/api/skills`` response:
@@ -77,7 +77,7 @@ class TestBrowseShSource(unittest.TestCase):
         results_all = self.src.search("", limit=10)
         self.assertEqual(len(results_all), 2)
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     @patch.object(BrowseShSource, "_fetch_catalog", return_value=SAMPLE_CATALOG)
     def test_fetch_returns_bundle(self, _mock_catalog, mock_get):
         # First call: GET /api/skills/{slug} returns the detail object with skillMdUrl.
@@ -107,7 +107,7 @@ class TestBrowseShSource(unittest.TestCase):
         self.assertIn("/api/skills/airbnb.com/search-listings-ddgioa", first_url)
         self.assertEqual(second_url, blob_url)
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     @patch.object(BrowseShSource, "_fetch_catalog", return_value=SAMPLE_CATALOG)
     def test_fetch_falls_back_to_raw_github_url(self, _mock_catalog, mock_get):
         # Detail endpoint fails → fall back to a raw.githubusercontent.com sourceUrl.

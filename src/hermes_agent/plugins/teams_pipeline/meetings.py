@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
-from plugins.teams_pipeline.models import MeetingArtifact, TeamsMeetingRef
-from tools.microsoft_graph_client import MicrosoftGraphAPIError, MicrosoftGraphClient
+from hermes_agent.plugins.teams_pipeline.models import MeetingArtifact, TeamsMeetingRef
+from hermes_agent.tools.microsoft_graph_client import MicrosoftGraphAPIError, MicrosoftGraphClient
 
 
 class TeamsMeetingError(RuntimeError):

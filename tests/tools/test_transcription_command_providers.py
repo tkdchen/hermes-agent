@@ -25,7 +25,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-from tools.transcription_tools import (
+from hermes_agent.tools.transcription_tools import (
     BUILTIN_STT_PROVIDERS,
     COMMAND_STT_OUTPUT_FORMATS,
     DEFAULT_COMMAND_STT_LANGUAGE,
@@ -480,7 +480,7 @@ class TestTranscribeAudioDispatchToCommandProvider:
         cfg = self._config_with_command_provider(
             "fake-cli", _python_emit_command("dispatched via command")
         )
-        with patch("tools.transcription_tools._load_stt_config", return_value=cfg):
+        with patch("hermes_agent.tools.transcription_tools._load_stt_config", return_value=cfg):
             result = transcribe_audio(str(audio))
         assert result["success"] is True
         assert result["transcript"] == "dispatched via command"
@@ -497,7 +497,7 @@ class TestTranscribeAudioDispatchToCommandProvider:
                 "openai": {"type": "command", "command": _python_emit_command("HIJACK")},
             },
         }
-        with patch("tools.transcription_tools._load_stt_config", return_value=cfg):
+        with patch("hermes_agent.tools.transcription_tools._load_stt_config", return_value=cfg):
             # openai dispatch will likely fail with no API key — that's fine,
             # what matters is the transcript is NOT "HIJACK" (which would
             # mean the command-provider hijacked the built-in name).
@@ -507,7 +507,7 @@ class TestTranscribeAudioDispatchToCommandProvider:
     def test_unknown_provider_no_command_falls_through_to_error(self, tmp_path):
         audio = _make_silent_wav(tmp_path / "audio.wav")
         cfg = {"provider": "unknown-cli"}
-        with patch("tools.transcription_tools._load_stt_config", return_value=cfg):
+        with patch("hermes_agent.tools.transcription_tools._load_stt_config", return_value=cfg):
             result = transcribe_audio(str(audio))
         assert result["success"] is False
         assert "No STT provider available" in result["error"]
@@ -537,8 +537,8 @@ class TestCommandWinsOverPlugin:
         }
 
         # Register a plugin under the SAME name. It must NOT fire.
-        from agent.transcription_provider import TranscriptionProvider
-        from agent.transcription_registry import (
+        from hermes_agent.agent.transcription_provider import TranscriptionProvider
+        from hermes_agent.agent.transcription_registry import (
             _reset_for_tests,
             register_provider,
         )
@@ -558,7 +558,7 @@ class TestCommandWinsOverPlugin:
         _reset_for_tests()
         try:
             register_provider(FakePlugin())
-            with patch("tools.transcription_tools._load_stt_config", return_value=cfg):
+            with patch("hermes_agent.tools.transcription_tools._load_stt_config", return_value=cfg):
                 result = transcribe_audio(str(audio))
         finally:
             _reset_for_tests()
@@ -570,8 +570,8 @@ class TestCommandWinsOverPlugin:
         audio = _make_silent_wav(tmp_path / "audio.wav")
         cfg = {"provider": "fake-plugin"}
 
-        from agent.transcription_provider import TranscriptionProvider
-        from agent.transcription_registry import (
+        from hermes_agent.agent.transcription_provider import TranscriptionProvider
+        from hermes_agent.agent.transcription_registry import (
             _reset_for_tests,
             register_provider,
         )
@@ -591,7 +591,7 @@ class TestCommandWinsOverPlugin:
         _reset_for_tests()
         try:
             register_provider(FakePlugin())
-            with patch("tools.transcription_tools._load_stt_config", return_value=cfg):
+            with patch("hermes_agent.tools.transcription_tools._load_stt_config", return_value=cfg):
                 result = transcribe_audio(str(audio))
         finally:
             _reset_for_tests()

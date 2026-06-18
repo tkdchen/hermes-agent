@@ -4,8 +4,8 @@ Azure Foundry exposes an OpenAI-compatible endpoint; users supply their own
 base URL at setup since endpoints are per-resource.
 """
 
-from providers import register_provider
-from providers.base import ProviderProfile
+from hermes_agent.providers import register_provider
+from hermes_agent.providers.base import ProviderProfile
 
 azure_foundry = ProviderProfile(
     name="azure-foundry",

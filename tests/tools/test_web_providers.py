@@ -33,13 +33,13 @@ class TestWebProviderABCs:
     """
 
     def test_cannot_instantiate_abc_directly(self):
-        from agent.web_search_provider import WebSearchProvider
+        from hermes_agent.agent.web_search_provider import WebSearchProvider
 
         with pytest.raises(TypeError):
             WebSearchProvider()  # type: ignore[abstract]
 
     def test_concrete_search_only_provider_works(self):
-        from agent.web_search_provider import WebSearchProvider
+        from hermes_agent.agent.web_search_provider import WebSearchProvider
 
         class Dummy(WebSearchProvider):
             @property
@@ -68,7 +68,7 @@ class TestWebProviderABCs:
         assert d.search("test")["success"] is True
 
     def test_concrete_multi_capability_provider_works(self):
-        from agent.web_search_provider import WebSearchProvider
+        from hermes_agent.agent.web_search_provider import WebSearchProvider
 
         class Dummy(WebSearchProvider):
             @property
@@ -101,7 +101,7 @@ class TestWebProviderABCs:
 
     def test_search_only_provider_skips_extract(self):
         """Search-only providers don't have to implement extract()."""
-        from agent.web_search_provider import WebSearchProvider
+        from hermes_agent.agent.web_search_provider import WebSearchProvider
 
         class SearchOnly(WebSearchProvider):
             @property
@@ -138,7 +138,7 @@ class TestPerCapabilityBackendSelection:
     """_get_search_backend and _get_extract_backend read per-capability config."""
 
     def test_search_backend_overrides_generic(self, monkeypatch):
-        from tools import web_tools
+        from hermes_agent.tools import web_tools
 
         monkeypatch.setattr(web_tools, "_load_web_config", lambda: {
             "backend": "firecrawl",
@@ -148,7 +148,7 @@ class TestPerCapabilityBackendSelection:
         assert web_tools._get_search_backend() == "tavily"
 
     def test_extract_backend_overrides_generic(self, monkeypatch):
-        from tools import web_tools
+        from hermes_agent.tools import web_tools
 
         monkeypatch.setattr(web_tools, "_load_web_config", lambda: {
             "backend": "tavily",
@@ -158,7 +158,7 @@ class TestPerCapabilityBackendSelection:
         assert web_tools._get_extract_backend() == "exa"
 
     def test_falls_back_to_generic_backend_when_search_backend_empty(self, monkeypatch):
-        from tools import web_tools
+        from hermes_agent.tools import web_tools
 
         monkeypatch.setattr(web_tools, "_load_web_config", lambda: {
             "backend": "tavily",
@@ -168,7 +168,7 @@ class TestPerCapabilityBackendSelection:
         assert web_tools._get_search_backend() == "tavily"
 
     def test_falls_back_to_generic_backend_when_extract_backend_empty(self, monkeypatch):
-        from tools import web_tools
+        from hermes_agent.tools import web_tools
 
         monkeypatch.setattr(web_tools, "_load_web_config", lambda: {
             "backend": "parallel",
@@ -178,7 +178,7 @@ class TestPerCapabilityBackendSelection:
         assert web_tools._get_extract_backend() == "parallel"
 
     def test_search_backend_ignored_when_not_available(self, monkeypatch):
-        from tools import web_tools
+        from hermes_agent.tools import web_tools
 
         monkeypatch.setattr(web_tools, "_load_web_config", lambda: {
             "backend": "firecrawl",
@@ -190,7 +190,7 @@ class TestPerCapabilityBackendSelection:
         assert web_tools._get_search_backend() == "firecrawl"
 
     def test_fully_backward_compatible_with_web_backend_only(self, monkeypatch):
-        from tools import web_tools
+        from hermes_agent.tools import web_tools
 
         monkeypatch.setattr(web_tools, "_load_web_config", lambda: {
             "backend": "tavily",
@@ -210,7 +210,7 @@ class TestDefaultConfig:
     """The web section exists in DEFAULT_CONFIG with per-capability keys."""
 
     def test_web_section_in_default_config(self):
-        from hermes_cli.config import DEFAULT_CONFIG
+        from hermes_agent.hermes_cli.config import DEFAULT_CONFIG
 
         assert "web" in DEFAULT_CONFIG
         web = DEFAULT_CONFIG["web"]
@@ -232,7 +232,7 @@ class TestWebSearchUsesSearchBackend:
     """web_search_tool dispatches through _get_search_backend not _get_backend."""
 
     def test_search_tool_calls_search_backend(self, monkeypatch):
-        from tools import web_tools
+        from hermes_agent.tools import web_tools
 
         called_with = []
         original_get_search = web_tools._get_search_backend
@@ -274,7 +274,7 @@ class TestUnconfiguredErrorEnvelopeParity:
     def _populate_web_registry(self):
         self._register_providers()
         yield
-        from agent.web_search_registry import _reset_for_tests
+        from hermes_agent.agent.web_search_registry import _reset_for_tests
         _reset_for_tests()
 
     def _clear_web_creds(self, monkeypatch):
@@ -295,7 +295,7 @@ class TestUnconfiguredErrorEnvelopeParity:
         """``web_search_tool`` with no creds returns ``{"error": "Error searching web: ..."}``
         — matching main's ``tool_error()`` envelope, not a per-result shape.
         """
-        from tools import web_tools
+        from hermes_agent.tools import web_tools
 
         self._clear_web_creds(monkeypatch)
         # Reset firecrawl client cache so the unconfigured state is re-evaluated
@@ -334,7 +334,7 @@ class TestDispatchersTriggerPluginDiscovery:
         """Reset the web_search registry to empty and return a callback
         that restores the original contents. Used in a try/finally so the
         snapshot is restored even when the dispatcher under test raises."""
-        from agent import web_search_registry
+        from hermes_agent.agent import web_search_registry
 
         with web_search_registry._lock:
             original = dict(web_search_registry._providers)
@@ -361,9 +361,9 @@ class TestDispatchersTriggerPluginDiscovery:
         import asyncio
         import json
         from unittest.mock import MagicMock
-        from agent.web_search_provider import WebSearchProvider
-        from agent import web_search_registry
-        from tools import web_tools
+        from hermes_agent.agent.web_search_provider import WebSearchProvider
+        from hermes_agent.agent import web_search_registry
+        from hermes_agent.tools import web_tools
 
         restore = self._clear_registry()
         try:
@@ -442,9 +442,9 @@ class TestDispatchersTriggerPluginDiscovery:
         """
         import json
         from unittest.mock import MagicMock
-        from agent.web_search_provider import WebSearchProvider
-        from agent import web_search_registry
-        from tools import web_tools
+        from hermes_agent.agent.web_search_provider import WebSearchProvider
+        from hermes_agent.agent import web_search_registry
+        from hermes_agent.tools import web_tools
 
         restore = self._clear_registry()
         try:

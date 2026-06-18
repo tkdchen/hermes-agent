@@ -29,7 +29,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 
-from run_agent import AIAgent
+from hermes_agent.run_agent import AIAgent
 
 
 def _bare_agent() -> AIAgent:
@@ -163,7 +163,7 @@ def test_update_from_response_forwards_canonical_cache_buckets():
     # Test the contract directly: a usage_dict built from CanonicalUsage must
     # contain the canonical buckets in addition to the legacy keys. We don't
     # spin up the full conversation loop; we just verify the dict shape.
-    from agent.usage_pricing import CanonicalUsage
+    from hermes_agent.agent.usage_pricing import CanonicalUsage
 
     canonical = CanonicalUsage(
         input_tokens=1000,
@@ -197,7 +197,7 @@ def test_update_from_response_forwards_canonical_cache_buckets():
 
 def test_discover_context_engines_includes_plugin_registered_engines(monkeypatch):
     """Plugin-registered context engines appear in the ``hermes plugins`` picker."""
-    from hermes_cli import plugins_cmd
+    from hermes_agent.hermes_cli import plugins_cmd
 
     fake_repo = lambda: [("compressor", "built-in", True)]
 
@@ -205,15 +205,15 @@ def test_discover_context_engines_includes_plugin_registered_engines(monkeypatch
         name = "lcm"
 
     monkeypatch.setattr(
-        "plugins.context_engine.discover_context_engines",
+        "hermes_agent.plugins.context_engine.discover_context_engines",
         fake_repo,
     )
     monkeypatch.setattr(
-        "hermes_cli.plugins.discover_plugins",
+        "hermes_agent.hermes_cli.plugins.discover_plugins",
         lambda *_a, **_kw: None,
     )
     monkeypatch.setattr(
-        "hermes_cli.plugins.get_plugin_context_engine",
+        "hermes_agent.hermes_cli.plugins.get_plugin_context_engine",
         lambda: FakePluginEngine(),
     )
 
@@ -225,21 +225,21 @@ def test_discover_context_engines_includes_plugin_registered_engines(monkeypatch
 
 def test_discover_context_engines_dedupes_by_name(monkeypatch):
     """Repo-shipped engine wins when name collides with a plugin-registered one."""
-    from hermes_cli import plugins_cmd
+    from hermes_agent.hermes_cli import plugins_cmd
 
     class FakePluginEngine:
         name = "compressor"  # same name as repo-shipped
 
     monkeypatch.setattr(
-        "plugins.context_engine.discover_context_engines",
+        "hermes_agent.plugins.context_engine.discover_context_engines",
         lambda: [("compressor", "built-in compressor", True)],
     )
     monkeypatch.setattr(
-        "hermes_cli.plugins.discover_plugins",
+        "hermes_agent.hermes_cli.plugins.discover_plugins",
         lambda *_a, **_kw: None,
     )
     monkeypatch.setattr(
-        "hermes_cli.plugins.get_plugin_context_engine",
+        "hermes_agent.hermes_cli.plugins.get_plugin_context_engine",
         lambda: FakePluginEngine(),
     )
 
@@ -250,8 +250,8 @@ def test_discover_context_engines_dedupes_by_name(monkeypatch):
 
 def test_engine_collector_forwards_register_command_to_plugin_manager():
     """A plugin context engine can register a slash command via ``ctx.register_command``."""
-    from plugins.context_engine import _EngineCollector
-    from hermes_cli.plugins import get_plugin_manager
+    from hermes_agent.plugins.context_engine import _EngineCollector
+    from hermes_agent.hermes_cli.plugins import get_plugin_manager
 
     handler = lambda raw_args: f"echo: {raw_args}"
 
@@ -277,8 +277,8 @@ def test_engine_collector_forwards_register_command_to_plugin_manager():
 
 def test_engine_collector_rejects_builtin_command_conflicts():
     """Context engine cannot shadow built-in slash commands like /help."""
-    from plugins.context_engine import _EngineCollector
-    from hermes_cli.plugins import get_plugin_manager
+    from hermes_agent.plugins.context_engine import _EngineCollector
+    from hermes_agent.hermes_cli.plugins import get_plugin_manager
 
     collector = _EngineCollector(engine_name="my-lcm")
     collector.register_command("help", lambda *_: "shadow")

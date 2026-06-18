@@ -10,8 +10,8 @@ import types
 
 import pytest
 
-from plugins.memory.honcho import client as honcho_client
-from plugins.memory.honcho.client import (
+from hermes_agent.plugins.memory.honcho import client as honcho_client
+from hermes_agent.plugins.memory.honcho.client import (
     HonchoClientConfig,
     get_honcho_client,
     reset_honcho_client,

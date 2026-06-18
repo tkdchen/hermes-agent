@@ -49,7 +49,7 @@ class TestManifest:
 class TestDiscovery:
     def test_plugin_is_discovered_as_standalone_opt_in(self, tmp_path, monkeypatch):
         """Scanner should find the plugin but NOT load it by default."""
-        from hermes_cli import plugins as plugins_mod
+        from hermes_agent.hermes_cli import plugins as plugins_mod
 
         # Isolated HERMES_HOME so we don't read the developer's config.yaml.
         home = tmp_path / ".hermes"
@@ -77,7 +77,7 @@ class TestDiscovery:
 class TestRuntimeGate:
     def _fresh_plugin(self):
         """Import the plugin module fresh (clears any cached client)."""
-        mod_name = "plugins.observability.langfuse"
+        mod_name = "hermes_agent.plugins.observability.langfuse"
         sys.modules.pop(mod_name, None)
         return importlib.import_module(mod_name)
 
@@ -134,13 +134,13 @@ class TestRuntimeGate:
             monkeypatch.delenv(k, raising=False)
 
         # Drop any cached import of hermes_cli.config.
-        sys.modules.pop("hermes_cli.config", None)
+        sys.modules.pop("hermes_agent.hermes_cli.config", None)
 
         langfuse_plugin = self._fresh_plugin()
         for _ in range(20):
             langfuse_plugin._get_langfuse()
 
-        assert "hermes_cli.config" not in sys.modules, (
+        assert "hermes_agent.hermes_cli.config" not in sys.modules, (
             "langfuse plugin imported hermes_cli.config — regression toward "
             "the rejected per-hook load_config() design"
         )
@@ -159,9 +159,9 @@ class TestHooksInert:
         ):
             monkeypatch.delenv(k, raising=False)
 
-        sys.modules.pop("plugins.observability.langfuse", None)
+        sys.modules.pop("hermes_agent.plugins.observability.langfuse", None)
         import importlib
-        mod = importlib.import_module("plugins.observability.langfuse")
+        mod = importlib.import_module("hermes_agent.plugins.observability.langfuse")
 
         # Each hook should just return; no exceptions.
         mod.on_pre_llm_call(task_id="t", session_id="s", messages=[{"role": "user", "content": "hi"}])
@@ -173,9 +173,9 @@ class TestHooksInert:
 
 class TestPayloadSanitization:
     def test_safe_value_redacts_base64_data_uri_instead_of_truncating(self):
-        sys.modules.pop("plugins.observability.langfuse", None)
+        sys.modules.pop("hermes_agent.plugins.observability.langfuse", None)
         import importlib
-        mod = importlib.import_module("plugins.observability.langfuse")
+        mod = importlib.import_module("hermes_agent.plugins.observability.langfuse")
 
         payload = "data:image/png;base64," + ("a" * 20000)
         result = mod._safe_value(payload)
@@ -188,9 +188,9 @@ class TestPayloadSanitization:
         }
 
     def test_serialize_messages_redacts_data_uri_parts(self):
-        sys.modules.pop("plugins.observability.langfuse", None)
+        sys.modules.pop("hermes_agent.plugins.observability.langfuse", None)
         import importlib
-        mod = importlib.import_module("plugins.observability.langfuse")
+        mod = importlib.import_module("hermes_agent.plugins.observability.langfuse")
 
         payload = "data:image/jpeg;base64," + ("b" * 20000)
         serialized = mod._serialize_messages([
@@ -237,10 +237,10 @@ class _FakeLangfuse:
 
 
 class TestPlaceholderKeyDetection:
-    LOGGER_NAME = "plugins.observability.langfuse"
+    LOGGER_NAME = "hermes_agent.plugins.observability.langfuse"
 
     def _fresh_plugin(self, monkeypatch=None):
-        mod_name = "plugins.observability.langfuse"
+        mod_name = "hermes_agent.plugins.observability.langfuse"
         sys.modules.pop(mod_name, None)
         mod = importlib.import_module(mod_name)
         if monkeypatch is not None:
@@ -481,8 +481,8 @@ class TestPlaceholderKeyDetection:
 
 class TestRequestMessageCoercion:
     def test_prefers_request_messages_then_messages_then_history_then_user_message(self):
-        sys.modules.pop("plugins.observability.langfuse", None)
-        mod = importlib.import_module("plugins.observability.langfuse")
+        sys.modules.pop("hermes_agent.plugins.observability.langfuse", None)
+        mod = importlib.import_module("hermes_agent.plugins.observability.langfuse")
 
         assert mod._coerce_request_messages(
             request_messages=[{"role": "system", "content": "s"}],
@@ -504,8 +504,8 @@ class TestRequestMessageCoercion:
 
 class TestToolCallOutputBackfill:
     def test_post_tool_call_backfills_matching_turn_tool_call_output(self, monkeypatch):
-        sys.modules.pop("plugins.observability.langfuse", None)
-        mod = importlib.import_module("plugins.observability.langfuse")
+        sys.modules.pop("hermes_agent.plugins.observability.langfuse", None)
+        mod = importlib.import_module("hermes_agent.plugins.observability.langfuse")
 
         observation = object()
         state = mod.TraceState(trace_id="trace-1", root_ctx=None, root_span=None)
@@ -550,8 +550,8 @@ class TestToolCallOutputBackfill:
         }
 
     def test_serialize_messages_keeps_tool_name_and_call_id(self):
-        sys.modules.pop("plugins.observability.langfuse", None)
-        mod = importlib.import_module("plugins.observability.langfuse")
+        sys.modules.pop("hermes_agent.plugins.observability.langfuse", None)
+        mod = importlib.import_module("hermes_agent.plugins.observability.langfuse")
 
         messages = [{
             "role": "tool",
@@ -568,8 +568,8 @@ class TestToolCallOutputBackfill:
         }]
 
     def test_serialize_tool_calls_emits_openai_style_function_shape(self):
-        sys.modules.pop("plugins.observability.langfuse", None)
-        mod = importlib.import_module("plugins.observability.langfuse")
+        sys.modules.pop("hermes_agent.plugins.observability.langfuse", None)
+        mod = importlib.import_module("hermes_agent.plugins.observability.langfuse")
 
         class _Fn:
             name = "web_extract"
@@ -596,8 +596,8 @@ class TestToolObservationKeying:
     """Tests for pre/post tool_call observation matching when tool_call_id is absent."""
 
     def _make_mod(self):
-        sys.modules.pop("plugins.observability.langfuse", None)
-        return importlib.import_module("plugins.observability.langfuse")
+        sys.modules.pop("hermes_agent.plugins.observability.langfuse", None)
+        return importlib.import_module("hermes_agent.plugins.observability.langfuse")
 
     def test_empty_tool_call_id_single_tool_sets_output(self, monkeypatch):
         mod = self._make_mod()
@@ -761,8 +761,8 @@ class TestUsageFromSanitizedResponse:
         return captured
 
     def test_sanitized_dict_response_uses_usage_dict(self, monkeypatch):
-        sys.modules.pop("plugins.observability.langfuse", None)
-        mod = importlib.import_module("plugins.observability.langfuse")
+        sys.modules.pop("hermes_agent.plugins.observability.langfuse", None)
+        mod = importlib.import_module("hermes_agent.plugins.observability.langfuse")
         captured = self._setup(mod, monkeypatch)
 
         # A plain dict has no ``.usage`` attribute — mirrors post_api_request.
@@ -781,8 +781,8 @@ class TestUsageFromSanitizedResponse:
         assert captured["usage_details"] == {"input": 100, "output": 20}
 
     def test_real_response_object_with_usage_still_used(self, monkeypatch):
-        sys.modules.pop("plugins.observability.langfuse", None)
-        mod = importlib.import_module("plugins.observability.langfuse")
+        sys.modules.pop("hermes_agent.plugins.observability.langfuse", None)
+        mod = importlib.import_module("hermes_agent.plugins.observability.langfuse")
         captured = self._setup(mod, monkeypatch)
 
         # A response object that genuinely carries usage must still take the

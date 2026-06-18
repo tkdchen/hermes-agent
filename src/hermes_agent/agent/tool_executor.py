@@ -21,26 +21,26 @@ import threading
 import time
 from typing import Any, Optional
 
-from agent.display import (
+from hermes_agent.agent.display import (
     KawaiiSpinner,
     build_tool_preview as _build_tool_preview,
     get_cute_tool_message as _get_cute_tool_message_impl,
     get_tool_emoji as _get_tool_emoji,
     _detect_tool_failure,
 )
-from agent.tool_guardrails import ToolGuardrailDecision
-from agent.tool_dispatch_helpers import (
+from hermes_agent.agent.tool_guardrails import ToolGuardrailDecision
+from hermes_agent.agent.tool_dispatch_helpers import (
     _is_destructive_command,
     _is_multimodal_tool_result,
     _multimodal_text_summary,
     _append_subdir_hint_to_multimodal,
     make_tool_result_message,
 )
-from tools.terminal_tool import (
+from hermes_agent.tools.terminal_tool import (
     get_active_env,
 )
-from tools.thread_context import propagate_context_to_thread
-from tools.tool_result_storage import (
+from hermes_agent.tools.thread_context import propagate_context_to_thread
+from hermes_agent.tools.tool_result_storage import (
     maybe_persist_tool_result,
     enforce_turn_budget,
 )
@@ -54,7 +54,7 @@ _MAX_TOOL_WORKERS = 8
 
 def _ra():
     """Lazy reference to ``run_agent`` so patches like ``run_agent._set_interrupt`` work."""
-    import run_agent
+    import hermes_agent.run_agent as run_agent
     return run_agent
 
 
@@ -73,7 +73,7 @@ def _emit_terminal_post_tool_call(
     middleware_trace: Optional[list[dict[str, Any]]] = None,
 ) -> None:
     try:
-        from model_tools import _emit_post_tool_call_hook
+        from hermes_agent.model_tools import _emit_post_tool_call_hook
         _emit_post_tool_call_hook(
             function_name=function_name,
             function_args=function_args,
@@ -148,9 +148,9 @@ def _tool_search_scoped_names(agent) -> frozenset:
     a dict lookup, not a full tool-defs rebuild on every tool call.
     """
     try:
-        import model_tools
-        from tools import tool_search as _ts
-        from tools.registry import registry as _registry
+        import hermes_agent.model_tools as model_tools
+        from hermes_agent.tools import tool_search as _ts
+        from hermes_agent.tools.registry import registry as _registry
     except Exception:
         return frozenset()
 
@@ -190,7 +190,7 @@ def _apply_tool_request_middleware_for_agent(
     tool_call_id: str,
 ) -> tuple[dict, list[dict[str, Any]]]:
     try:
-        from hermes_cli.middleware import apply_tool_request_middleware
+        from hermes_agent.hermes_cli.middleware import apply_tool_request_middleware
 
         result = apply_tool_request_middleware(
             function_name,
@@ -224,7 +224,7 @@ def _run_agent_tool_execution_middleware(
         observed_args = next_args if isinstance(next_args, dict) else function_args
         return execute(observed_args)
 
-    from hermes_cli.middleware import run_tool_execution_middleware
+    from hermes_agent.hermes_cli.middleware import run_tool_execution_middleware
 
     result = run_tool_execution_middleware(
         function_name,
@@ -296,7 +296,7 @@ def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effe
         # hook, or dispatch fires.
         _ts_scope_block = None
         try:
-            from tools import tool_search as _ts
+            from hermes_agent.tools import tool_search as _ts
             if function_name == _ts.TOOL_CALL_NAME:
                 _underlying, _underlying_args, _err = _ts.resolve_underlying_call(function_args)
                 if not _err and _underlying:
@@ -343,7 +343,7 @@ def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effe
             )
         else:
             try:
-                from hermes_cli.plugins import get_pre_tool_call_block_message
+                from hermes_agent.hermes_cli.plugins import get_pre_tool_call_block_message
                 block_message = get_pre_tool_call_block_message(
                     function_name,
                     function_args,
@@ -481,7 +481,7 @@ def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effe
         # The callback is thread-local; the main thread's callback
         # is invisible to worker threads.
         try:
-            from tools.environments.base import set_activity_callback
+            from hermes_agent.tools.environments.base import set_activity_callback
             set_activity_callback(agent._touch_activity)
         except Exception:
             pass
@@ -803,7 +803,7 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
         # underlying tool directly, so session toolset scope is enforced here).
         _ts_scope_block: Optional[str] = None
         try:
-            from tools import tool_search as _ts
+            from hermes_agent.tools import tool_search as _ts
             if function_name == _ts.TOOL_CALL_NAME:
                 _underlying, _underlying_args, _err = _ts.resolve_underlying_call(function_args)
                 if not _err and _underlying:
@@ -834,7 +834,7 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
             _block_error_type = "tool_scope_block"
         else:
             try:
-                from hermes_cli.plugins import get_pre_tool_call_block_message
+                from hermes_agent.hermes_cli.plugins import get_pre_tool_call_block_message
                 _block_msg = get_pre_tool_call_block_message(
                     function_name,
                     function_args,
@@ -884,7 +884,7 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
         # the agent while a command is running.
         if not _execution_blocked:
             try:
-                from tools.environments.base import set_activity_callback
+                from hermes_agent.tools.environments.base import set_activity_callback
                 set_activity_callback(agent._touch_activity)
             except Exception:
                 pass
@@ -963,7 +963,7 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
             )
         elif function_name == "todo":
             def _execute(next_args: dict) -> Any:
-                from tools.todo_tool import todo_tool as _todo_tool
+                from hermes_agent.tools.todo_tool import todo_tool as _todo_tool
                 return _todo_tool(
                     todos=next_args.get("todos"),
                     merge=next_args.get("merge", False),
@@ -984,9 +984,9 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
             def _execute(next_args: dict) -> Any:
                 session_db = agent._get_session_db_for_recall()
                 if not session_db:
-                    from hermes_state import format_session_db_unavailable
+                    from hermes_agent.hermes_state import format_session_db_unavailable
                     return json.dumps({"success": False, "error": format_session_db_unavailable()})
-                from tools.session_search_tool import session_search as _session_search
+                from hermes_agent.tools.session_search_tool import session_search as _session_search
                 return _session_search(
                     query=next_args.get("query", ""),
                     role_filter=next_args.get("role_filter"),
@@ -1012,7 +1012,7 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
         elif function_name == "memory":
             def _execute(next_args: dict) -> Any:
                 target = next_args.get("target", "memory")
-                from tools.memory_tool import memory_tool as _memory_tool
+                from hermes_agent.tools.memory_tool import memory_tool as _memory_tool
                 result = _memory_tool(
                     action=next_args.get("action"),
                     target=target,
@@ -1048,7 +1048,7 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
                 agent._vprint(f"  {_get_cute_tool_message_impl('memory', function_args, tool_duration, result=function_result)}")
         elif function_name == "clarify":
             def _execute(next_args: dict) -> Any:
-                from tools.clarify_tool import clarify_tool as _clarify_tool
+                from hermes_agent.tools.clarify_tool import clarify_tool as _clarify_tool
                 return _clarify_tool(
                     question=next_args.get("question", ""),
                     choices=next_args.get("choices"),
@@ -1067,7 +1067,7 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
                 agent._vprint(f"  {_get_cute_tool_message_impl('clarify', function_args, tool_duration, result=function_result)}")
         elif function_name == "read_terminal":
             def _execute(next_args: dict) -> Any:
-                from tools.read_terminal_tool import read_terminal_tool as _read_terminal_tool
+                from hermes_agent.tools.read_terminal_tool import read_terminal_tool as _read_terminal_tool
                 return _read_terminal_tool(
                     start_line=next_args.get("start_line"),
                     count=next_args.get("count"),
@@ -1291,7 +1291,7 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
         # executor is the one that has to fire post_tool_call. For
         # registry-dispatched tools the else-branch above invoked
         # handle_function_call, which already fires the hook.
-        from agent.agent_runtime_helpers import agent_runtime_owns_post_tool_hook
+        from hermes_agent.agent.agent_runtime_helpers import agent_runtime_owns_post_tool_hook
         _executor_must_emit_post_hook = (
             not _execution_blocked
             and agent_runtime_owns_post_tool_hook(agent, function_name)

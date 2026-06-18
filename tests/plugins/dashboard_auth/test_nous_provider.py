@@ -30,8 +30,8 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-import plugins.dashboard_auth.nous as nous_plugin
-from hermes_cli.dashboard_auth import (
+import hermes_agent.plugins.dashboard_auth.nous as nous_plugin
+from hermes_agent.hermes_cli.dashboard_auth import (
     InvalidCodeError,
     LoginStart,
     ProviderError,
@@ -264,7 +264,7 @@ class TestConfigYamlSource:
             if oauth_block is not None:
                 cfg = {"dashboard": {"oauth": oauth_block}}
             monkeypatch.setattr(
-                "hermes_cli.config.load_config", lambda: cfg
+                "hermes_agent.hermes_cli.config.load_config", lambda: cfg
             )
 
         return _set
@@ -374,7 +374,7 @@ class TestConfigYamlSource:
             raise OSError("config.yaml not readable")
 
         monkeypatch.setattr(
-            "hermes_cli.config.load_config", _broken_load
+            "hermes_agent.hermes_cli.config.load_config", _broken_load
         )
         ctx = MagicMock()
         # Must not raise.
@@ -389,7 +389,7 @@ class TestConfigYamlSource:
         so a malformed user config doesn't crash startup."""
         monkeypatch.delenv("HERMES_DASHBOARD_OAUTH_CLIENT_ID", raising=False)
         monkeypatch.setattr(
-            "hermes_cli.config.load_config",
+            "hermes_agent.hermes_cli.config.load_config",
             lambda: {"dashboard": {"oauth": "wrong type"}},
         )
         ctx = MagicMock()
@@ -553,7 +553,7 @@ class TestCompleteLogin:
                 "refresh_token": "rt_initial_value",
             },
         )
-        with patch("plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
+        with patch("hermes_agent.plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
             session = provider.complete_login(
                 code="abc",
                 state="state-val",
@@ -578,7 +578,7 @@ class TestCompleteLogin:
         mock_resp = self._mock_post(
             200, {"access_token": access_token, "token_type": "Bearer"}
         )
-        with patch("plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
+        with patch("hermes_agent.plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
             session = provider.complete_login(
                 code="abc",
                 state="state-val",
@@ -589,7 +589,7 @@ class TestCompleteLogin:
 
     def test_400_raises_invalid_code(self, provider):
         mock_resp = self._mock_post(400, {"error": "invalid_grant"})
-        with patch("plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
+        with patch("hermes_agent.plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
             with pytest.raises(InvalidCodeError, match="invalid_grant"):
                 provider.complete_login(
                     code="bad", state="s", code_verifier="v",
@@ -599,7 +599,7 @@ class TestCompleteLogin:
     def test_500_raises_provider_error(self, provider):
         mock_resp = self._mock_post(500, "internal server error", ctype="text/plain")
         mock_resp.text = "internal server error"
-        with patch("plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
+        with patch("hermes_agent.plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
             with pytest.raises(ProviderError, match="500"):
                 provider.complete_login(
                     code="x", state="s", code_verifier="v",
@@ -608,7 +608,7 @@ class TestCompleteLogin:
 
     def test_missing_access_token_raises(self, provider):
         mock_resp = self._mock_post(200, {"token_type": "Bearer"})
-        with patch("plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
+        with patch("hermes_agent.plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
             with pytest.raises(ProviderError, match="access_token"):
                 provider.complete_login(
                     code="x", state="s", code_verifier="v",
@@ -620,7 +620,7 @@ class TestCompleteLogin:
         mock_resp = self._mock_post(
             200, {"access_token": access_token, "token_type": "DPoP"}
         )
-        with patch("plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
+        with patch("hermes_agent.plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
             with pytest.raises(ProviderError, match="token_type"):
                 provider.complete_login(
                     code="x", state="s", code_verifier="v",
@@ -629,7 +629,7 @@ class TestCompleteLogin:
 
     def test_network_error_raises_provider_error(self, provider):
         with patch(
-            "plugins.dashboard_auth.nous.httpx.post",
+            "hermes_agent.plugins.dashboard_auth.nous.httpx.post",
             side_effect=httpx.ConnectError("conn refused"),
         ):
             with pytest.raises(ProviderError, match="unreachable"):
@@ -652,7 +652,7 @@ class TestCompleteLogin:
                 "refresh_token": "rt-opaque",
             },
         )
-        with patch("plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
+        with patch("hermes_agent.plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
             session = provider.complete_login(
                 code="x", state="s", code_verifier="v",
                 redirect_uri="https://hermes.fly.dev/auth/callback",
@@ -732,7 +732,7 @@ class TestVerifySession:
     ):
         import logging
         token = _mint_token(rsa_keypair, oauth_contract_version=None)
-        with caplog.at_level(logging.WARNING, logger="plugins.dashboard_auth.nous"):
+        with caplog.at_level(logging.WARNING, logger="hermes_agent.plugins.dashboard_auth.nous"):
             session = provider.verify_session(access_token=token)
         assert session is not None
         assert any(
@@ -794,7 +794,7 @@ class TestRefreshAndRevoke:
             },
         )
         with patch(
-            "plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp
         ) as mock_post:
             session = provider.refresh_session(refresh_token="rt_old_value")
 
@@ -817,20 +817,20 @@ class TestRefreshAndRevoke:
     def test_refresh_400_raises_refresh_expired(self, provider):
         # Expired / revoked / reuse-detected RT → Portal 400 → force re-login.
         mock_resp = self._mock_post(400, {"error": "invalid_grant"})
-        with patch("plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
+        with patch("hermes_agent.plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
             with pytest.raises(RefreshExpiredError, match="invalid_grant"):
                 provider.refresh_session(refresh_token="rt_dead")
 
     def test_refresh_empty_token_raises_refresh_expired_without_network(self, provider):
         # No RT present — fail fast as a dead session, never hit the network.
-        with patch("plugins.dashboard_auth.nous.httpx.post") as mock_post:
+        with patch("hermes_agent.plugins.dashboard_auth.nous.httpx.post") as mock_post:
             with pytest.raises(RefreshExpiredError):
                 provider.refresh_session(refresh_token="")
         mock_post.assert_not_called()
 
     def test_refresh_network_error_raises_provider_error(self, provider):
         with patch(
-            "plugins.dashboard_auth.nous.httpx.post",
+            "hermes_agent.plugins.dashboard_auth.nous.httpx.post",
             side_effect=httpx.RequestError("boom"),
         ):
             with pytest.raises(ProviderError, match="unreachable"):
@@ -838,7 +838,7 @@ class TestRefreshAndRevoke:
 
     def test_refresh_500_raises_provider_error(self, provider):
         mock_resp = self._mock_post(500, "oops", ctype="text/plain")
-        with patch("plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
+        with patch("hermes_agent.plugins.dashboard_auth.nous.httpx.post", return_value=mock_resp):
             with pytest.raises(ProviderError):
                 provider.refresh_session(refresh_token="rt_x")
 

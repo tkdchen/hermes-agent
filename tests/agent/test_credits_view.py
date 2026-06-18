@@ -13,9 +13,9 @@ import asyncio
 
 import pytest
 
-import agent.account_usage as account_usage
-from agent.account_usage import CreditsView, build_credits_view
-from hermes_cli.nous_account import NousPortalAccountInfo, NousPaidServiceAccessInfo
+import hermes_agent.agent.account_usage as account_usage
+from hermes_agent.agent.account_usage import CreditsView, build_credits_view
+from hermes_agent.hermes_cli.nous_account import NousPortalAccountInfo, NousPaidServiceAccessInfo
 
 
 def _account(**kwargs) -> NousPortalAccountInfo:
@@ -30,13 +30,13 @@ def _account(**kwargs) -> NousPortalAccountInfo:
 def _logged_in_account(monkeypatch):
     """Stub the auth token + account fetch so build_credits_view runs offline."""
     monkeypatch.setattr(
-        "hermes_cli.auth.get_provider_auth_state",
+        "hermes_agent.hermes_cli.auth.get_provider_auth_state",
         lambda provider: {"access_token": "tok", "portal_base_url": "https://portal.example.test"},
     )
 
     def _install(account):
         monkeypatch.setattr(
-            "hermes_cli.nous_account.get_nous_portal_account_info",
+            "hermes_agent.hermes_cli.nous_account.get_nous_portal_account_info",
             lambda *a, **kw: account,
         )
 
@@ -47,7 +47,7 @@ def _logged_in_account(monkeypatch):
 
 
 def test_view_logged_out_when_no_token(monkeypatch):
-    monkeypatch.setattr("hermes_cli.auth.get_provider_auth_state", lambda provider: {})
+    monkeypatch.setattr("hermes_agent.hermes_cli.auth.get_provider_auth_state", lambda provider: {})
     view = build_credits_view()
     assert view == CreditsView(logged_in=False)
 
@@ -118,14 +118,14 @@ def test_view_falls_back_to_legacy_url_when_slug_null(_logged_in_account):
 
 def test_view_fetch_failure_is_logged_out(monkeypatch):
     monkeypatch.setattr(
-        "hermes_cli.auth.get_provider_auth_state",
+        "hermes_agent.hermes_cli.auth.get_provider_auth_state",
         lambda provider: {"access_token": "tok"},
     )
 
     def _boom(*a, **kw):
         raise RuntimeError("portal down")
 
-    monkeypatch.setattr("hermes_cli.nous_account.get_nous_portal_account_info", _boom)
+    monkeypatch.setattr("hermes_agent.hermes_cli.nous_account.get_nous_portal_account_info", _boom)
 
     view = build_credits_view()
     assert view.logged_in is False
@@ -140,7 +140,7 @@ class _FakeEvent:
 
 def _make_gateway_stub():
     """Minimal object exposing the mixin's _handle_credits_command."""
-    from gateway.slash_commands import GatewaySlashCommandsMixin
+    from hermes_agent.gateway.slash_commands import GatewaySlashCommandsMixin
 
     class _Stub(GatewaySlashCommandsMixin):
         def __init__(self):
@@ -194,7 +194,7 @@ def test_gateway_credits_fetch_exception_is_not_logged_in(monkeypatch):
 
 
 def test_credits_command_registered():
-    from hermes_cli.commands import resolve_command, COMMAND_REGISTRY
+    from hermes_agent.hermes_cli.commands import resolve_command, COMMAND_REGISTRY
 
     cmd = resolve_command("credits")
     assert cmd is not None and cmd.name == "credits"
@@ -213,8 +213,8 @@ def test_cli_show_credits_non_interactive_renders_text_not_modal(monkeypatch, ca
     worker's JSON-RPC stdin and crash the command (only the depleted banner
     would survive). Regression for that exact failure.
     """
-    import agent.account_usage as account_usage
-    from cli import HermesCLI
+    import hermes_agent.agent.account_usage as account_usage
+    from hermes_agent.cli import HermesCLI
 
     monkeypatch.setattr(
         account_usage,
@@ -248,8 +248,8 @@ def test_cli_show_credits_non_interactive_renders_text_not_modal(monkeypatch, ca
 
 
 def test_cli_show_credits_logged_out(monkeypatch, capsys):
-    import agent.account_usage as account_usage
-    from cli import HermesCLI
+    import hermes_agent.agent.account_usage as account_usage
+    from hermes_agent.cli import HermesCLI
 
     monkeypatch.setattr(
         account_usage, "build_credits_view", lambda *a, **k: CreditsView(logged_in=False)

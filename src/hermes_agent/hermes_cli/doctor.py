@@ -10,9 +10,9 @@ import subprocess
 import shutil
 from pathlib import Path
 
-from hermes_cli.config import get_project_root, get_hermes_home, get_env_path
-from hermes_cli.env_loader import load_hermes_dotenv
-from hermes_constants import display_hermes_home
+from hermes_agent.hermes_cli.config import get_project_root, get_hermes_home, get_env_path
+from hermes_agent.hermes_cli.env_loader import load_hermes_dotenv
+from hermes_agent.hermes_constants import display_hermes_home
 
 PROJECT_ROOT = get_project_root()
 HERMES_HOME = get_hermes_home()
@@ -22,10 +22,10 @@ _DHH = display_hermes_home()  # user-facing display path (e.g. ~/.hermes or ~/.h
 _env_path = get_env_path()
 load_hermes_dotenv(hermes_home=_env_path.parent, project_env=PROJECT_ROOT / ".env")
 
-from hermes_cli.colors import Colors, color
-from hermes_cli.models import _HERMES_USER_AGENT
-from hermes_constants import OPENROUTER_MODELS_URL
-from utils import base_url_host_matches
+from hermes_agent.hermes_cli.colors import Colors, color
+from hermes_agent.hermes_cli.models import _HERMES_USER_AGENT
+from hermes_agent.hermes_constants import OPENROUTER_MODELS_URL
+from hermes_agent.utils import base_url_host_matches
 
 
 _PROVIDER_ENV_HINTS = (
@@ -54,7 +54,7 @@ _PROVIDER_ENV_HINTS = (
 )
 
 
-from hermes_constants import is_termux as _is_termux
+from hermes_agent.hermes_constants import is_termux as _is_termux
 
 
 def _python_install_cmd() -> str:
@@ -105,7 +105,7 @@ def _has_provider_env_config(content: str) -> bool:
 def _honcho_is_configured_for_doctor() -> bool:
     """Return True when Honcho is configured, even if this process has no active session."""
     try:
-        from plugins.memory.honcho.client import HonchoClientConfig
+        from hermes_agent.plugins.memory.honcho.client import HonchoClientConfig
 
         cfg = HonchoClientConfig.from_global_config()
         return bool(cfg.enabled and (cfg.api_key or cfg.base_url))
@@ -160,19 +160,19 @@ def _has_healthy_oauth_fallback_for_apikey_provider(provider_label: str) -> bool
     normalized = (provider_label or "").strip().lower()
     if normalized in {"google / gemini", "gemini"}:
         try:
-            from hermes_cli.auth import get_gemini_oauth_auth_status
+            from hermes_agent.hermes_cli.auth import get_gemini_oauth_auth_status
             return bool((get_gemini_oauth_auth_status() or {}).get("logged_in"))
         except Exception:
             return False
     if normalized == "minimax":
         try:
-            from hermes_cli.auth import get_minimax_oauth_auth_status
+            from hermes_agent.hermes_cli.auth import get_minimax_oauth_auth_status
             return bool((get_minimax_oauth_auth_status() or {}).get("logged_in"))
         except Exception:
             return False
     if normalized == "xai":
         try:
-            from hermes_cli.auth import get_xai_oauth_auth_status
+            from hermes_agent.hermes_cli.auth import get_xai_oauth_auth_status
             return bool((get_xai_oauth_auth_status() or {}).get("logged_in"))
         except Exception:
             return False
@@ -239,7 +239,7 @@ def _check_version_consistency(issues: list[str]) -> None:
     Silent no-op for installed wheels where pyproject.toml isn't present.
     """
     try:
-        from hermes_cli import __version__ as init_version
+        from hermes_agent.hermes_cli import __version__ as init_version
     except Exception:
         return
     pyproject_version = _read_pyproject_version()
@@ -272,7 +272,7 @@ def _check_s6_supervision(issues: list[str]) -> None:
         currently supervised as ``up``
     """
     try:
-        from hermes_cli.service_manager import (
+        from hermes_agent.hermes_cli.service_manager import (
             S6ServiceManager,
             detect_service_manager,
         )
@@ -313,8 +313,8 @@ def check_certificates() -> None:
     a wall of tracebacks on the first outbound HTTPS call.
     """
     try:
-        from agent.ssl_guard import verify_ca_bundle_with_fallback
-        from agent.errors import SSLConfigurationError
+        from hermes_agent.agent.ssl_guard import verify_ca_bundle_with_fallback
+        from hermes_agent.agent.errors import SSLConfigurationError
         verify_ca_bundle_with_fallback()
         check_ok("SSL CA certificate bundle is valid")
     except SSLConfigurationError as e:
@@ -332,12 +332,12 @@ def _check_gateway_service_linger(issues: list[str]) -> None:
     ``_check_s6_supervision``.
     """
     try:
-        from hermes_cli.gateway import (
+        from hermes_agent.hermes_cli.gateway import (
             get_systemd_linger_status,
             get_systemd_unit_path,
             is_linux,
         )
-        from hermes_cli.service_manager import detect_service_manager
+        from hermes_agent.hermes_cli.service_manager import detect_service_manager
     except Exception as e:
         check_warn("Gateway service linger", f"(could not import gateway helpers: {e})")
         return
@@ -420,10 +420,10 @@ def _build_apikey_providers_list() -> list:
     _dedicated_canonical = {"anthropic", "openrouter", "bedrock"}
     _known_canonical.update(_dedicated_canonical)
     try:
-        from providers import list_providers
-        from providers.base import ProviderProfile as _PP
+        from hermes_agent.providers import list_providers
+        from hermes_agent.providers.base import ProviderProfile as _PP
         try:
-            from hermes_cli.providers import normalize_provider as _normalize_provider
+            from hermes_agent.hermes_cli.providers import normalize_provider as _normalize_provider
         except Exception:  # pragma: no cover - normalization is best-effort
             def _normalize_provider(_name: str) -> str:
                 return (_name or "").strip().lower()
@@ -475,7 +475,7 @@ def run_doctor(args):
     # return without running the rest of the diagnostics — the user has
     # already seen the advisory and just wants to silence it.
     if ack_target:
-        from hermes_cli.security_advisories import (
+        from hermes_agent.hermes_cli.security_advisories import (
             ADVISORIES,
             ack_advisory,
         )
@@ -513,7 +513,7 @@ def run_doctor(args):
 
     _section("Security Advisories")
     try:
-        from hermes_cli.security_advisories import (
+        from hermes_agent.hermes_cli.security_advisories import (
             detect_compromised,
             filter_unacked,
             full_remediation_text,
@@ -559,8 +559,8 @@ def run_doctor(args):
 
     _section("MCP Server Security")
     try:
-        from hermes_cli.config import load_config
-        from hermes_cli.mcp_security import validate_mcp_server_entry
+        from hermes_agent.hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.mcp_security import validate_mcp_server_entry
 
         servers = load_config().get("mcp_servers") or {}
         suspicious = 0
@@ -697,7 +697,7 @@ def run_doctor(args):
 
             known_providers: set = set()
             try:
-                from hermes_cli.auth import (
+                from hermes_agent.hermes_cli.auth import (
                     PROVIDER_REGISTRY,
                     resolve_provider as _resolve_auth_provider,
                 )
@@ -706,8 +706,8 @@ def run_doctor(args):
                 _resolve_auth_provider = None
                 pass
             try:
-                from hermes_cli.config import get_compatible_custom_providers as _compatible_custom_providers
-                from hermes_cli.providers import (
+                from hermes_agent.hermes_cli.config import get_compatible_custom_providers as _compatible_custom_providers
+                from hermes_agent.hermes_cli.providers import (
                     normalize_provider as _normalize_catalog_provider,
                     resolve_provider_full as _resolve_provider_full,
                 )
@@ -827,14 +827,14 @@ def run_doctor(args):
             if runtime_provider and runtime_provider not in ("auto", "custom"):
                 try:
                     if runtime_provider == "openrouter":
-                        from hermes_cli.config import get_env_value
+                        from hermes_agent.hermes_cli.config import get_env_value
 
                         configured = bool(
                             str(get_env_value("OPENROUTER_API_KEY") or "").strip()
                             or str(get_env_value("OPENAI_API_KEY") or "").strip()
                         )
                     else:
-                        from hermes_cli.auth import PROVIDER_REGISTRY, get_auth_status
+                        from hermes_agent.hermes_cli.auth import PROVIDER_REGISTRY, get_auth_status
 
                         pconfig = PROVIDER_REGISTRY.get(runtime_provider)
                         configured = True
@@ -873,7 +873,7 @@ def run_doctor(args):
                     shutil.copy2(str(example_config), str(config_path))
                     check_ok(f"Created {_DHH}/config.yaml from cli-config.yaml.example")
                 else:
-                    from hermes_cli.config import DEFAULT_CONFIG, save_config
+                    from hermes_agent.hermes_cli.config import DEFAULT_CONFIG, save_config
                     save_config(DEFAULT_CONFIG)
                     check_ok(f"Created {_DHH}/config.yaml from defaults")
                 fixed_count += 1
@@ -884,7 +884,7 @@ def run_doctor(args):
     config_path = HERMES_HOME / 'config.yaml'
     if config_path.exists():
         try:
-            from hermes_cli.config import check_config_version, migrate_config
+            from hermes_agent.hermes_cli.config import check_config_version, migrate_config
             current_ver, latest_ver = check_config_version()
             if current_ver < latest_ver:
                 check_warn(
@@ -935,7 +935,7 @@ def run_doctor(args):
                             model_section[k] = raw_config.pop(k)
                         else:
                             raw_config.pop(k)
-                    from utils import atomic_yaml_write
+                    from hermes_agent.utils import atomic_yaml_write
                     atomic_yaml_write(config_path, raw_config)
                     check_ok("Migrated stale root-level keys into model section")
                     fixed_count += 1
@@ -956,7 +956,7 @@ def run_doctor(args):
         # which the startup bridge may already have overridden.
         try:
             import yaml
-            from hermes_cli.config import load_env, remove_env_value
+            from hermes_agent.hermes_cli.config import load_env, remove_env_value
             with open(config_path, encoding="utf-8") as f:
                 raw_config = yaml.safe_load(f) or {}
             agent_cfg = raw_config.get("agent")
@@ -977,7 +977,7 @@ def run_doctor(args):
             if drift:
                 check_warn(
                     f"HERMES_MAX_ITERATIONS={env_ghost} in .env shadows "
-                    f"agent.max_turns={cfg_max_turns} in config.yaml",
+                    f"hermes_agent.agent.max_turns={cfg_max_turns} in config.yaml",
                     "(stale ghost from an earlier `hermes setup` run)",
                 )
                 if should_fix:
@@ -1003,7 +1003,7 @@ def run_doctor(args):
 
         # Validate config structure (catches malformed custom_providers, etc.)
         try:
-            from hermes_cli.config import validate_config_structure
+            from hermes_agent.hermes_cli.config import validate_config_structure
             config_issues = validate_config_structure()
             if config_issues:
                 _section("Config Structure")
@@ -1022,8 +1022,8 @@ def run_doctor(args):
     _section("xAI Model Retirement (May 15, 2026)")
 
     try:
-        from hermes_cli.config import load_config
-        from hermes_cli.xai_retirement import (
+        from hermes_agent.hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.xai_retirement import (
             MIGRATION_GUIDE_URL,
             find_retired_xai_refs,
             format_issue,
@@ -1047,7 +1047,7 @@ def run_doctor(args):
     _section("Auth Providers")
 
     try:
-        from hermes_cli.auth import (
+        from hermes_agent.hermes_cli.auth import (
             get_nous_auth_status,
             get_codex_auth_status,
             get_gemini_oauth_auth_status,
@@ -1104,7 +1104,7 @@ def run_doctor(args):
     # xAI OAuth — separate try/except so an import failure here cannot
     # disrupt the already-printed Nous/Codex/Gemini/MiniMax rows above.
     try:
-        from hermes_cli.auth import get_xai_oauth_auth_status
+        from hermes_agent.hermes_cli.auth import get_xai_oauth_auth_status
         xai_oauth_status = get_xai_oauth_auth_status() or {}
         if xai_oauth_status.get("logged_in"):
             check_ok("xAI OAuth", "(logged in)")
@@ -1196,7 +1196,7 @@ def run_doctor(args):
             conn.close()
             check_ok(f"{_DHH}/state.db exists ({count} sessions)")
         except Exception as e:
-            from hermes_state import is_malformed_db_error, repair_state_db_schema
+            from hermes_agent.hermes_state import is_malformed_db_error, repair_state_db_schema
 
             if is_malformed_db_error(e):
                 # sqlite_master itself is malformed (e.g. duplicate
@@ -1366,7 +1366,7 @@ def run_doctor(args):
     # Docker (optional)
     terminal_env = os.getenv("TERMINAL_ENV", "local")
     try:
-        from hermes_constants import is_container as _is_container
+        from hermes_agent.hermes_constants import is_container as _is_container
         running_in_container = _is_container()
     except Exception:
         running_in_container = False
@@ -1502,7 +1502,7 @@ def run_doctor(args):
             try:
                 # Lazy import: browser_tool is a ~150KB module we don't want
                 # to eagerly load in every `hermes doctor` invocation.
-                from tools.browser_tool import (
+                from hermes_agent.tools.browser_tool import (
                     _chromium_installed,
                     _is_camofox_mode,
                     _get_cloud_provider,
@@ -1727,13 +1727,13 @@ def run_doctor(args):
             )
 
     def _probe_anthropic() -> _ConnectivityResult:
-        from hermes_cli.auth import get_anthropic_key
+        from hermes_agent.hermes_cli.auth import get_anthropic_key
         key = get_anthropic_key()
         if not key:
             return _ConnectivityResult("Anthropic API", [], [])
         try:
             import httpx
-            from agent.anthropic_adapter import (
+            from hermes_agent.agent.anthropic_adapter import (
                 _is_oauth_token,
                 _COMMON_BETAS,
                 _OAUTH_ONLY_BETAS,
@@ -1823,7 +1823,7 @@ def run_doctor(args):
             # with no /v1) don't support /models. Rewrite to OpenAI-compat
             # /v1 surface for health checks.
             if base and base.rstrip("/").endswith("/anthropic"):
-                from agent.auxiliary_client import _to_openai_base_url
+                from hermes_agent.agent.auxiliary_client import _to_openai_base_url
                 base = _to_openai_base_url(base)
             if base_url_host_matches(base, "api.kimi.com") and base.rstrip("/").endswith("/coding"):
                 base = base.rstrip("/") + "/v1"
@@ -1882,7 +1882,7 @@ def run_doctor(args):
 
     def _probe_bedrock() -> _ConnectivityResult:
         try:
-            from agent.bedrock_adapter import (
+            from hermes_agent.agent.bedrock_adapter import (
                 has_aws_credentials,
                 resolve_aws_auth_env_var,
                 resolve_bedrock_region,
@@ -1944,7 +1944,7 @@ def run_doctor(args):
         """
         label = "Azure Foundry (Entra ID)".ljust(28)
         try:
-            from hermes_cli.config import load_config
+            from hermes_agent.hermes_cli.config import load_config
             cfg = load_config()
             model_cfg = cfg.get("model") if isinstance(cfg, dict) else {}
             if not isinstance(model_cfg, dict):
@@ -1957,7 +1957,7 @@ def run_doctor(args):
             return _ConnectivityResult("Azure Foundry (Entra ID)", [], [])
 
         try:
-            from agent.azure_identity_adapter import (
+            from hermes_agent.agent.azure_identity_adapter import (
                 EntraIdentityConfig,
                 SCOPE_AI_AZURE_DEFAULT,
                 describe_active_credential,
@@ -2079,7 +2079,7 @@ def run_doctor(args):
     try:
         # Add project root to path for imports
         sys.path.insert(0, str(PROJECT_ROOT))
-        from model_tools import check_tool_availability, TOOLSET_REQUIREMENTS
+        from hermes_agent.model_tools import check_tool_availability, TOOLSET_REQUIREMENTS
         
         available, unavailable = check_tool_availability()
         available, unavailable = _apply_doctor_tool_availability_overrides(available, unavailable)
@@ -2123,7 +2123,7 @@ def run_doctor(args):
     else:
         check_warn("Skills Hub directory not initialized", "(run: hermes skills list)")
 
-    from hermes_cli.config import get_env_value
+    from hermes_agent.hermes_cli.config import get_env_value
 
     def _gh_authenticated() -> bool:
         """Check if gh CLI is authenticated via token file or device flow."""
@@ -2160,7 +2160,7 @@ def run_doctor(args):
         check_ok("Built-in memory active", "(no external provider configured — this is fine)")
     elif _active_memory_provider == "honcho":
         try:
-            from plugins.memory.honcho.client import HonchoClientConfig, resolve_config_path
+            from hermes_agent.plugins.memory.honcho.client import HonchoClientConfig, resolve_config_path
             hcfg = HonchoClientConfig.from_global_config()
             _honcho_cfg_path = resolve_config_path()
 
@@ -2184,7 +2184,7 @@ def run_doctor(args):
                     issues,
                 )
             else:
-                from plugins.memory.honcho.client import get_honcho_client, reset_honcho_client
+                from hermes_agent.plugins.memory.honcho.client import get_honcho_client, reset_honcho_client
                 reset_honcho_client()
                 try:
                     get_honcho_client(hcfg)
@@ -2205,7 +2205,7 @@ def run_doctor(args):
             check_warn("Honcho check failed", str(_e))
     elif _active_memory_provider == "mem0":
         try:
-            from plugins.memory.mem0 import _load_config as _load_mem0_config
+            from hermes_agent.plugins.memory.mem0 import _load_config as _load_mem0_config
             mem0_cfg = _load_mem0_config()
             mem0_key = mem0_cfg.get("api_key", "")
             if mem0_key:
@@ -2230,7 +2230,7 @@ def run_doctor(args):
     else:
         # Generic check for other memory providers (openviking, hindsight, etc.)
         try:
-            from plugins.memory import load_memory_provider
+            from hermes_agent.plugins.memory import load_memory_provider
             _provider = load_memory_provider(_active_memory_provider)
             if _provider and _provider.is_available():
                 check_ok(f"{_active_memory_provider} provider active")
@@ -2242,7 +2242,7 @@ def run_doctor(args):
             check_warn(f"{_active_memory_provider} check failed", str(_e))
 
     try:
-        from hermes_cli.profiles import list_profiles, _get_wrapper_dir, profile_exists
+        from hermes_agent.hermes_cli.profiles import list_profiles, _get_wrapper_dir, profile_exists
         import re as _re
 
         named_profiles = [p for p in list_profiles() if not p.is_default]

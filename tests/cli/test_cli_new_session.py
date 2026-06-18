@@ -10,8 +10,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from hermes_state import SessionDB
-from tools.todo_tool import TodoStore
+from hermes_agent.hermes_state import SessionDB
+from hermes_agent.tools.todo_tool import TodoStore
 
 
 class _FakeCompressor:
@@ -112,7 +112,7 @@ def _make_cli(env_overrides=None, config_overrides=None, **kwargs):
     with patch.dict(sys.modules, prompt_toolkit_stubs), patch.dict(
         "os.environ", clean_env, clear=False
     ):
-        import cli as _cli_mod
+        import hermes_agent.cli as _cli_mod
 
         _cli_mod = importlib.reload(_cli_mod)
         with patch.object(_cli_mod, "get_tool_definitions", return_value=[]), patch.dict(
@@ -142,7 +142,7 @@ def _prepare_cli_with_active_session(tmp_path):
 
 @pytest.fixture(autouse=True)
 def _reset_session_id_context():
-    from gateway.session_context import _UNSET, _VAR_MAP
+    from hermes_agent.gateway.session_context import _UNSET, _VAR_MAP
 
     yield
     os.environ.pop("HERMES_SESSION_ID", None)
@@ -176,7 +176,7 @@ def test_new_command_creates_real_fresh_session_and_resets_agent_state(tmp_path)
 
 
 def test_new_command_rotates_hermes_session_id_env_and_context(tmp_path):
-    from gateway.session_context import _VAR_MAP, get_session_env
+    from hermes_agent.gateway.session_context import _VAR_MAP, get_session_env
 
     cli = _prepare_cli_with_active_session(tmp_path)
     old_session_id = cli.session_id

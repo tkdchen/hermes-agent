@@ -37,10 +37,10 @@ def fake_hermes(tmp_path, monkeypatch):
 
     monkeypatch.setenv("HERMES_HOME", str(sec_home))
 
-    import hermes_constants
+    import hermes_agent.hermes_constants as hermes_constants
     monkeypatch.setattr(hermes_constants, "get_default_hermes_root", lambda: root)
 
-    import agent.file_safety as fs
+    import hermes_agent.agent.file_safety as fs
     monkeypatch.setattr(fs, "_hermes_home_path", lambda: sec_home)
     monkeypatch.setattr(fs, "_hermes_root_path", lambda: root)
 
@@ -58,7 +58,7 @@ def fake_hermes(tmp_path, monkeypatch):
 
 class TestWriteFileCrossProfileGuard:
     def test_in_profile_write_allowed(self, fake_hermes):
-        from tools.file_tools import write_file_tool
+        from hermes_agent.tools.file_tools import write_file_tool
         target = fake_hermes["sec_home"] / "skills" / "new-skill" / "SKILL.md"
         target.parent.mkdir(parents=True)
         result_json = write_file_tool(str(target), "in-profile content")
@@ -70,7 +70,7 @@ class TestWriteFileCrossProfileGuard:
     def test_cross_profile_write_blocked_by_default(self, fake_hermes):
         """The May 2026 incident — security-profile session edits default
         profile's skill. Must be blocked."""
-        from tools.file_tools import write_file_tool
+        from hermes_agent.tools.file_tools import write_file_tool
         target = fake_hermes["root"] / "skills" / "shared-skill" / "SKILL.md"
         original = target.read_text()
         result_json = write_file_tool(str(target), "OVERWRITTEN")
@@ -84,7 +84,7 @@ class TestWriteFileCrossProfileGuard:
 
     def test_cross_profile_True_bypass(self, fake_hermes):
         """Explicit override after user direction must succeed."""
-        from tools.file_tools import write_file_tool
+        from hermes_agent.tools.file_tools import write_file_tool
         target = fake_hermes["root"] / "skills" / "shared-skill" / "SKILL.md"
         result_json = write_file_tool(
             str(target), "user-directed override", cross_profile=True
@@ -94,7 +94,7 @@ class TestWriteFileCrossProfileGuard:
         assert target.read_text() == "user-directed override"
 
     def test_non_hermes_path_unaffected(self, fake_hermes, tmp_path):
-        from tools.file_tools import write_file_tool
+        from hermes_agent.tools.file_tools import write_file_tool
         target = tmp_path / "outside" / "main.py"
         target.parent.mkdir()
         result_json = write_file_tool(str(target), "print('hello')")
@@ -110,7 +110,7 @@ class TestWriteFileCrossProfileGuard:
 
 class TestPatchCrossProfileGuard:
     def test_cross_profile_patch_blocked(self, fake_hermes):
-        from tools.file_tools import patch_tool
+        from hermes_agent.tools.file_tools import patch_tool
         target = fake_hermes["root"] / "skills" / "shared-skill" / "SKILL.md"
         original = target.read_text()
         result_json = patch_tool(
@@ -125,7 +125,7 @@ class TestPatchCrossProfileGuard:
         assert target.read_text() == original
 
     def test_cross_profile_patch_bypass(self, fake_hermes):
-        from tools.file_tools import patch_tool
+        from hermes_agent.tools.file_tools import patch_tool
         target = fake_hermes["root"] / "skills" / "shared-skill" / "SKILL.md"
         result_json = patch_tool(
             mode="replace",
@@ -141,7 +141,7 @@ class TestPatchCrossProfileGuard:
     def test_v4a_patch_extracts_path_for_guard(self, fake_hermes):
         """V4A patches embed the target paths in the patch body, not in
         a ``path`` kwarg. The guard must still apply."""
-        from tools.file_tools import patch_tool
+        from hermes_agent.tools.file_tools import patch_tool
         target = fake_hermes["root"] / "skills" / "shared-skill" / "SKILL.md"
         original = target.read_text()
         v4a = (
@@ -182,9 +182,9 @@ class TestSkillManageCrossProfileErrorUX:
         # Re-import the module so SKILLS_DIR picks up HERMES_HOME (set in
         # the fixture). Skill_manager_tool computes SKILLS_DIR at import.
         import importlib
-        import tools.skill_manager_tool
+        import hermes_agent.tools.skill_manager_tool
         importlib.reload(tools.skill_manager_tool)
-        from tools.skill_manager_tool import _skill_not_found_error
+        from hermes_agent.tools.skill_manager_tool import _skill_not_found_error
 
         err = _skill_not_found_error("default-only-skill")
         assert "not found in active profile 'hermes-security'" in err
@@ -197,9 +197,9 @@ class TestSkillManageCrossProfileErrorUX:
         self._make_skill_in_profile(fake_hermes["coder_home"], "everywhere-skill")
 
         import importlib
-        import tools.skill_manager_tool
+        import hermes_agent.tools.skill_manager_tool
         importlib.reload(tools.skill_manager_tool)
-        from tools.skill_manager_tool import _skill_not_found_error
+        from hermes_agent.tools.skill_manager_tool import _skill_not_found_error
 
         err = _skill_not_found_error("everywhere-skill")
         assert "default" in err
@@ -212,9 +212,9 @@ class TestSkillManageCrossProfileErrorUX:
     ):
         """When no profile has the skill, error falls back to skills_list hint."""
         import importlib
-        import tools.skill_manager_tool
+        import hermes_agent.tools.skill_manager_tool
         importlib.reload(tools.skill_manager_tool)
-        from tools.skill_manager_tool import _skill_not_found_error
+        from hermes_agent.tools.skill_manager_tool import _skill_not_found_error
 
         err = _skill_not_found_error("totally-imaginary-skill")
         assert "not found in active profile 'hermes-security'" in err
@@ -231,11 +231,11 @@ class TestSystemPromptActiveProfile:
         """When active profile is 'default', the prompt names it and warns
         about ~/.hermes/profiles/<name>/."""
         # Don't set HERMES_HOME — falls back to default.
-        import agent.file_safety as fs
+        import hermes_agent.agent.file_safety as fs
         monkeypatch.setattr(fs, "_hermes_home_path", lambda: tmp_path / "fake")
         monkeypatch.setattr(fs, "_hermes_root_path", lambda: tmp_path / "fake")
 
-        from agent.file_safety import _resolve_active_profile_name
+        from hermes_agent.agent.file_safety import _resolve_active_profile_name
         assert _resolve_active_profile_name() == "default"
         # Build the line manually to pin the contract — the prompt builder
         # is too heavy to instantiate end-to-end in a unit test.

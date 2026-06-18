@@ -28,7 +28,7 @@ import sys
 import threading
 from typing import Any, Dict, List, Optional, Tuple
 
-from tools.computer_use.backend import (
+from hermes_agent.tools.computer_use.backend import (
     ActionResult,
     CaptureResult,
     ComputerUseBackend,
@@ -229,7 +229,7 @@ class _AsyncBridge:
             raise RuntimeError("cua-driver asyncio bridge failed to start")
 
     def run(self, coro, timeout: Optional[float] = 30.0) -> Any:
-        from agent.async_utils import safe_schedule_threadsafe
+        from hermes_agent.agent.async_utils import safe_schedule_threadsafe
         if not self._loop or not self._thread or not self._thread.is_alive():
             if asyncio.iscoroutine(coro):
                 coro.close()

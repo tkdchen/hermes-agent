@@ -9,8 +9,8 @@ from unittest.mock import AsyncMock, MagicMock
 import httpx
 import pytest
 
-from gateway.config import Platform, PlatformConfig, HomeChannel
-from plugins.teams_pipeline.models import TeamsMeetingRef, TeamsMeetingSummaryPayload
+from hermes_agent.gateway.config import Platform, PlatformConfig, HomeChannel
+from hermes_agent.plugins.teams_pipeline.models import TeamsMeetingRef, TeamsMeetingSummaryPayload
 from tests.gateway._plugin_adapter_loader import load_plugin_adapter
 
 
@@ -223,7 +223,7 @@ class TestTeamsRequirements:
             return True
 
         monkeypatch.setattr(
-            "tools.lazy_deps.ensure_and_bind", _fake_ensure_and_bind
+            "hermes_agent.tools.lazy_deps.ensure_and_bind", _fake_ensure_and_bind
         )
         assert check_teams_requirements() is True
         assert called["ensure_and_bind"] == 0
@@ -240,7 +240,7 @@ class TestTeamsRequirements:
             return True
 
         monkeypatch.setattr(
-            "tools.lazy_deps.ensure_and_bind", _fake_ensure_and_bind
+            "hermes_agent.tools.lazy_deps.ensure_and_bind", _fake_ensure_and_bind
         )
         assert check_teams_requirements() is True
         assert seen["feature"] == "platform.teams"
@@ -375,13 +375,13 @@ class TestTeamsPluginRegistration:
 class TestTeamsInteractiveSetup:
     def test_interactive_setup_persists_credentials(self, tmp_path, monkeypatch):
         """Regression for #19173: interactive_setup must import prompt helpers
-        from hermes_cli.cli_output (not hermes_cli.config) and persist
+        from hermes_agent.hermes_cli.cli_output (not hermes_cli.config) and persist
         credentials to .env without crashing.
         """
         hermes_home = tmp_path / "hermes"
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
 
-        import hermes_cli.cli_output as cli_output_mod
+        import hermes_agent.hermes_cli.cli_output as cli_output_mod
 
         answers = iter(["client-id", "client-secret", "tenant-id", "aad-1, aad-2"])
         monkeypatch.setattr(cli_output_mod, "prompt", lambda *_a, **_kw: next(answers))
@@ -404,7 +404,7 @@ class TestTeamsConnect:
         # locked-down env): the lazy-installer can't rebind the globals, so
         # TEAMS_SDK_AVAILABLE stays False and connect() must fail.
         monkeypatch.setattr(
-            "tools.lazy_deps.ensure_and_bind",
+            "hermes_agent.tools.lazy_deps.ensure_and_bind",
             lambda *_a, **_k: False,
         )
         adapter = TeamsAdapter(_make_config(
@@ -812,7 +812,7 @@ class TestTeamsAttachmentClassification:
 
     @pytest.mark.anyio
     async def test_file_download_info_sets_document_type(self):
-        from gateway.platforms.base import MessageType
+        from hermes_agent.gateway.platforms.base import MessageType
 
         adapter = self._make_adapter()
         adapter._fetch_attachment_bytes = AsyncMock(return_value=b"%PDF-1.4 fake")
@@ -830,7 +830,7 @@ class TestTeamsAttachmentClassification:
 
     @pytest.mark.anyio
     async def test_mixed_image_and_document_prefers_document(self):
-        from gateway.platforms.base import MessageType
+        from hermes_agent.gateway.platforms.base import MessageType
 
         adapter = self._make_adapter()
         adapter._fetch_attachment_bytes = AsyncMock(return_value=b"%PDF-1.4 fake")
@@ -852,7 +852,7 @@ class TestTeamsAttachmentClassification:
 
     @pytest.mark.anyio
     async def test_html_body_attachment_stays_text(self):
-        from gateway.platforms.base import MessageType
+        from hermes_agent.gateway.platforms.base import MessageType
 
         adapter = self._make_adapter()
         activity = self._make_activity([self._html_body_attachment()])
@@ -864,7 +864,7 @@ class TestTeamsAttachmentClassification:
 
     @pytest.mark.anyio
     async def test_image_only_still_photo(self):
-        from gateway.platforms.base import MessageType
+        from hermes_agent.gateway.platforms.base import MessageType
 
         adapter = self._make_adapter()
 
@@ -882,7 +882,7 @@ class TestTeamsAttachmentClassification:
 
     @pytest.mark.anyio
     async def test_download_failure_degrades_to_text(self):
-        from gateway.platforms.base import MessageType
+        from hermes_agent.gateway.platforms.base import MessageType
 
         adapter = self._make_adapter()
         adapter._fetch_attachment_bytes = AsyncMock(side_effect=Exception("boom"))

@@ -5,7 +5,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread
 from unittest.mock import patch, MagicMock
 
-from providers.base import ProviderProfile
+from hermes_agent.providers.base import ProviderProfile
 
 
 class _FakeModelHandler(BaseHTTPRequestHandler):
@@ -103,7 +103,7 @@ class TestCustomProviderBaseUrlPassthrough:
         """CustomProfile.fetch_models passes base_url to super()."""
         server, port = _start_server([{"id": "ollama-model"}])
         try:
-            from plugins.model_providers.custom import CustomProfile
+            from hermes_agent.plugins.model_providers.custom import CustomProfile
             profile = CustomProfile(
                 name="custom",
                 base_url="http://127.0.0.1:1",  # wrong port
@@ -128,11 +128,11 @@ class TestModelPickerBaseUrlIntegration:
         mock_profile.fetch_models.return_value = ["model-a"]
 
         with (
-            patch("providers.get_provider_profile", return_value=mock_profile),
-            patch("hermes_cli.auth.resolve_api_key_provider_credentials",
+            patch("hermes_agent.providers.get_provider_profile", return_value=mock_profile),
+            patch("hermes_agent.hermes_cli.auth.resolve_api_key_provider_credentials",
                   return_value={"api_key": "sk-test", "base_url": "https://custom.proxy.com"}),
         ):
-            from hermes_cli.models import provider_model_ids
+            from hermes_agent.hermes_cli.models import provider_model_ids
             result = provider_model_ids("test-provider")
             # Verify fetch_models was called with base_url
             mock_profile.fetch_models.assert_called_once()

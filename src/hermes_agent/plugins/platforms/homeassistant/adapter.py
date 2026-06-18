@@ -28,8 +28,8 @@ except ImportError:
     AIOHTTP_AVAILABLE = False
     aiohttp = None  # type: ignore[assignment]
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
@@ -539,7 +539,7 @@ def _is_connected(config) -> bool:
     vars.  Matches what the legacy connected-platforms check did before
     this migration.
     """
-    import hermes_cli.gateway as gateway_mod
+    import hermes_agent.hermes_cli.gateway as gateway_mod
     return bool((gateway_mod.get_env_value("HASS_TOKEN") or "").strip())
 
 

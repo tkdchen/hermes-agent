@@ -32,7 +32,7 @@ import logging
 import os
 from typing import Any, Dict, List
 
-from agent.web_search_provider import WebSearchProvider
+from hermes_agent.agent.web_search_provider import WebSearchProvider
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ def _ensure_parallel_sdk_installed() -> None:
     raises ImportError that the caller can handle.
     """
     try:
-        from tools.lazy_deps import ensure as _lazy_ensure
+        from hermes_agent.tools.lazy_deps import ensure as _lazy_ensure
 
         _lazy_ensure("search.parallel", prompt=False)
     except ImportError:
@@ -67,7 +67,7 @@ def _get_sync_client() -> Any:
     Cache lives on :mod:`tools.web_tools` (as ``_parallel_client``) so unit
     tests that reset that name between cases keep working.
     """
-    import tools.web_tools as _wt
+    import hermes_agent.tools.web_tools as _wt
 
     cached = getattr(_wt, "_parallel_client", None)
     if cached is not None:
@@ -93,7 +93,7 @@ def _get_async_client() -> Any:
 
     Cache lives on :mod:`tools.web_tools` (as ``_async_parallel_client``).
     """
-    import tools.web_tools as _wt
+    import hermes_agent.tools.web_tools as _wt
 
     cached = getattr(_wt, "_async_parallel_client", None)
     if cached is not None:
@@ -120,7 +120,7 @@ def _reset_clients_for_tests() -> None:
     Clears the canonical slots on :mod:`tools.web_tools` (where
     :func:`_get_sync_client` / :func:`_get_async_client` read/write them).
     """
-    import tools.web_tools as _wt
+    import hermes_agent.tools.web_tools as _wt
 
     _wt._parallel_client = None
     _wt._async_parallel_client = None
@@ -169,7 +169,7 @@ class ParallelWebSearchProvider(WebSearchProvider):
         capped at 20 server-side.
         """
         try:
-            from tools.interrupt import is_interrupted
+            from hermes_agent.tools.interrupt import is_interrupted
 
             if is_interrupted():
                 return {"success": False, "error": "Interrupted"}
@@ -220,7 +220,7 @@ class ParallelWebSearchProvider(WebSearchProvider):
         field. Errors are not raised — they're returned as per-URL items.
         """
         try:
-            from tools.interrupt import is_interrupted
+            from hermes_agent.tools.interrupt import is_interrupted
 
             if is_interrupted():
                 return [

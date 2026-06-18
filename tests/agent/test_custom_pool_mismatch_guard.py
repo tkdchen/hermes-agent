@@ -17,8 +17,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from agent.agent_runtime_helpers import recover_with_credential_pool
-from agent.error_classifier import FailoverReason
+from hermes_agent.agent.agent_runtime_helpers import recover_with_credential_pool
+from hermes_agent.agent.error_classifier import FailoverReason
 
 
 FIREWORKS_URL = "https://api.fireworks.ai/inference/v1"
@@ -44,7 +44,7 @@ class TestCustomPoolMismatchGuard:
         # which a MagicMock would answer truthily).
         pool.current.return_value = None
         with patch(
-            "agent.credential_pool.get_custom_provider_pool_key",
+            "hermes_agent.agent.credential_pool.get_custom_provider_pool_key",
             return_value="custom:fireworks",
         ):
             recover_with_credential_pool(
@@ -65,7 +65,7 @@ class TestCustomPoolMismatchGuard:
             "custom", "https://other-endpoint.example/v1", "custom:fireworks"
         )
         with patch(
-            "agent.credential_pool.get_custom_provider_pool_key",
+            "hermes_agent.agent.credential_pool.get_custom_provider_pool_key",
             return_value="custom:other",
         ):
             recovered, _ = recover_with_credential_pool(

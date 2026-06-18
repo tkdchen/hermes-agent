@@ -87,17 +87,17 @@ with open(config_path, "w") as f:
 
 # Fresh import — must not have anything cached from prior runs.
 for name in list(sys.modules):
-    if (name.startswith("tools.")
-            or name.startswith("agent.")
-            or name.startswith("plugins.")
-            or name.startswith("hermes_cli.")):
+    if (name.startswith("hermes_agent.tools.")
+            or name.startswith("hermes_agent.agent.")
+            or name.startswith("hermes_agent.plugins.")
+            or name.startswith("hermes_agent.hermes_cli.")):
         sys.modules.pop(name, None)
 
 # Try importing transcription_registry — only exists on PR side.
 have_plugin_hook = False
 try:
-    from agent import transcription_registry
-    from agent.transcription_provider import TranscriptionProvider
+    from hermes_agent.agent import transcription_registry
+    from hermes_agent.agent.transcription_provider import TranscriptionProvider
     have_plugin_hook = True
 
     if plugin_register == "yes":
@@ -122,7 +122,7 @@ try:
 except ImportError:
     pass
 
-import tools.transcription_tools as tt
+import hermes_agent.tools.transcription_tools as tt
 
 # Use a real (but empty) audio file so _validate_audio_file passes.
 audio_path = os.path.join(home, "audio.ogg")

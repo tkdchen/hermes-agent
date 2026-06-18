@@ -8,15 +8,15 @@ import os
 import threading
 from pathlib import Path
 
-from agent.file_safety import get_read_block_error
-from tools.binary_extensions import has_binary_extension
-from tools.file_operations import (
+from hermes_agent.agent.file_safety import get_read_block_error
+from hermes_agent.tools.binary_extensions import has_binary_extension
+from hermes_agent.tools.file_operations import (
     ShellFileOperations,
     normalize_read_pagination,
     normalize_search_pagination,
 )
-from tools import file_state
-from agent.redact import redact_sensitive_text
+from hermes_agent.tools import file_state
+from hermes_agent.agent.redact import redact_sensitive_text
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ def _get_max_read_chars() -> int:
     if _max_read_chars_cached is not None:
         return _max_read_chars_cached
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         cfg = load_config()
         val = cfg.get("file_read_max_chars")
         if isinstance(val, (int, float)) and val > 0:
@@ -134,7 +134,7 @@ def _registered_task_cwd_override(task_id: str = "default") -> str | None:
     read that raw override before falling back to the collapsed container key.
     """
     try:
-        from tools.terminal_tool import resolve_task_overrides
+        from hermes_agent.tools.terminal_tool import resolve_task_overrides
 
         overrides = resolve_task_overrides(task_id)
     except Exception:
@@ -146,7 +146,7 @@ def _registered_task_cwd_override(task_id: str = "default") -> str | None:
 def _get_live_tracking_cwd(task_id: str = "default") -> str | None:
     """Return the task's live terminal cwd for bookkeeping when available."""
     try:
-        from tools.terminal_tool import _resolve_container_task_id
+        from hermes_agent.tools.terminal_tool import _resolve_container_task_id
         container_key = _resolve_container_task_id(task_id)
     except Exception:
         container_key = task_id
@@ -161,7 +161,7 @@ def _get_live_tracking_cwd(task_id: str = "default") -> str | None:
             return live_cwd
 
     try:
-        from tools.terminal_tool import _active_environments, _env_lock
+        from hermes_agent.tools.terminal_tool import _active_environments, _env_lock
 
         with _env_lock:
             env = _active_environments.get(container_key) or _active_environments.get(task_id)
@@ -340,7 +340,7 @@ def _get_hermes_config_resolved() -> str | None:
         return _hermes_config_resolved
     _hermes_config_resolved_loaded = True
     try:
-        from hermes_cli.config import get_config_path
+        from hermes_agent.hermes_cli.config import get_config_path
         _hermes_config_resolved = str(get_config_path().resolve())
     except Exception:
         try:
@@ -383,7 +383,7 @@ def _check_sensitive_path(filepath: str, task_id: str = "default") -> str | None
 def _get_container_mirror_prefix_for_task(task_id: str = "default") -> str | None:
     """Return the container-side Hermes mirror prefix for Docker file tools."""
     try:
-        from tools.terminal_tool import (
+        from hermes_agent.tools.terminal_tool import (
             _active_environments,
             _env_lock,
             _get_env_config,
@@ -442,7 +442,7 @@ def _check_cross_profile_path(filepath: str, task_id: str = "default") -> str | 
     for the detection rules.
     """
     try:
-        from agent.file_safety import (
+        from hermes_agent.agent.file_safety import (
             get_container_mirror_warning,
             get_cross_profile_warning,
             get_sandbox_mirror_warning,
@@ -654,7 +654,7 @@ def _get_file_ops(task_id: str = "default") -> ShellFileOperations:
     parent's container and its cached file_ops. RL/benchmark task_ids with
     a registered env override keep their isolation.
     """
-    from tools.terminal_tool import (
+    from hermes_agent.tools.terminal_tool import (
         _active_environments, _env_lock, _create_environment,
         _get_env_config, _last_activity, _start_cleanup_thread,
         _creation_locks,
@@ -697,7 +697,7 @@ def _get_file_ops(task_id: str = "default") -> ShellFileOperations:
                 terminal_env = None
 
         if terminal_env is None:
-            from tools.terminal_tool import resolve_task_overrides
+            from hermes_agent.tools.terminal_tool import resolve_task_overrides
 
             config = _get_env_config()
             env_type = config["env_type"]
@@ -802,7 +802,7 @@ def read_file_tool(path: str, offset: int = 1, limit: int = 500, task_id: str = 
         # ── Structured-document extraction ────────────────────────────
         # Try before the binary-extension guard so .docx/.xlsx can render as text.
         # Malformed documents fall through to the normal path/binary guard.
-        from tools.read_extract import ExtractionError, extract_document_text, is_extractable_document
+        from hermes_agent.tools.read_extract import ExtractionError, extract_document_text, is_extractable_document
 
         if is_extractable_document(str(_resolved)):
             try:
@@ -1271,7 +1271,7 @@ def patch_tool(mode: str = "replace", path: str = None, old_string: str = None,
         _paths_to_check.append(path)
     if mode == "patch" and patch:
         import re as _re
-        from tools.path_security import has_traversal_component
+        from hermes_agent.tools.path_security import has_traversal_component
         for _m in _re.finditer(r'^\*\*\*\s+(?:Update|Add|Delete)\s+File:\s*(.+)$', patch, _re.MULTILINE):
             v4a_path = _m.group(1).strip()
             # V4A path headers come from patch CONTENT, not the explicit
@@ -1502,12 +1502,12 @@ def search_tool(pattern: str, target: str = "content", path: str = ".",
 # ---------------------------------------------------------------------------
 # Schemas + Registry
 # ---------------------------------------------------------------------------
-from tools.registry import registry, tool_error
+from hermes_agent.tools.registry import registry, tool_error
 
 
 def _check_file_reqs():
     """Lazy wrapper to avoid circular import with tools/__init__.py."""
-    from tools import check_file_requirements
+    from hermes_agent.tools import check_file_requirements
     return check_file_requirements()
 
 READ_FILE_SCHEMA = {

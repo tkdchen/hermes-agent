@@ -237,7 +237,7 @@ def test_stale_gateway_pid_cleaned_up_on_restart(restart_container: str) -> None
         "import json, pathlib; "
         "p = pathlib.Path('/opt/data/profiles/ghost'); "
         "(p / 'gateway_state.json').write_text(json.dumps({'gateway_state': 'stopped', 'timestamp': 1})); "
-        "(p / 'gateway.pid').write_text(json.dumps({'pid': 99999, 'host': 'old'})); "
+        "(p / 'hermes_agent.gateway.pid').write_text(json.dumps({'pid': 99999, 'host': 'old'})); "
         "(p / 'processes.json').write_text('[]')"
     )
     _exec(container, "python3", "-c", stamp, timeout=10).check_returncode()

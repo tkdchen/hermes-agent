@@ -54,12 +54,12 @@ import sys
 from pathlib import Path as _Path
 sys.path.insert(0, str(_Path(__file__).resolve().parents[2]))
 
-from gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.config import Platform, PlatformConfig
 import re
 
-from gateway.platforms.helpers import MessageDeduplicator, ThreadParticipationTracker
-from utils import atomic_json_write
-from gateway.platforms.base import (
+from hermes_agent.gateway.platforms.helpers import MessageDeduplicator, ThreadParticipationTracker
+from hermes_agent.utils import atomic_json_write
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
@@ -72,7 +72,7 @@ from gateway.platforms.base import (
     cache_document_from_bytes,
     SUPPORTED_DOCUMENT_TYPES,
 )
-from tools.url_safety import is_safe_url
+from hermes_agent.tools.url_safety import is_safe_url
 
 
 async def _wait_for_ready_or_bot_exit(
@@ -160,7 +160,7 @@ def check_discord_requirements() -> bool:
     if DISCORD_AVAILABLE:
         return True
     try:
-        from tools.lazy_deps import ensure as _lazy_ensure
+        from hermes_agent.tools.lazy_deps import ensure as _lazy_ensure
         _lazy_ensure("platform.discord", prompt=False)
     except Exception:
         return False
@@ -586,7 +586,7 @@ def _read_dm_role_auth_guild() -> Optional[int]:
     default (DM role-auth disabled).
     """
     try:
-        from hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.config import read_raw_config
         cfg = read_raw_config() or {}
         discord_cfg = cfg.get("discord", {}) or {}
         raw = discord_cfg.get("dm_role_auth_guild")
@@ -822,7 +822,7 @@ class DiscordAdapter(BasePlatformAdapter):
             intents.voice_states = True
 
             # Resolve proxy (DISCORD_PROXY > generic env vars > macOS system proxy)
-            from gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_bot
+            from hermes_agent.gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_bot
             proxy_url = resolve_proxy_url(platform_env_var="DISCORD_PROXY")
             if proxy_url:
                 logger.info("[%s] Using proxy for Discord: %s", self.name, proxy_url)
@@ -1086,7 +1086,7 @@ class DiscordAdapter(BasePlatformAdapter):
         logger.info("[%s] Disconnected", self.name)
 
     def _command_sync_state_path(self) -> _Path:
-        from hermes_constants import get_hermes_home
+        from hermes_agent.hermes_constants import get_hermes_home
 
         directory = get_hermes_home() / _DISCORD_COMMAND_SYNC_STATE_SUBDIR
         try:
@@ -1908,7 +1908,7 @@ class DiscordAdapter(BasePlatformAdapter):
                         # Download to BytesIO so it renders inline
                         try:
                             import aiohttp as _aiohttp
-                            from gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_aiohttp
+                            from hermes_agent.gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_aiohttp
                             _proxy = resolve_proxy_url(platform_env_var="DISCORD_PROXY")
                             _sess_kw, _req_kw = proxy_kwargs_for_aiohttp(_proxy)
                             if aiohttp_session is None:
@@ -2103,7 +2103,7 @@ class DiscordAdapter(BasePlatformAdapter):
             ],
         }
         try:
-            from hermes_cli.config import read_raw_config
+            from hermes_agent.hermes_cli.config import read_raw_config
             cfg = read_raw_config() or {}
             fx = ((cfg.get("discord") or {}).get("voice_fx") or {})
             if isinstance(fx, dict):
@@ -2195,7 +2195,7 @@ class DiscordAdapter(BasePlatformAdapter):
         )
         os.makedirs(os.path.dirname(audio_path), exist_ok=True)
         try:
-            from tools.tts_tool import text_to_speech_tool
+            from hermes_agent.tools.tts_tool import text_to_speech_tool
             result_json = await asyncio.to_thread(
                 text_to_speech_tool, text=phrase, output_path=audio_path
             )
@@ -2566,7 +2566,7 @@ class DiscordAdapter(BasePlatformAdapter):
 
     async def _process_voice_input(self, guild_id: int, user_id: int, pcm_data: bytes):
         """Convert PCM -> WAV -> STT -> callback."""
-        from tools.voice_mode import is_whisper_hallucination
+        from hermes_agent.tools.voice_mode import is_whisper_hallucination
 
         tmp_f = tempfile.NamedTemporaryFile(suffix=".wav", prefix="vc_listen_", delete=False)
         wav_path = tmp_f.name
@@ -2574,7 +2574,7 @@ class DiscordAdapter(BasePlatformAdapter):
         try:
             await asyncio.to_thread(VoiceReceiver.pcm_to_wav, pcm_data, wav_path)
 
-            from tools.transcription_tools import transcribe_audio
+            from hermes_agent.tools.transcription_tools import transcribe_audio
             result = await asyncio.to_thread(transcribe_audio, wav_path)
 
             if not result.get("success"):
@@ -2956,7 +2956,7 @@ class DiscordAdapter(BasePlatformAdapter):
 
             # Download the image and send as a Discord file attachment
             # (Discord renders attachments inline, unlike plain URLs)
-            from gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_aiohttp
+            from hermes_agent.gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_aiohttp
             _proxy = resolve_proxy_url(platform_env_var="DISCORD_PROXY")
             _sess_kw, _req_kw = proxy_kwargs_for_aiohttp(_proxy)
             async with aiohttp.ClientSession(**_sess_kw) as session:
@@ -3035,7 +3035,7 @@ class DiscordAdapter(BasePlatformAdapter):
 
             # Download the GIF and send as a Discord file attachment
             # (Discord renders .gif attachments as auto-playing animations inline)
-            from gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_aiohttp
+            from hermes_agent.gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_aiohttp
             _proxy = resolve_proxy_url(platform_env_var="DISCORD_PROXY")
             _sess_kw, _req_kw = proxy_kwargs_for_aiohttp(_proxy)
             async with aiohttp.ClientSession(**_sess_kw) as session:
@@ -3530,7 +3530,7 @@ class DiscordAdapter(BasePlatformAdapter):
         slot_cap = _DISCORD_MAX_APP_COMMANDS - 1
         dropped_over_cap = 0
         try:
-            from hermes_cli.commands import COMMAND_REGISTRY, _is_gateway_available, _resolve_config_gates
+            from hermes_agent.hermes_cli.commands import COMMAND_REGISTRY, _is_gateway_available, _resolve_config_gates
 
             try:
                 already_registered = {cmd.name for cmd in tree.get_commands()}
@@ -3575,7 +3575,7 @@ class DiscordAdapter(BasePlatformAdapter):
         # autocomplete UX as for built-in commands. No per-platform plugin
         # API needed — plugin commands are platform-agnostic.
         try:
-            from hermes_cli.commands import _iter_plugin_command_entries
+            from hermes_agent.hermes_cli.commands import _iter_plugin_command_entries
 
             for plugin_name, plugin_desc, plugin_args_hint in _iter_plugin_command_entries():
                 discord_name = plugin_name.lower()[:32]
@@ -3814,7 +3814,7 @@ class DiscordAdapter(BasePlatformAdapter):
         and the handler both read from these instance attributes
         directly, so an in-place mutation is sufficient.
         """
-        from hermes_cli.commands import discord_skill_commands_by_category
+        from hermes_agent.hermes_cli.commands import discord_skill_commands_by_category
 
         reserved = getattr(self, "_skill_group_reserved_names", set())
         categories, uncategorized, hidden = discord_skill_commands_by_category(
@@ -4002,12 +4002,12 @@ class DiscordAdapter(BasePlatformAdapter):
                 skills: ["skill-a", "skill-b"]
         Also checks parent_id so forum threads inherit the forum's bindings.
         """
-        from gateway.platforms.base import resolve_channel_skills
+        from hermes_agent.gateway.platforms.base import resolve_channel_skills
         return resolve_channel_skills(self.config.extra, channel_id, parent_id)
 
     def _resolve_channel_prompt(self, channel_id: str, parent_id: str | None = None) -> str | None:
         """Resolve a Discord per-channel prompt, preferring the exact channel over its parent."""
-        from gateway.platforms.base import resolve_channel_prompt
+        from hermes_agent.gateway.platforms.base import resolve_channel_prompt
         return resolve_channel_prompt(self.config.extra, channel_id, parent_id)
 
     def _discord_require_mention(self) -> bool:
@@ -4690,7 +4690,7 @@ class DiscordAdapter(BasePlatformAdapter):
                 channel = await self._client.fetch_channel(int(target_id))
 
             try:
-                from hermes_cli.providers import get_label
+                from hermes_agent.hermes_cli.providers import get_label
                 provider_label = get_label(current_provider)
             except Exception:
                 provider_label = current_provider
@@ -4877,7 +4877,7 @@ class DiscordAdapter(BasePlatformAdapter):
                 f"Blocked unsafe attachment URL (SSRF protection): {att.url}"
             )
         import aiohttp
-        from gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_aiohttp
+        from hermes_agent.gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_aiohttp
         _proxy = resolve_proxy_url(platform_env_var="DISCORD_PROXY")
         _sess_kw, _req_kw = proxy_kwargs_for_aiohttp(_proxy)
         async with aiohttp.ClientSession(**_sess_kw) as session:
@@ -5297,7 +5297,7 @@ class DiscordAdapter(BasePlatformAdapter):
 
     def _text_batch_key(self, event: MessageEvent) -> str:
         """Session-scoped key for text message batching."""
-        from gateway.session import build_session_key
+        from hermes_agent.gateway.session import build_session_key
         return build_session_key(
             event.source,
             group_sessions_per_user=self.config.extra.get("group_sessions_per_user", True),
@@ -5517,7 +5517,7 @@ def _define_discord_view_classes() -> None:
 
             # Unblock the waiting agent thread via the gateway approval queue
             try:
-                from tools.approval import resolve_gateway_approval
+                from hermes_agent.tools.approval import resolve_gateway_approval
                 count = resolve_gateway_approval(self.session_key, choice)
                 logger.info(
                     "Discord button resolved %d approval(s) for session %s (choice=%s, user=%s)",
@@ -5634,7 +5634,7 @@ def _define_discord_view_classes() -> None:
             # Resolve via the module-level primitive.  If the handler
             # returns a follow-up message, post it in the same channel.
             try:
-                from tools import slash_confirm as _slash_confirm_mod
+                from hermes_agent.tools import slash_confirm as _slash_confirm_mod
                 result_text = await _slash_confirm_mod.resolve(
                     self.session_key, self.confirm_id, choice,
                 )
@@ -5737,7 +5737,7 @@ def _define_discord_view_classes() -> None:
 
             # Write response file
             try:
-                from hermes_constants import get_hermes_home
+                from hermes_agent.hermes_constants import get_hermes_home
                 home = get_hermes_home()
                 response_path = home / ".update_response"
                 tmp = response_path.with_suffix(".tmp")
@@ -5912,7 +5912,7 @@ def _define_discord_view_classes() -> None:
 
         async def _expensive_warning_for(self, model_id: str):
             try:
-                from hermes_cli.model_cost_guard import expensive_model_warning
+                from hermes_agent.hermes_cli.model_cost_guard import expensive_model_warning
 
                 # Pricing lookup can hit models.dev / a /models endpoint on a
                 # cache miss — keep it off the event loop.
@@ -6052,7 +6052,7 @@ def _define_discord_view_classes() -> None:
             self._build_provider_select()
 
             try:
-                from hermes_cli.providers import get_label
+                from hermes_agent.hermes_cli.providers import get_label
                 provider_label = get_label(self.current_provider)
             except Exception:
                 provider_label = self.current_provider
@@ -6206,7 +6206,7 @@ def _define_discord_view_classes() -> None:
             # we round-trip the original value, not a button-label variant.
             resolved_text: Optional[str] = None
             try:
-                from tools.clarify_gateway import _entries as _clarify_entries  # type: ignore
+                from hermes_agent.tools.clarify_gateway import _entries as _clarify_entries  # type: ignore
                 entry = _clarify_entries.get(self.clarify_id)
                 if entry and entry.choices and 0 <= index < len(entry.choices):
                     resolved_text = entry.choices[index]
@@ -6216,7 +6216,7 @@ def _define_discord_view_classes() -> None:
                 resolved_text = choice
 
             try:
-                from tools.clarify_gateway import resolve_gateway_clarify
+                from hermes_agent.tools.clarify_gateway import resolve_gateway_clarify
                 resolved = resolve_gateway_clarify(self.clarify_id, resolved_text)
                 logger.info(
                     "Discord clarify button resolved (id=%s, choice=%r, user=%s, ok=%s)",
@@ -6247,7 +6247,7 @@ def _define_discord_view_classes() -> None:
             # until the user actually types. Just mark it as awaiting text
             # and disable the buttons so the user can't double-click.
             try:
-                from tools.clarify_gateway import mark_awaiting_text
+                from hermes_agent.tools.clarify_gateway import mark_awaiting_text
                 mark_awaiting_text(self.clarify_id)
             except Exception as exc:
                 logger.warning(
@@ -6383,7 +6383,7 @@ async def _standalone_send(
         return {"error": "Discord standalone send: DISCORD_BOT_TOKEN is not set"}
 
     try:
-        from gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_aiohttp
+        from hermes_agent.gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_aiohttp
         _proxy = resolve_proxy_url(platform_env_var="DISCORD_PROXY")
         _sess_kw, _req_kw = proxy_kwargs_for_aiohttp(_proxy)
         auth_headers = {"Authorization": f"Bot {token}"}
@@ -6402,7 +6402,7 @@ async def _standalone_send(
             # cache → GET /channels/{id} probe (with result memoized).
             _channel_type = None
             try:
-                from gateway.channel_directory import lookup_channel_type
+                from hermes_agent.gateway.channel_directory import lookup_channel_type
                 _channel_type = lookup_channel_type("discord", chat_id)
             except Exception:
                 pass
@@ -6577,8 +6577,8 @@ def interactive_setup() -> None:
     the plugin's import surface stays small, prompts for the bot token,
     captures an allowlist, and offers to set a home channel.
     """
-    from hermes_cli.config import get_env_value, save_env_value
-    from hermes_cli.cli_output import (
+    from hermes_agent.hermes_cli.config import get_env_value, save_env_value
+    from hermes_agent.hermes_cli.cli_output import (
         prompt,
         prompt_yes_no,
         print_header,
@@ -6754,7 +6754,7 @@ def _is_connected(config) -> bool:
     ``DISCORD_BOT_TOKEN`` env vars. Matches what the legacy
     ``_PLATFORMS["discord"]`` dispatch did before this migration.
     """
-    import hermes_cli.gateway as gateway_mod
+    import hermes_agent.hermes_cli.gateway as gateway_mod
     return bool((gateway_mod.get_env_value("DISCORD_BOT_TOKEN") or "").strip())
 
 

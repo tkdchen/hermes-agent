@@ -3,13 +3,13 @@
 import pytest
 from types import SimpleNamespace
 
-from agent.transports import get_transport
-from agent.transports.types import NormalizedResponse
+from hermes_agent.agent.transports import get_transport
+from hermes_agent.agent.transports.types import NormalizedResponse
 
 
 @pytest.fixture
 def transport():
-    import agent.transports.chat_completions  # noqa: F401
+    import hermes_agent.agent.transports.chat_completions  # noqa: F401
     return get_transport("chat_completions")
 
 
@@ -163,7 +163,7 @@ class TestChatCompletionsBuildKwargs:
         assert kw["tools"] == tools
 
     def test_openrouter_provider_prefs(self, transport):
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("openrouter")
         msgs = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
@@ -175,7 +175,7 @@ class TestChatCompletionsBuildKwargs:
 
     def test_openrouter_pareto_min_coding_score(self, transport):
         """Profile path: model=openrouter/pareto-code + score → plugins block."""
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("openrouter")
         msgs = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
@@ -189,7 +189,7 @@ class TestChatCompletionsBuildKwargs:
 
     def test_openrouter_pareto_score_ignored_for_other_models(self, transport):
         """Score must not be emitted for any model other than openrouter/pareto-code."""
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("openrouter")
         msgs = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
@@ -201,7 +201,7 @@ class TestChatCompletionsBuildKwargs:
 
     def test_openrouter_pareto_score_omitted_when_unset(self, transport):
         """No score → no plugins block (router uses its omission default = strongest coder)."""
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("openrouter")
         msgs = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
@@ -213,7 +213,7 @@ class TestChatCompletionsBuildKwargs:
 
     def test_openrouter_pareto_score_out_of_range_dropped(self, transport):
         """Out-of-range scores must be silently dropped, not forwarded."""
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("openrouter")
         msgs = [{"role": "user", "content": "Hi"}]
         for bad in (1.5, -0.1, "not-a-number"):
@@ -237,8 +237,8 @@ class TestChatCompletionsBuildKwargs:
         ]
 
     def test_nous_tags(self, transport):
-        from agent.portal_tags import nous_portal_tags
-        from providers import get_provider_profile
+        from hermes_agent.agent.portal_tags import nous_portal_tags
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("nous")
         msgs = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(model="gpt-4o", messages=msgs, provider_profile=profile)
@@ -253,7 +253,7 @@ class TestChatCompletionsBuildKwargs:
         assert kw["extra_body"]["reasoning"] == {"enabled": True, "effort": "medium"}
 
     def test_nous_omits_disabled_reasoning(self, transport):
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("nous")
         msgs = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
@@ -266,7 +266,7 @@ class TestChatCompletionsBuildKwargs:
         assert "reasoning" not in kw.get("extra_body", {})
 
     def test_ollama_num_ctx(self, transport):
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("custom")
         msgs = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
@@ -277,7 +277,7 @@ class TestChatCompletionsBuildKwargs:
         assert kw["extra_body"]["options"]["num_ctx"] == 32768
 
     def test_custom_think_false(self, transport):
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("custom")
         msgs = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
@@ -470,7 +470,7 @@ class TestChatCompletionsBuildKwargs:
 
     def test_nvidia_default_max_tokens(self, transport):
         """NVIDIA max_tokens=16384 is now set via ProviderProfile, not legacy flag."""
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
 
         profile = get_provider_profile("nvidia")
         msgs = [{"role": "user", "content": "Hi"}]
@@ -483,7 +483,7 @@ class TestChatCompletionsBuildKwargs:
         assert kw["max_tokens"] == 16384
 
     def test_qwen_default_max_tokens(self, transport):
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("qwen-oauth")
         msgs = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
@@ -515,7 +515,7 @@ class TestChatCompletionsBuildKwargs:
 
     def test_fixed_temperature(self, transport):
         """Fixed temperature is now set via ProviderProfile.fixed_temperature."""
-        from providers.base import ProviderProfile
+        from hermes_agent.providers.base import ProviderProfile
         msgs = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
             model="gpt-4o", messages=msgs,
@@ -525,7 +525,7 @@ class TestChatCompletionsBuildKwargs:
 
     def test_omit_temperature(self, transport):
         """Omit temperature is set via ProviderProfile with OMIT_TEMPERATURE sentinel."""
-        from providers.base import ProviderProfile, OMIT_TEMPERATURE
+        from hermes_agent.providers.base import ProviderProfile, OMIT_TEMPERATURE
         msgs = [{"role": "user", "content": "Hi"}]
         kw = transport.build_kwargs(
             model="gpt-4o", messages=msgs,
@@ -538,7 +538,7 @@ class TestChatCompletionsKimi:
     """Regression tests for the Kimi/Moonshot quirks migrated into the transport."""
 
     def test_kimi_max_tokens_default(self, transport):
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("kimi-coding")
         kw = transport.build_kwargs(
             model="kimi-k2", messages=[{"role": "user", "content": "Hi"}],
@@ -549,7 +549,7 @@ class TestChatCompletionsKimi:
         assert kw["max_tokens"] == 32000
 
     def test_kimi_reasoning_effort_top_level(self, transport):
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("kimi-coding")
         kw = transport.build_kwargs(
             model="kimi-k2", messages=[{"role": "user", "content": "Hi"}],
@@ -571,7 +571,7 @@ class TestChatCompletionsKimi:
         assert "reasoning_effort" not in kw
 
     def test_kimi_thinking_enabled_extra_body(self, transport):
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("kimi-coding")
         kw = transport.build_kwargs(
             model="kimi-k2", messages=[{"role": "user", "content": "Hi"}],
@@ -581,7 +581,7 @@ class TestChatCompletionsKimi:
         assert kw["extra_body"]["thinking"] == {"type": "enabled"}
 
     def test_kimi_thinking_disabled_extra_body(self, transport):
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("kimi-coding")
         kw = transport.build_kwargs(
             model="kimi-k2", messages=[{"role": "user", "content": "Hi"}],
@@ -991,7 +991,7 @@ class TestChatCompletionsGeminiNativeExtraBodyStrip:
     """
 
     def _nous_profile(self):
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         return get_provider_profile("nous")
 
     def test_tags_stripped_when_endpoint_is_native_gemini(self, transport):

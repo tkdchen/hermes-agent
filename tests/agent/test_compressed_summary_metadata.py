@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from agent.context_compressor import (
+from hermes_agent.agent.context_compressor import (
     COMPRESSED_SUMMARY_METADATA_KEY,
     ContextCompressor,
 )
@@ -24,7 +24,7 @@ from agent.context_compressor import (
 
 def _make_compressor():
     with patch(
-        "agent.context_compressor.get_model_context_length", return_value=8000
+        "hermes_agent.agent.context_compressor.get_model_context_length", return_value=8000
     ):
         return ContextCompressor(
             model="test-model", quiet_mode=True, config_context_length=8000
@@ -42,7 +42,7 @@ def _make_messages(n_turns=30):
 def _compress(cc, msgs):
     resp = MagicMock()
     resp.choices[0].message.content = "## Active Task\nstuff"
-    with patch("agent.context_compressor.call_llm", return_value=resp):
+    with patch("hermes_agent.agent.context_compressor.call_llm", return_value=resp):
         return cc.compress(msgs, current_tokens=100_000, force=True)
 
 
@@ -77,7 +77,7 @@ class TestMetadataFlagNeverReachesWire:
         assert COMPRESSED_SUMMARY_METADATA_KEY.startswith("_")
 
     def test_chat_completions_transport_strips_flag(self):
-        from agent.transports.chat_completions import ChatCompletionsTransport
+        from hermes_agent.agent.transports.chat_completions import ChatCompletionsTransport
 
         cc = _make_compressor()
         out = _compress(cc, _make_messages())

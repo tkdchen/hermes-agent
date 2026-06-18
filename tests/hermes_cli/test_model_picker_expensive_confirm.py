@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from hermes_cli.model_switch import ModelSwitchResult
+from hermes_agent.hermes_cli.model_switch import ModelSwitchResult
 
 
 def _bound(fn, instance):
@@ -8,7 +8,7 @@ def _bound(fn, instance):
 
 
 def test_prompt_toolkit_model_picker_defers_confirmation_off_key_handler(monkeypatch):
-    import cli as cli_mod
+    import hermes_agent.cli as cli_mod
 
     result = ModelSwitchResult(
         success=True,
@@ -16,7 +16,7 @@ def test_prompt_toolkit_model_picker_defers_confirmation_off_key_handler(monkeyp
         target_provider="nous",
     )
     monkeypatch.setattr(
-        "hermes_cli.model_switch.switch_model",
+        "hermes_agent.hermes_cli.model_switch.switch_model",
         lambda **_kwargs: result,
     )
 

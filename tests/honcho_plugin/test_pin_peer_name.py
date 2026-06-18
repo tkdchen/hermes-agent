@@ -19,8 +19,8 @@ import json
 from unittest.mock import MagicMock
 
 
-from plugins.memory.honcho.client import HonchoClientConfig
-from plugins.memory.honcho.session import HonchoSessionManager
+from hermes_agent.plugins.memory.honcho.client import HonchoClientConfig
+from hermes_agent.plugins.memory.honcho.session import HonchoSessionManager
 
 
 # ---------------------------------------------------------------------------
@@ -616,7 +616,7 @@ class TestPinUserPeerAlias:
     """
 
     def test_root_pinUserPeer_true_pins(self, tmp_path):
-        from plugins.memory.honcho.client import HonchoClientConfig
+        from hermes_agent.plugins.memory.honcho.client import HonchoClientConfig
         import json
         config_file = tmp_path / "honcho.json"
         config_file.write_text(json.dumps({
@@ -628,7 +628,7 @@ class TestPinUserPeerAlias:
         assert config.pin_peer_name is True
 
     def test_host_pinUserPeer_wins_over_root_pinPeerName(self, tmp_path):
-        from plugins.memory.honcho.client import HonchoClientConfig
+        from hermes_agent.plugins.memory.honcho.client import HonchoClientConfig
         import json
         config_file = tmp_path / "honcho.json"
         config_file.write_text(json.dumps({
@@ -641,7 +641,7 @@ class TestPinUserPeerAlias:
         assert config.pin_peer_name is True
 
     def test_host_pinUserPeer_false_disables_root_pinPeerName(self, tmp_path):
-        from plugins.memory.honcho.client import HonchoClientConfig
+        from hermes_agent.plugins.memory.honcho.client import HonchoClientConfig
         import json
         config_file = tmp_path / "honcho.json"
         config_file.write_text(json.dumps({
@@ -657,7 +657,7 @@ class TestPinUserPeerAlias:
         )
 
     def test_pinPeerName_still_works_unchanged(self, tmp_path):
-        from plugins.memory.honcho.client import HonchoClientConfig
+        from hermes_agent.plugins.memory.honcho.client import HonchoClientConfig
         import json
         config_file = tmp_path / "honcho.json"
         config_file.write_text(json.dumps({
@@ -739,7 +739,7 @@ class TestPinTransition:
 
     def test_cache_busting_signature_reflects_pin_peer_name(self, tmp_path, monkeypatch):
         """Gateway agent cache must bust when honcho.json's pinPeerName flips."""
-        from gateway.run import GatewayRunner
+        from hermes_agent.gateway.run import GatewayRunner
 
         cfg_path = tmp_path / "honcho.json"
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
@@ -753,7 +753,7 @@ class TestPinTransition:
         assert sig_pinned["honcho.pin_peer_name"] != sig_unpinned["honcho.pin_peer_name"]
 
     def test_cache_busting_signature_reflects_user_peer_aliases(self, tmp_path, monkeypatch):
-        from gateway.run import GatewayRunner
+        from hermes_agent.gateway.run import GatewayRunner
 
         cfg_path = tmp_path / "honcho.json"
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
@@ -771,7 +771,7 @@ class TestPinTransition:
         assert sig_no_aliases["honcho.user_peer_aliases"] != sig_with_aliases["honcho.user_peer_aliases"]
 
     def test_cache_busting_signature_reflects_runtime_peer_prefix(self, tmp_path, monkeypatch):
-        from gateway.run import GatewayRunner
+        from hermes_agent.gateway.run import GatewayRunner
 
         cfg_path = tmp_path / "honcho.json"
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
@@ -795,7 +795,7 @@ class TestPinTransition:
         without busting here, assistant writes keep landing on the old
         peer until an unrelated cache eviction.
         """
-        from gateway.run import GatewayRunner
+        from hermes_agent.gateway.run import GatewayRunner
 
         cfg_path = tmp_path / "honcho.json"
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))

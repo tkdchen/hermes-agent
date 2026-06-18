@@ -9,10 +9,10 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 import yaml
 
-import gateway.run as gateway_run
-from gateway.config import Platform
-from gateway.platforms.base import MessageEvent
-from gateway.session import SessionSource
+import hermes_agent.gateway.run as gateway_run
+from hermes_agent.gateway.config import Platform
+from hermes_agent.gateway.platforms.base import MessageEvent
+from hermes_agent.gateway.session import SessionSource
 
 
 def _make_event(text="/reasoning", platform=Platform.TELEGRAM, user_id="12345", chat_id="67890"):
@@ -218,9 +218,9 @@ class TestReasoningCommand:
                 "api_key": "test-key",
             },
         )
-        fake_run_agent = types.ModuleType("run_agent")
+        fake_run_agent = types.ModuleType("hermes_agent.run_agent")
         fake_run_agent.AIAgent = _CapturingAgent
-        monkeypatch.setitem(sys.modules, "run_agent", fake_run_agent)
+        monkeypatch.setitem(sys.modules, "hermes_agent.run_agent", fake_run_agent)
 
         _CapturingAgent.last_init = None
         runner = _make_runner()
@@ -267,9 +267,9 @@ class TestReasoningCommand:
                 "api_key": "***",
             },
         )
-        fake_run_agent = types.ModuleType("run_agent")
+        fake_run_agent = types.ModuleType("hermes_agent.run_agent")
         fake_run_agent.AIAgent = _CapturingAgent
-        monkeypatch.setitem(sys.modules, "run_agent", fake_run_agent)
+        monkeypatch.setitem(sys.modules, "hermes_agent.run_agent", fake_run_agent)
 
         _CapturingAgent.last_init = None
         runner = _make_runner()
@@ -326,9 +326,9 @@ class TestReasoningCommand:
                 "api_key": "test-key",
             },
         )
-        fake_run_agent = types.ModuleType("run_agent")
+        fake_run_agent = types.ModuleType("hermes_agent.run_agent")
         fake_run_agent.AIAgent = _CapturingAgent
-        monkeypatch.setitem(sys.modules, "run_agent", fake_run_agent)
+        monkeypatch.setitem(sys.modules, "hermes_agent.run_agent", fake_run_agent)
 
         _CapturingAgent.last_init = None
         runner = _make_runner()
@@ -378,9 +378,9 @@ class TestReasoningCommand:
                 "api_key": "test-key",
             },
         )
-        fake_run_agent = types.ModuleType("run_agent")
+        fake_run_agent = types.ModuleType("hermes_agent.run_agent")
         fake_run_agent.AIAgent = _CapturingAgent
-        monkeypatch.setitem(sys.modules, "run_agent", fake_run_agent)
+        monkeypatch.setitem(sys.modules, "hermes_agent.run_agent", fake_run_agent)
 
         _CapturingAgent.last_init = None
         runner = _make_runner()

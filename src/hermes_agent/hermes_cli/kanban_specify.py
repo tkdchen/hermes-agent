@@ -38,9 +38,9 @@ import re
 from dataclasses import dataclass
 from typing import Optional
 
-from hermes_cli import kanban_db as kb
+from hermes_agent.hermes_cli import kanban_db as kb
 
-from utils import env_int
+from hermes_agent.utils import env_int
 
 HERMES_KANBAN_SPECIFY_MAX_TOKENS = max(
     1500,
@@ -162,7 +162,7 @@ def specify_task(
         )
 
     try:
-        from agent.auxiliary_client import get_auxiliary_extra_body, get_text_auxiliary_client
+        from hermes_agent.agent.auxiliary_client import get_auxiliary_extra_body, get_text_auxiliary_client
     except Exception as exc:  # pragma: no cover — import smoke test
         logger.debug("specify: auxiliary client import failed: %s", exc)
         return SpecifyOutcome(task_id, False, "auxiliary client unavailable")

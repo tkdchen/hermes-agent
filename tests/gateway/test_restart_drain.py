@@ -6,11 +6,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-import gateway.run as gateway_run
-from agent.i18n import t
-from gateway.platforms.base import MessageEvent, MessageType
-from gateway.restart import DEFAULT_GATEWAY_RESTART_DRAIN_TIMEOUT
-from gateway.session import SessionEntry, build_session_key
+import hermes_agent.gateway.run as gateway_run
+from hermes_agent.agent.i18n import t
+from hermes_agent.gateway.platforms.base import MessageEvent, MessageType
+from hermes_agent.gateway.restart import DEFAULT_GATEWAY_RESTART_DRAIN_TIMEOUT
+from hermes_agent.gateway.session import SessionEntry, build_session_key
 from tests.gateway.restart_test_helpers import make_restart_runner, make_restart_source
 
 
@@ -33,15 +33,15 @@ async def test_restart_command_while_busy_requests_drain_without_interrupt(monke
 
     result = await runner._handle_message(event)
 
-    expected = t("gateway.draining", count=1)
+    expected = t("hermes_agent.gateway.draining", count=1)
     assert result == expected
     # Guard against the silent-degradation regression in #22266: if the i18n
     # catalog cannot be resolved (e.g. xdist workers losing the locales path)
-    # then ``t("gateway.draining", count=1)`` returns the bare key
-    # ``"gateway.draining"`` instead of the formatted English string, and both
+    # then ``t("hermes_agent.gateway.draining", count=1)`` returns the bare key
+    # ``"hermes_agent.gateway.draining"`` instead of the formatted English string, and both
     # sides of the equality above would still match. Assert on the catalog
     # output explicitly so a broken locale resolution fails loudly here.
-    assert expected != "gateway.draining"
+    assert expected != "hermes_agent.gateway.draining"
     assert "Draining" in expected and "1" in expected
     running_agent.interrupt.assert_not_called()
     runner.request_restart.assert_called_once_with(detached=True, via_service=False)
@@ -261,7 +261,7 @@ async def test_windows_detached_restart_scrubs_gateway_marker(monkeypatch, tmp_p
     monkeypatch.setenv("_HERMES_GATEWAY", "1")
     monkeypatch.setenv("VIRTUAL_ENV", str(venv_dir))
 
-    import hermes_cli._subprocess_compat as subprocess_compat
+    import hermes_agent.hermes_cli._subprocess_compat as subprocess_compat
 
     monkeypatch.setattr(
         subprocess_compat,
@@ -346,7 +346,7 @@ async def test_shutdown_notification_skipped_when_no_active_agents():
 @pytest.mark.asyncio
 async def test_shutdown_notification_ignores_pending_sentinels():
     """Pending sentinels (not-yet-started agents) don't trigger notifications."""
-    from gateway.run import _AGENT_PENDING_SENTINEL
+    from hermes_agent.gateway.run import _AGENT_PENDING_SENTINEL
 
     runner, adapter = make_restart_runner()
     runner._running_agents["agent:main:telegram:dm:999"] = _AGENT_PENDING_SENTINEL
@@ -371,7 +371,7 @@ async def test_shutdown_notification_send_failure_does_not_block():
 @pytest.mark.asyncio
 async def test_shutdown_notification_suppressed_when_flag_disabled():
     """Active-session ping is muted when gateway_restart_notification=False on the platform."""
-    from gateway.config import Platform
+    from hermes_agent.gateway.config import Platform
 
     runner, adapter = make_restart_runner()
     runner._restart_requested = True
@@ -387,7 +387,7 @@ async def test_shutdown_notification_suppressed_when_flag_disabled():
 @pytest.mark.asyncio
 async def test_shutdown_notification_home_channel_suppressed_when_flag_disabled():
     """Home-channel ping during shutdown is muted when the flag is False."""
-    from gateway.config import HomeChannel, Platform
+    from hermes_agent.gateway.config import HomeChannel, Platform
 
     runner, adapter = make_restart_runner()
     runner.config.platforms[Platform.TELEGRAM].home_channel = HomeChannel(

@@ -19,8 +19,8 @@ import time
 from unittest.mock import MagicMock
 
 
-from gateway.run import _run_planned_stop_watcher
-from gateway import status as status_mod
+from hermes_agent.gateway.run import _run_planned_stop_watcher
+from hermes_agent.gateway import status as status_mod
 
 
 def _write_self_marker(marker, *, stale: bool = False):
@@ -100,7 +100,7 @@ def test_watcher_does_not_fire_when_marker_absent(tmp_path, monkeypatch):
     marker = tmp_path / ".gateway-planned-stop.json"
     # Deliberately do NOT create the marker.
 
-    from gateway import status as status_mod
+    from hermes_agent.gateway import status as status_mod
     monkeypatch.setattr(status_mod, "_get_planned_stop_marker_path", lambda: marker)
 
     runner = _FakeRunner(running=True, draining=False)
@@ -165,7 +165,7 @@ def test_watcher_skips_when_runner_not_started(tmp_path, monkeypatch):
     marker = tmp_path / ".gateway-planned-stop.json"
     marker.write_text('{"target_pid": 9999}', encoding="utf-8")
 
-    from gateway import status as status_mod
+    from hermes_agent.gateway import status as status_mod
     monkeypatch.setattr(status_mod, "_get_planned_stop_marker_path", lambda: marker)
 
     runner = _FakeRunner(running=False, draining=False)
@@ -190,7 +190,7 @@ def test_watcher_skips_when_runner_not_started(tmp_path, monkeypatch):
 def test_watcher_responds_to_stop_event_promptly(tmp_path, monkeypatch):
     """Setting stop_event must exit the watcher within ~poll_interval seconds."""
     marker = tmp_path / ".gateway-planned-stop.json"
-    from gateway import status as status_mod
+    from hermes_agent.gateway import status as status_mod
     monkeypatch.setattr(status_mod, "_get_planned_stop_marker_path", lambda: marker)
 
     runner = _FakeRunner(running=True, draining=False)
@@ -250,7 +250,7 @@ def test_watcher_fires_only_once_when_marker_persists(tmp_path, monkeypatch):
 
 def test_watcher_tolerates_marker_path_resolution_errors(tmp_path, monkeypatch, caplog):
     """If _get_planned_stop_marker_path() raises, the watcher logs and continues."""
-    from gateway import status as status_mod
+    from hermes_agent.gateway import status as status_mod
 
     call_count = [0]
     def explode():

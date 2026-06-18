@@ -18,13 +18,13 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 
-from gateway.status import terminate_pid
-from gateway.restart import (
+from hermes_agent.gateway.status import terminate_pid
+from hermes_agent.gateway.restart import (
     DEFAULT_GATEWAY_RESTART_DRAIN_TIMEOUT,
     GATEWAY_SERVICE_RESTART_EXIT_CODE,
     parse_restart_drain_timeout,
 )
-from hermes_cli.config import (
+from hermes_agent.hermes_cli.config import (
     get_env_value,
     get_hermes_home,
     is_managed,
@@ -35,7 +35,7 @@ from hermes_cli.config import (
 
 # display_hermes_home is imported lazily at call sites to avoid ImportError
 # when hermes_constants is cached from a pre-update version during `hermes update`.
-from hermes_cli.setup import (
+from hermes_agent.hermes_cli.setup import (
     print_header,
     print_info,
     print_success,
@@ -45,7 +45,7 @@ from hermes_cli.setup import (
     prompt_choice,
     prompt_yes_no,
 )
-from hermes_cli.colors import Colors, color
+from hermes_agent.hermes_cli.colors import Colors, color
 
 logger = logging.getLogger(__name__)
 
@@ -267,7 +267,7 @@ def _graceful_restart_via_sigusr1(pid: int, drain_timeout: float) -> bool:
     # for sig=0, hard-killing the target. Use the cross-platform
     # ``_pid_exists`` helper in gateway.status which does OpenProcess +
     # WaitForSingleObject on Windows.
-    from gateway.status import _pid_exists
+    from hermes_agent.gateway.status import _pid_exists
 
     while _time.monotonic() < deadline:
         if not _pid_exists(pid):
@@ -320,9 +320,9 @@ def _scan_gateway_pids(exclude_pids: set[int], all_profiles: bool = False) -> li
     exclude_pids = exclude_pids | _get_ancestor_pids()
     pids: list[int] = []
     patterns = [
-        "hermes_cli.main gateway",
-        "hermes_cli.main --profile",
-        "hermes_cli.main -p",
+        "hermes_agent.hermes_cli.main gateway",
+        "hermes_agent.hermes_cli.main --profile",
+        "hermes_agent.hermes_cli.main -p",
         "hermes_cli/main.py gateway",
         "hermes_cli/main.py --profile",
         "hermes_cli/main.py -p",
@@ -573,7 +573,7 @@ def find_gateway_pids(
     pids: list[int] = []
     if not all_profiles:
         try:
-            from gateway.status import get_running_pid
+            from hermes_agent.gateway.status import get_running_pid
 
             _append_unique_pid(pids, get_running_pid(), _exclude)
         except Exception:
@@ -592,15 +592,15 @@ def find_profile_gateway_processes(
     _exclude = set(exclude_pids or set())
     processes: list[ProfileGatewayProcess] = []
     try:
-        from gateway.status import get_running_pid
-        from hermes_cli.profiles import list_profiles
+        from hermes_agent.gateway.status import get_running_pid
+        from hermes_agent.hermes_cli.profiles import list_profiles
     except Exception:
         return processes
 
     seen: set[int] = set()
     for profile in list_profiles():
         try:
-            pid = get_running_pid(profile.path / "gateway.pid", cleanup_stale=False)
+            pid = get_running_pid(profile.path / "hermes_agent.gateway.pid", cleanup_stale=False)
         except Exception:
             continue
         if pid is None or pid <= 0 or pid in _exclude or pid in seen:
@@ -613,7 +613,7 @@ def find_profile_gateway_processes(
 
 
 def _gateway_run_args_for_profile(profile: str) -> list[str]:
-    args = [get_python_path(), "-m", "hermes_cli.main"]
+    args = [get_python_path(), "-m", "hermes_agent.hermes_cli.main"]
     if profile != "default":
         args.extend(["--profile", profile])
     args.extend(["gateway", "run", "--replace"])
@@ -642,7 +642,7 @@ def launch_detached_profile_gateway_restart(profile: str, old_pid: int) -> bool:
     #
     # ``windows_detach_popen_kwargs()`` returns the right kwargs for the
     # host platform and is a no-op on POSIX (just ``start_new_session=True``).
-    from hermes_cli._subprocess_compat import (
+    from hermes_agent.hermes_cli._subprocess_compat import (
         windows_detach_flags_without_breakaway,
         windows_detach_popen_kwargs,
     )
@@ -660,7 +660,7 @@ def launch_detached_profile_gateway_restart(profile: str, old_pid: int) -> bool:
         while time.monotonic() < deadline:
             # ``os.kill(pid, 0)`` is not a no-op on Windows — use the
             # cross-platform existence check.
-            from gateway.status import _pid_exists
+            from hermes_agent.gateway.status import _pid_exists
             if not _pid_exists(pid):
                 break
             time.sleep(0.2)
@@ -877,7 +877,7 @@ def _systemd_main_pid(system: bool = False) -> int | None:
 
 def _read_gateway_runtime_status() -> dict | None:
     try:
-        from gateway.status import read_runtime_status
+        from hermes_agent.gateway.status import read_runtime_status
 
         state = read_runtime_status()
     except Exception:
@@ -918,7 +918,7 @@ def _wait_for_systemd_service_restart(
         sub_state = props.get("SubState", "")
         new_pid = None
         try:
-            from gateway.status import get_running_pid
+            from hermes_agent.gateway.status import get_running_pid
 
             new_pid = get_running_pid()
         except Exception:
@@ -1016,7 +1016,7 @@ def _recover_pending_systemd_restart(
         return False
 
     try:
-        from gateway.status import read_runtime_status
+        from hermes_agent.gateway.status import read_runtime_status
     except Exception:
         return False
 
@@ -1089,14 +1089,14 @@ def get_gateway_runtime_snapshot(system: bool = False) -> GatewayRuntimeSnapshot
             gateway_pids=gateway_pids,
         )
 
-    from hermes_constants import is_container
+    from hermes_agent.hermes_constants import is_container
 
     if is_linux() and is_container():
         # Phase 4: report s6 supervision when running under our /init.
         # Other container runtimes (or containers built before Phase 2)
         # still get the original "docker (foreground)" label.
         try:
-            from hermes_cli.service_manager import detect_service_manager, get_service_manager
+            from hermes_agent.hermes_cli.service_manager import detect_service_manager, get_service_manager
             if detect_service_manager() == "s6":
                 profile = _profile_suffix() or "default"
                 service_name = f"gateway-{profile}"
@@ -1187,7 +1187,7 @@ def _print_other_profiles_gateway_status() -> None:
     avoid confusing another profile's process with the current one.
     """
     try:
-        from hermes_cli.profiles import get_active_profile_name
+        from hermes_agent.hermes_cli.profiles import get_active_profile_name
 
         current = get_active_profile_name()
         other_processes = [
@@ -1212,7 +1212,7 @@ def _gateway_list() -> None:
     check each profile individually.
     """
     try:
-        from hermes_cli.profiles import list_profiles, get_active_profile_name
+        from hermes_agent.hermes_cli.profiles import list_profiles, get_active_profile_name
     except Exception:
         print("Unable to list profiles.")
         return
@@ -1233,9 +1233,9 @@ def _gateway_list() -> None:
         parts = [f"  {marker} {label:<24s}"]
         if prof.gateway_running:
             try:
-                from gateway.status import get_running_pid
+                from hermes_agent.gateway.status import get_running_pid
 
-                pid = get_running_pid(prof.path / "gateway.pid", cleanup_stale=False)
+                pid = get_running_pid(prof.path / "hermes_agent.gateway.pid", cleanup_stale=False)
                 if pid:
                     parts.append(f"PID {pid}")
             except Exception:
@@ -1283,7 +1283,7 @@ def stop_profile_gateway() -> bool:
     Returns True if a process was stopped, False if none was found.
     """
     try:
-        from gateway.status import get_running_pid, remove_pid_file
+        from hermes_agent.gateway.status import get_running_pid, remove_pid_file
     except ImportError:
         return False
 
@@ -1292,7 +1292,7 @@ def stop_profile_gateway() -> bool:
         return False
 
     try:
-        from gateway.status import write_planned_stop_marker
+        from hermes_agent.gateway.status import write_planned_stop_marker
 
         write_planned_stop_marker(pid)
     except Exception:
@@ -1309,7 +1309,7 @@ def stop_profile_gateway() -> bool:
     # Wait briefly for it to exit. On Windows, os.kill(pid, 0) is NOT
     # a no-op — route through the cross-platform existence check.
     import time as _time
-    from gateway.status import _pid_exists
+    from hermes_agent.gateway.status import _pid_exists
 
     for _ in range(20):
         if not _pid_exists(pid):
@@ -1325,7 +1325,7 @@ def is_linux() -> bool:
     return sys.platform.startswith("linux")
 
 
-from hermes_constants import is_container, is_termux, is_wsl
+from hermes_agent.hermes_constants import is_container, is_termux, is_wsl
 
 
 def _wsl_systemd_operational() -> bool:
@@ -1431,7 +1431,7 @@ def _profile_suffix() -> str:
     """
     import hashlib
     import re
-    from hermes_constants import get_default_hermes_root
+    from hermes_agent.hermes_constants import get_default_hermes_root
 
     home = get_hermes_home().resolve()
     default = get_default_hermes_root().resolve()
@@ -1466,7 +1466,7 @@ def _profile_arg(hermes_home: str | None = None, default_root: str | Path | None
             refer to root but the target profile lives under the service user.
     """
     import re
-    from hermes_constants import get_default_hermes_root
+    from hermes_agent.hermes_constants import get_default_hermes_root
 
     home = Path(hermes_home or str(get_hermes_home())).resolve()
     default = Path(default_root).resolve() if default_root else get_default_hermes_root().resolve()
@@ -1769,7 +1769,7 @@ _LEGACY_SERVICE_NAMES: tuple[str, ...] = ("hermes.service",)
 # ExecStart content markers that identify a unit as running our gateway.
 # A legacy unit is only flagged when its file contains one of these.
 _LEGACY_UNIT_EXECSTART_MARKERS: tuple[str, ...] = (
-    "hermes_cli.main gateway",
+    "hermes_agent.hermes_cli.main gateway",
     "hermes_cli/main.py gateway",
     "gateway/run.py",
     " hermes gateway ",
@@ -2915,7 +2915,7 @@ def systemd_stop(system: bool = False):
     _require_service_installed("stop", system=system)
     _sync_hermes_home_from_systemd_unit(system=system)
     try:
-        from gateway.status import get_running_pid, write_planned_stop_marker
+        from hermes_agent.gateway.status import get_running_pid, write_planned_stop_marker
 
         pid = get_running_pid(cleanup_stale=False)
         if pid is not None:
@@ -2945,7 +2945,7 @@ def systemd_restart(system: bool = False):
     _require_service_installed("restart", system=system)
     refresh_systemd_unit_if_needed(system=system)
     _sync_hermes_home_from_systemd_unit(system=system)
-    from gateway.status import get_running_pid
+    from hermes_agent.gateway.status import get_running_pid
 
     pid = get_running_pid() or _systemd_main_pid(system=system)
     if pid is not None:
@@ -3273,7 +3273,7 @@ def _gateway_run_command() -> list[str]:
     Profile-aware: honors the active HERMES_HOME via `_profile_arg()` so the
     detached fallback launches into the same profile as the CLI invocation.
     """
-    cmd = [get_python_path(), "-m", "hermes_cli.main"]
+    cmd = [get_python_path(), "-m", "hermes_agent.hermes_cli.main"]
     profile_arg = _profile_arg()
     if profile_arg:
         cmd.extend(profile_arg.split())
@@ -3290,12 +3290,12 @@ def _spawn_detached_gateway() -> bool:
     gateway logs and the PID is tracked via the gateway.pid file that
     `run_gateway` writes, so stop/status/restart keep working.
     """
-    from hermes_cli._subprocess_compat import windows_detach_popen_kwargs
+    from hermes_agent.hermes_cli._subprocess_compat import windows_detach_popen_kwargs
 
     log_dir = get_hermes_home() / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
-    out_path = log_dir / "gateway.log"
-    err_path = log_dir / "gateway.error.log"
+    out_path = log_dir / "hermes_agent.gateway.log"
+    err_path = log_dir / "hermes_agent.gateway.error.log"
     try:
         out = open(out_path, "ab")
         err = open(err_path, "ab")
@@ -3322,7 +3322,7 @@ def _launchd_fallback_to_detached(reason: str, *, exit_on_failure: bool = True) 
     launched, prints the manual workaround and (by default) exits non-zero so
     the failure surfaces instead of silently doing nothing.
     """
-    from hermes_constants import display_hermes_home as _dhh
+    from hermes_agent.hermes_constants import display_hermes_home as _dhh
 
     print(f"⚠ launchd cannot manage the gateway on this macOS version ({reason}).")
     if _spawn_detached_gateway():
@@ -3479,7 +3479,7 @@ def refresh_launchd_plist_if_needed() -> bool:
     # case and hand the reload to a detached session that survives the bootout.
     gateway_pid = None
     try:
-        from gateway.status import get_running_pid
+        from hermes_agent.gateway.status import get_running_pid
         gateway_pid = get_running_pid()
     except Exception:
         gateway_pid = None
@@ -3568,7 +3568,7 @@ def launchd_install(force: bool = False):
     print()
     print("Next steps:")
     print("  hermes gateway status             # Check status")
-    from hermes_constants import display_hermes_home as _dhh
+    from hermes_agent.hermes_constants import display_hermes_home as _dhh
 
     print(f"  tail -f {_dhh()}/logs/gateway.log  # View logs")
 
@@ -3657,7 +3657,7 @@ def launchd_stop():
     label = get_launchd_label()
     target = f"{_launchd_domain()}/{label}"
     try:
-        from gateway.status import get_running_pid, write_planned_stop_marker
+        from hermes_agent.gateway.status import get_running_pid, write_planned_stop_marker
 
         pid = get_running_pid(cleanup_stale=False)
         if pid is not None:
@@ -3698,7 +3698,7 @@ def _wait_for_gateway_exit(
         force_after: Seconds of graceful waiting before escalating to force-kill.
     """
     import time
-    from gateway.status import get_running_pid
+    from hermes_agent.gateway.status import get_running_pid
 
     deadline = time.monotonic() + timeout
     force_deadline = (
@@ -3740,7 +3740,7 @@ def launchd_restart():
     label = get_launchd_label()
     target = f"{_launchd_domain()}/{label}"
     drain_timeout = _get_restart_drain_timeout()
-    from gateway.status import get_running_pid
+    from hermes_agent.gateway.status import get_running_pid
 
     try:
         pid = get_running_pid()
@@ -3819,7 +3819,7 @@ def launchd_status(deep: bool = False):
         print("  Run: hermes gateway start")
 
     if deep:
-        log_file = get_hermes_home() / "logs" / "gateway.log"
+        log_file = get_hermes_home() / "logs" / "hermes_agent.gateway.log"
         if log_file.exists():
             print()
             print("Recent logs:")
@@ -3919,7 +3919,7 @@ def _guard_existing_gateway_process_conflict(replace: bool = False) -> None:
     if replace or _running_under_gateway_supervisor():
         return
     try:
-        from gateway.status import get_running_pid
+        from hermes_agent.gateway.status import get_running_pid
 
         pid = get_running_pid()
     except Exception:
@@ -4035,7 +4035,7 @@ def run_gateway(verbose: int = 0, quiet: bool = False, replace: bool = False, fo
         except Exception:
             pass  # best-effort; don't block gateway startup
 
-    from gateway.run import start_gateway
+    from hermes_agent.gateway.run import start_gateway
 
     print("┌─────────────────────────────────────────────────────────┐")
     print("│           ⚕ Hermes Gateway Starting...                 │")
@@ -4067,7 +4067,7 @@ def run_gateway(verbose: int = 0, quiet: bool = False, replace: bool = False, fo
         if os.environ.get("HERMES_GATEWAY_EXIT_DIAG", "1") != "1":
             return
         try:
-            from hermes_constants import get_hermes_home as _ghh
+            from hermes_agent.hermes_constants import get_hermes_home as _ghh
 
             log_dir = _ghh() / "logs"
             log_dir.mkdir(parents=True, exist_ok=True)
@@ -4088,7 +4088,7 @@ def run_gateway(verbose: int = 0, quiet: bool = False, replace: bool = False, fo
             pass  # never let the diagnostic itself crash the gateway
 
     _exit_diag(
-        "gateway.start",
+        "hermes_agent.gateway.start",
         replace=replace,
         argv=sys.argv,
         stdin_is_tty=_stdin_is_tty,
@@ -4131,9 +4131,9 @@ def run_gateway(verbose: int = 0, quiet: bool = False, replace: bool = False, fo
         )
         raise
     if not success:
-        _exit_diag("gateway.exit_nonzero")
+        _exit_diag("hermes_agent.gateway.exit_nonzero")
         sys.exit(1)
-    _exit_diag("gateway.exit_clean")
+    _exit_diag("hermes_agent.gateway.exit_clean")
 
 
 # =============================================================================
@@ -4746,7 +4746,7 @@ def _all_platforms() -> list[dict]:
     # User-installed platform plugins under ~/.hermes/plugins/ still require
     # opt-in via ``plugins.enabled`` (untrusted code).
     try:
-        from hermes_cli.plugins import discover_plugins
+        from hermes_agent.hermes_cli.plugins import discover_plugins
 
         discover_plugins()
     except Exception as e:
@@ -4761,7 +4761,7 @@ def _all_platforms() -> list[dict]:
     by_key = {p["key"]: p for p in platforms}
 
     try:
-        from gateway.platform_registry import platform_registry
+        from hermes_agent.gateway.platform_registry import platform_registry
     except Exception:
         return platforms
 
@@ -4794,7 +4794,7 @@ def _platform_status(platform: dict) -> str:
         # check_fn (typically just dependency / env presence).
         if entry.is_connected is not None:
             try:
-                from gateway.config import PlatformConfig
+                from hermes_agent.gateway.config import PlatformConfig
 
                 synthetic = PlatformConfig(enabled=True)
                 configured = bool(entry.is_connected(synthetic))
@@ -4864,7 +4864,7 @@ def _platform_status(platform: dict) -> str:
 def _runtime_health_lines() -> list[str]:
     """Summarize the latest persisted gateway runtime health state."""
     try:
-        from gateway.status import read_runtime_status
+        from hermes_agent.gateway.status import read_runtime_status
     except Exception:
         return []
 
@@ -4929,7 +4929,7 @@ def _setup_standard_platform(platform: dict):
         choice = prompt("  Choice [1/2]", default="1")
         if choice.strip() == "1":
             try:
-                from hermes_cli.telegram_managed_bot import (
+                from hermes_agent.hermes_cli.telegram_managed_bot import (
                     auto_setup_telegram_bot_result,
                     is_valid_telegram_bot_token,
                 )
@@ -5057,7 +5057,7 @@ def _setup_standard_platform(platform: dict):
 
 def _setup_whatsapp():
     """Delegate to the existing WhatsApp setup flow."""
-    from hermes_cli.main import cmd_whatsapp
+    from hermes_agent.hermes_cli.main import cmd_whatsapp
     import argparse
 
     cmd_whatsapp(argparse.Namespace())
@@ -5065,7 +5065,7 @@ def _setup_whatsapp():
 
 def _setup_dingtalk():
     """Configure DingTalk — QR scan (recommended) or manual credential entry."""
-    from hermes_cli.setup import (
+    from hermes_agent.hermes_cli.setup import (
         prompt_choice,
         prompt_yes_no,
         print_success,
@@ -5099,7 +5099,7 @@ def _setup_dingtalk():
     if method == 0:
         # ── QR-code device-flow authorization ──
         try:
-            from hermes_cli.dingtalk_auth import dingtalk_qr_auth
+            from hermes_agent.hermes_cli.dingtalk_auth import dingtalk_qr_auth
         except ImportError as exc:
             print_warning(
                 f"  QR auth module failed to load ({exc}), falling back to manual input."
@@ -5152,7 +5152,7 @@ def _setup_wecom():
     if method_idx == 0:
         # ── QR scan flow ──
         try:
-            from gateway.platforms.wecom import qr_scan_for_bot_info
+            from hermes_agent.gateway.platforms.wecom import qr_scan_for_bot_info
         except Exception as exc:
             print_error(f"  WeCom QR scan import failed: {exc}")
             qr_scan_for_bot_info = None
@@ -5258,7 +5258,7 @@ def _is_service_installed() -> bool:
     elif is_macos():
         return get_launchd_plist_path().exists()
     elif is_windows():
-        from hermes_cli import gateway_windows
+        from hermes_agent.hermes_cli import gateway_windows
 
         return gateway_windows.is_installed()
     return False
@@ -5311,7 +5311,7 @@ def _is_service_running() -> bool:
         except subprocess.TimeoutExpired:
             return False
     elif is_windows():
-        from hermes_cli import gateway_windows
+        from hermes_agent.hermes_cli import gateway_windows
 
         if gateway_windows.is_installed():
             # "installed" doesn't necessarily mean "running" on Windows. The
@@ -5344,7 +5344,7 @@ def _setup_weixin():
             return
 
     try:
-        from gateway.platforms.weixin import check_weixin_requirements, qr_login
+        from hermes_agent.gateway.platforms.weixin import check_weixin_requirements, qr_login
     except Exception as exc:
         print_error(f"  Weixin adapter import failed: {exc}")
         print_info("  Install gateway dependencies first, then retry.")
@@ -5517,7 +5517,7 @@ def _setup_feishu():
     if method_idx == 0:
         # ── QR scan-to-create ──
         try:
-            from gateway.platforms.feishu import qr_register
+            from hermes_agent.gateway.platforms.feishu import qr_register
         except Exception as exc:
             print_error(f"  Feishu / Lark onboard import failed: {exc}")
             qr_register = None
@@ -5562,7 +5562,7 @@ def _setup_feishu():
         # Try to probe the bot with manual credentials
         bot_name = None
         try:
-            from gateway.platforms.feishu import probe_bot
+            from hermes_agent.gateway.platforms.feishu import probe_bot
 
             bot_info = probe_bot(app_id, app_secret, domain)
             if bot_info:
@@ -5709,7 +5709,7 @@ def _setup_qqbot():
     if method_idx == 0:
         # ── QR scan-to-configure ──
         try:
-            from gateway.platforms.qqbot import qr_register
+            from hermes_agent.gateway.platforms.qqbot import qr_register
 
             credentials = qr_register()
         except KeyboardInterrupt:
@@ -5944,7 +5944,7 @@ def _builtin_setup_fn(key: str):
     Late-bound to avoid a circular import with ``hermes_cli.setup`` (which
     imports from this module for the remaining bespoke flows).
     """
-    from hermes_cli import setup as _s
+    from hermes_agent.hermes_cli import setup as _s
 
     return {
         "telegram": _s._setup_telegram,
@@ -6146,7 +6146,7 @@ def gateway_setup():
                     elif is_macos():
                         launchd_restart()
                     elif is_windows():
-                        from hermes_cli import gateway_windows
+                        from hermes_agent.hermes_cli import gateway_windows
 
                         gateway_windows.restart()
                     else:
@@ -6171,7 +6171,7 @@ def gateway_setup():
                     elif is_macos():
                         launchd_start()
                     elif is_windows():
-                        from hermes_cli import gateway_windows
+                        from hermes_agent.hermes_cli import gateway_windows
 
                         gateway_windows.start()
                 except UserSystemdUnavailableError as e:
@@ -6211,7 +6211,7 @@ def gateway_setup():
                             launchd_install(force=False)
                             did_install = True
                         else:
-                            from hermes_cli import gateway_windows
+                            from hermes_agent.hermes_cli import gateway_windows
 
                             gateway_windows.install(force=False)
                             did_install = True
@@ -6223,7 +6223,7 @@ def gateway_setup():
                                 elif is_macos():
                                     launchd_start()
                                 elif is_windows():
-                                    from hermes_cli import gateway_windows
+                                    from hermes_agent.hermes_cli import gateway_windows
                                     gateway_windows.start()
                             except UserSystemdUnavailableError as e:
                                 print_error(
@@ -6254,7 +6254,7 @@ def gateway_setup():
                     "  To enable systemd: add systemd=true to /etc/wsl.conf, then 'wsl --shutdown'"
                 )
             elif is_termux():
-                from hermes_constants import display_hermes_home as _dhh
+                from hermes_agent.hermes_constants import display_hermes_home as _dhh
 
                 print_info("  Termux does not use systemd/launchd services.")
                 print_info("  Run in foreground: hermes gateway run")
@@ -6291,7 +6291,7 @@ def _dispatch_via_service_manager_if_s6(
     :mod:`hermes_cli.service_manager` are caught and surfaced as
     actionable CLI messages (no raw ``CalledProcessError`` traceback).
     """
-    from hermes_cli.service_manager import (
+    from hermes_agent.hermes_cli.service_manager import (
         GatewayNotRegisteredError,
         S6CommandError,
         detect_service_manager,
@@ -6346,7 +6346,7 @@ def _dispatch_all_via_service_manager_if_s6(action: str) -> bool:
     ``action`` is one of ``stop`` / ``restart`` (``start --all`` isn't
     a supported CLI surface).
     """
-    from hermes_cli.service_manager import (
+    from hermes_agent.hermes_cli.service_manager import (
         detect_service_manager,
         get_service_manager,
     )
@@ -6569,7 +6569,7 @@ def _gateway_command_inner(args):
         elif is_macos():
             launchd_install(force)
         elif is_windows():
-            from hermes_cli import gateway_windows
+            from hermes_agent.hermes_cli import gateway_windows
 
             gateway_windows.install(
                 force=force,
@@ -6598,7 +6598,7 @@ def _gateway_command_inner(args):
             # Phase 4: inside a container with s6 the gateway service is
             # auto-registered when the profile is created (and reconciled
             # at every container boot). `install` is therefore informational.
-            from hermes_cli.service_manager import detect_service_manager
+            from hermes_agent.hermes_cli.service_manager import detect_service_manager
             if detect_service_manager() == "s6":
                 print("Per-profile gateways are auto-registered when you create a profile.")
                 print()
@@ -6643,11 +6643,11 @@ def _gateway_command_inner(args):
         elif is_macos():
             launchd_uninstall()
         elif is_windows():
-            from hermes_cli import gateway_windows
+            from hermes_agent.hermes_cli import gateway_windows
 
             gateway_windows.uninstall()
         elif is_container():
-            from hermes_cli.service_manager import detect_service_manager
+            from hermes_agent.hermes_cli.service_manager import detect_service_manager
             if detect_service_manager() == "s6":
                 print("Per-profile gateways are auto-unregistered when you delete the profile.")
                 print()
@@ -6696,7 +6696,7 @@ def _gateway_command_inner(args):
         elif is_macos():
             launchd_start()
         elif is_windows():
-            from hermes_cli import gateway_windows
+            from hermes_agent.hermes_cli import gateway_windows
 
             gateway_windows.start()
         elif is_wsl():
@@ -6777,7 +6777,7 @@ def _gateway_command_inner(args):
                 except subprocess.CalledProcessError:
                     pass
             elif is_windows():
-                from hermes_cli import gateway_windows
+                from hermes_agent.hermes_cli import gateway_windows
 
                 if gateway_windows.is_installed():
                     try:
@@ -6810,7 +6810,7 @@ def _gateway_command_inner(args):
                 except subprocess.CalledProcessError:
                     pass
             elif is_windows():
-                from hermes_cli import gateway_windows
+                from hermes_agent.hermes_cli import gateway_windows
 
                 if gateway_windows.is_installed():
                     try:
@@ -6874,7 +6874,7 @@ def _gateway_command_inner(args):
                 except subprocess.CalledProcessError:
                     pass
             elif is_windows():
-                from hermes_cli import gateway_windows
+                from hermes_agent.hermes_cli import gateway_windows
 
                 if gateway_windows.is_installed():
                     try:
@@ -6898,7 +6898,7 @@ def _gateway_command_inner(args):
             elif is_macos() and get_launchd_plist_path().exists():
                 launchd_start()
             elif is_windows():
-                from hermes_cli import gateway_windows
+                from hermes_agent.hermes_cli import gateway_windows
 
                 # On Windows, even without a registered Scheduled Task / Startup
                 # entry, gateway_windows.start() uses the safe detached
@@ -6929,7 +6929,7 @@ def _gateway_command_inner(args):
             except subprocess.CalledProcessError:
                 pass
         elif is_windows():
-            from hermes_cli import gateway_windows
+            from hermes_agent.hermes_cli import gateway_windows
 
             # Prefer the Windows-specific restart path: it supports both
             # registered Scheduled Task / Startup installs and no-service
@@ -6995,7 +6995,7 @@ def _gateway_command_inner(args):
         # Check for service first
         _windows_service_installed = False
         if is_windows():
-            from hermes_cli import gateway_windows
+            from hermes_agent.hermes_cli import gateway_windows
 
             _windows_service_installed = gateway_windows.is_installed()
         if supports_systemd_services() and (
@@ -7008,7 +7008,7 @@ def _gateway_command_inner(args):
             launchd_status(deep)
             _print_gateway_process_mismatch(snapshot)
         elif _windows_service_installed:
-            from hermes_cli import gateway_windows
+            from hermes_agent.hermes_cli import gateway_windows
 
             gateway_windows.status(deep=deep)
             _print_gateway_process_mismatch(snapshot)

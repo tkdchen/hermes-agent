@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import run_agent as run_agent_module
-from run_agent import AIAgent
+import hermes_agent.run_agent as run_agent_module
+from hermes_agent.run_agent import AIAgent
 
 
 def _bare_agent() -> AIAgent:
@@ -86,7 +86,7 @@ def test_background_review_summarizer_receives_captured_messages_after_close(mon
     disappear. The fix snapshots ``_session_messages`` before teardown.
     """
     import json
-    import agent.background_review as bg_review
+    import hermes_agent.agent.background_review as bg_review
 
     review_tool_message = {
         "role": "tool",
@@ -158,7 +158,7 @@ def test_background_review_installs_auto_deny_approval_callback(monkeypatch):
     trips falls back to input() on a daemon thread, which deadlocks against
     the parent's prompt_toolkit TUI.
     """
-    import tools.terminal_tool as tt
+    import hermes_agent.tools.terminal_tool as tt
 
     observed: dict = {"during_run": "<unread>", "after_finally": "<unread>"}
 
@@ -323,7 +323,7 @@ def test_background_review_fork_skips_external_memory_plugins(monkeypatch):
 
 import json as _json
 
-from agent.background_review import summarize_background_review_actions
+from hermes_agent.agent.background_review import summarize_background_review_actions
 
 
 def _memory_add_review():

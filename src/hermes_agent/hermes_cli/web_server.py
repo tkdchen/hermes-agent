@@ -43,8 +43,8 @@ PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from hermes_cli import __version__, __release_date__
-from hermes_cli.config import (
+from hermes_agent.hermes_cli import __version__, __release_date__
+from hermes_agent.hermes_cli.config import (
     cfg_get,
     DEFAULT_CONFIG,
     OPTIONAL_ENV_VARS,
@@ -62,12 +62,12 @@ from hermes_cli.config import (
     recommended_update_command_for_method,
     redact_key,
 )
-from gateway.status import (
+from hermes_agent.gateway.status import (
     get_running_pid,
     get_runtime_status_running_pid,
     read_runtime_status,
 )
-from utils import env_var_enabled
+from hermes_agent.utils import env_var_enabled
 
 try:
     from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
@@ -80,7 +80,7 @@ except ImportError:
     # running `hermes dashboard` needs fastapi+uvicorn; lazy install keeps
     # them out of every other install path. After install, re-import.
     try:
-        from tools.lazy_deps import ensure as _lazy_ensure
+        from hermes_agent.tools.lazy_deps import ensure as _lazy_ensure
         _lazy_ensure("tool.dashboard", prompt=False)
         from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
         from fastapi.middleware.cors import CORSMiddleware
@@ -120,7 +120,7 @@ def _start_desktop_cron_ticker(stop_event: "threading.Event", interval: int = 60
     file lock, so this never double-fires alongside a real gateway on the same
     HERMES_HOME — whichever process grabs the lock first wins the tick.
     """
-    from cron.scheduler import tick as cron_tick
+    from hermes_agent.cron.scheduler import tick as cron_tick
 
     _log.info("Desktop cron ticker started (interval=%ds)", interval)
     # Tick once up front (catches jobs due at launch), then on the interval.
@@ -226,7 +226,7 @@ app.add_middleware(
 # Keep the upstream list minimal — only truly non-sensitive, read-only
 # endpoints belong there.
 # ---------------------------------------------------------------------------
-from hermes_cli.dashboard_auth.public_paths import (
+from hermes_agent.hermes_cli.dashboard_auth.public_paths import (
     PUBLIC_API_PATHS as _PUBLIC_API_PATHS,
 )
 
@@ -406,7 +406,7 @@ async def host_header_middleware(request: Request, call_next):
 
 @app.middleware("http")
 async def _dashboard_auth_gate(request: Request, call_next):
-    from hermes_cli.dashboard_auth.middleware import gated_auth_middleware
+    from hermes_agent.hermes_cli.dashboard_auth.middleware import gated_auth_middleware
     return await gated_auth_middleware(request, call_next)
 
 
@@ -516,7 +516,7 @@ _SCHEMA_OVERRIDES: Dict[str, Dict[str, Any]] = {
         "description": "Log level for agent.log",
         "options": ["DEBUG", "INFO", "WARNING", "ERROR"],
     },
-    "agent.service_tier": {
+    "hermes_agent.agent.service_tier": {
         "type": "select",
         "description": "API service tier (OpenAI/Anthropic)",
         "options": ["", "auto", "default", "flex"],
@@ -783,8 +783,8 @@ def _normalize_main_model_assignment(provider: str, model: str) -> tuple[str, st
        ``normalize_model_for_provider`` (e.g. ``anthropic/claude-opus-4.6``
        on native anthropic → ``claude-opus-4-6``).
     """
-    from hermes_cli.models import _KNOWN_PROVIDER_NAMES, normalize_provider
-    from hermes_cli.model_normalize import normalize_model_for_provider
+    from hermes_agent.hermes_cli.models import _KNOWN_PROVIDER_NAMES, normalize_provider
+    from hermes_agent.hermes_cli.model_normalize import normalize_model_for_provider
 
     prov_in = (provider or "").strip()
     model_in = (model or "").strip()
@@ -802,7 +802,7 @@ def _normalize_main_model_assignment(provider: str, model: str) -> tuple[str, st
             )
         except Exception:
             cur_provider = ""
-        from hermes_cli.models import _AGGREGATOR_PROVIDERS
+        from hermes_agent.hermes_cli.models import _AGGREGATOR_PROVIDERS
         if cur_provider and normalize_provider(cur_provider) in _AGGREGATOR_PROVIDERS:
             canonical = normalize_provider(cur_provider)
             prov_in = cur_provider
@@ -1234,7 +1234,7 @@ def _default_hermes_root_is_opt_data() -> bool:
     if not raw:
         return False
     try:
-        from hermes_constants import get_default_hermes_root
+        from hermes_agent.hermes_constants import get_default_hermes_root
 
         root = get_default_hermes_root().expanduser().resolve(strict=False)
     except (OSError, RuntimeError):
@@ -1251,7 +1251,7 @@ def _dashboard_local_update_managed_externally() -> bool:
     still behave like their actual install method in the CLI.
     """
     try:
-        from hermes_constants import is_container
+        from hermes_agent.hermes_constants import is_container
 
         return is_container()
     except Exception:
@@ -1657,7 +1657,7 @@ async def get_status(profile: Optional[str] = None):
         gateway_updated_at = None
         configured_gateway_platforms: set[str] | None = None
         try:
-            from gateway.config import load_gateway_config
+            from hermes_agent.gateway.config import load_gateway_config
 
             gateway_config = load_gateway_config()
             configured_gateway_platforms = {
@@ -1711,7 +1711,7 @@ async def get_status(profile: Optional[str] = None):
 
         active_sessions = 0
         try:
-            from hermes_state import SessionDB
+            from hermes_agent.hermes_state import SessionDB
             db = SessionDB()
             try:
                 sessions = db.list_sessions_rich(limit=50)
@@ -1733,7 +1733,7 @@ async def get_status(profile: Optional[str] = None):
         auth_required = bool(getattr(app.state, "auth_required", False))
         auth_providers: list[str] = []
         try:
-            from hermes_cli.dashboard_auth import list_providers as _list_providers
+            from hermes_agent.hermes_cli.dashboard_auth import list_providers as _list_providers
             auth_providers = [p.name for p in _list_providers()]
         except Exception:
             # Module not importable yet (early startup) — leave as [].
@@ -1920,7 +1920,7 @@ async def get_system_stats():
 @app.get("/api/curator")
 async def get_curator_status():
     try:
-        from agent import curator
+        from hermes_agent.agent import curator
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Curator unavailable: {exc}")
     try:
@@ -1944,7 +1944,7 @@ class CuratorPause(BaseModel):
 
 @app.put("/api/curator/paused")
 async def set_curator_paused(body: CuratorPause):
-    from agent import curator
+    from hermes_agent.agent import curator
 
     curator.set_paused(bool(body.paused))
     return {"ok": True, "paused": bool(body.paused)}
@@ -1978,7 +1978,7 @@ async def get_portal_status():
     cfg = load_config() or {}
     auth: Dict[str, Any] = {}
     try:
-        from hermes_cli.auth import get_nous_auth_status
+        from hermes_agent.hermes_cli.auth import get_nous_auth_status
 
         auth = get_nous_auth_status() or {}
     except Exception:
@@ -1986,7 +1986,7 @@ async def get_portal_status():
 
     features = []
     try:
-        from hermes_cli.nous_subscription import get_nous_subscription_features
+        from hermes_agent.hermes_cli.nous_subscription import get_nous_subscription_features
 
         feats = get_nous_subscription_features(cfg)
         if feats is not None:
@@ -2068,7 +2068,7 @@ async def run_debug_share_endpoint(body: DebugShareRequest | None = None):
     dashboard renders those as real, copyable links instead of scraping a log
     tail. Pastes auto-delete after 6 hours (handled inside the share core).
     """
-    from hermes_cli.debug import build_debug_share
+    from hermes_agent.hermes_cli.debug import build_debug_share
 
     req = body or DebugShareRequest()
     try:
@@ -2167,7 +2167,7 @@ def _spawn_hermes_action(subcommand: List[str], name: str) -> subprocess.Popen:
         f"\n=== {name} started {time.strftime('%Y-%m-%d %H:%M:%S')} ===\n".encode()
     )
 
-    cmd = [sys.executable, "-m", "hermes_cli.main", *subcommand]
+    cmd = [sys.executable, "-m", "hermes_agent.hermes_cli.main", *subcommand]
 
     popen_kwargs: Dict[str, Any] = {
         "cwd": str(PROJECT_ROOT),
@@ -2430,7 +2430,7 @@ async def check_hermes_update(force: bool = False):
     # caches the result for 6h. ``force`` busts the cache so the "Check now"
     # button reflects reality immediately.
     try:
-        from hermes_cli.banner import check_for_updates
+        from hermes_agent.hermes_cli.banner import check_for_updates
 
         if force:
             try:
@@ -2504,7 +2504,7 @@ async def transcribe_audio_upload(payload: AudioTranscriptionRequest):
             tmp.write(audio_bytes)
             temp_path = tmp.name
 
-        from tools.transcription_tools import transcribe_audio
+        from hermes_agent.tools.transcription_tools import transcribe_audio
 
         loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(None, transcribe_audio, temp_path)
@@ -2608,7 +2608,7 @@ async def speak_text(payload: TTSSpeakRequest):
         raise HTTPException(status_code=400, detail="Text is required")
 
     try:
-        from tools.tts_tool import text_to_speech_tool
+        from hermes_agent.tools.tts_tool import text_to_speech_tool
         loop = asyncio.get_running_loop()
         result_json = await loop.run_in_executor(None, text_to_speech_tool, text)
     except Exception as exc:
@@ -2808,8 +2808,8 @@ async def get_profiles_sessions(
     if order not in ("created", "recent"):
         raise HTTPException(status_code=400, detail="order must be one of: created, recent")
 
-    from hermes_state import SessionDB
-    from hermes_cli import profiles as profiles_mod
+    from hermes_agent.hermes_state import SessionDB
+    from hermes_agent.hermes_cli import profiles as profiles_mod
 
     targets: List[Tuple[str, Path]] = []
     if profile and profile != "all":
@@ -3148,7 +3148,7 @@ def get_model_info(profile: Optional[str] = None):
         # Resolve auto-detected context length (pass config_ctx=None to get
         # purely auto-detected value, then separately report the override)
         try:
-            from agent.model_metadata import get_model_context_length
+            from hermes_agent.agent.model_metadata import get_model_context_length
             auto_ctx = get_model_context_length(
                 model=model_name,
                 base_url=base_url,
@@ -3168,7 +3168,7 @@ def get_model_info(profile: Optional[str] = None):
         # Try to get model capabilities from models.dev
         caps = {}
         try:
-            from agent.models_dev import get_model_capabilities
+            from hermes_agent.agent.models_dev import get_model_capabilities
             mc = get_model_capabilities(provider=provider, model=model_name)
             if mc is not None:
                 caps = {
@@ -3236,7 +3236,7 @@ def get_model_options(profile: Optional[str] = None):
     reads the SAME profile /api/model/set writes.
     """
     try:
-        from hermes_cli.inventory import build_models_payload, load_picker_context
+        from hermes_agent.hermes_cli.inventory import build_models_payload, load_picker_context
 
         # include_unconfigured + picker_hints + canonical_order mirror the
         # tui_gateway `model.options` JSON-RPC handler exactly, so every GUI
@@ -3281,7 +3281,7 @@ def get_recommended_default_model(provider: str = ""):
 
     if slug == "nous":
         try:
-            from hermes_cli.models import (
+            from hermes_agent.hermes_cli.models import (
                 get_curated_nous_model_ids,
                 get_pricing_for_provider,
                 check_nous_free_tier,
@@ -3289,7 +3289,7 @@ def get_recommended_default_model(provider: str = ""):
                 union_with_portal_free_recommendations,
                 union_with_portal_paid_recommendations,
             )
-            from hermes_cli.auth import get_provider_auth_state
+            from hermes_agent.hermes_cli.auth import get_provider_auth_state
 
             model_ids = get_curated_nous_model_ids()
             pricing = get_pricing_for_provider("nous") or {}
@@ -3322,7 +3322,7 @@ def get_recommended_default_model(provider: str = ""):
 
     # Non-Nous: first curated model for the provider, matching prior behaviour.
     try:
-        from hermes_cli.inventory import build_models_payload, load_picker_context
+        from hermes_agent.hermes_cli.inventory import build_models_payload, load_picker_context
 
         payload = build_models_payload(load_picker_context(), max_models=50)
         for row in payload.get("providers", []):
@@ -3411,7 +3411,7 @@ async def set_model_assignment(body: ModelAssignment, profile: Optional[str] = N
         # event-loop thread could cross-restore the module globals).
         if model and not body.confirm_expensive_model:
             try:
-                from hermes_cli.model_cost_guard import expensive_model_warning
+                from hermes_agent.hermes_cli.model_cost_guard import expensive_model_warning
 
                 # Pricing lookup can hit models.dev / a /models endpoint on a
                 # cache miss — keep it off the event loop.
@@ -3479,8 +3479,8 @@ def _apply_model_assignment_sync(
         gateway_tools: list[str] = []
         if provider.strip().lower() == "nous":
             try:
-                from hermes_cli.nous_subscription import apply_nous_managed_defaults
-                from hermes_cli.tools_config import _get_platform_tools
+                from hermes_agent.hermes_cli.nous_subscription import apply_nous_managed_defaults
+                from hermes_agent.hermes_cli.tools_config import _get_platform_tools
 
                 enabled = _get_platform_tools(
                     cfg, "cli", include_default_mcp_servers=False
@@ -3506,7 +3506,7 @@ def _apply_model_assignment_sync(
         # provider. Dedups by base_url, so re-saving is idempotent.
         if provider.strip().lower() in {"custom", "local"} and base_url:
             try:
-                from hermes_cli.main import _auto_provider_name, _save_custom_provider
+                from hermes_agent.hermes_cli.main import _auto_provider_name, _save_custom_provider
 
                 _save_custom_provider(
                     base_url,
@@ -4225,7 +4225,7 @@ def _messaging_platform_catalog() -> tuple[dict[str, Any], ...]:
     in :data:`_PLATFORM_OVERRIDES`; anything not overridden gets reasonable
     defaults derived from the platform id and required_env.
     """
-    from gateway.config import Platform
+    from hermes_agent.gateway.config import Platform
 
     seen: set[str] = set()
     entries: list[dict[str, Any]] = []
@@ -4239,7 +4239,7 @@ def _messaging_platform_catalog() -> tuple[dict[str, Any], ...]:
         entries.append(_build_catalog_entry(member.value))
 
     try:
-        from gateway.platform_registry import platform_registry
+        from hermes_agent.gateway.platform_registry import platform_registry
 
         for plugin_entry in platform_registry.plugin_entries():
             if plugin_entry.name in seen:
@@ -4383,7 +4383,7 @@ def _messaging_env_info(key: str) -> dict[str, Any]:
 
 
 def _gateway_platform_config(platform_id: str):
-    from gateway.config import Platform, load_gateway_config
+    from hermes_agent.gateway.config import Platform, load_gateway_config
 
     config = load_gateway_config()
     platform = Platform(platform_id)
@@ -5075,7 +5075,7 @@ def _anthropic_oauth_status() -> Dict[str, Any]:
     double-counts the token and shadows a real ANTHROPIC_API_KEY.
     """
     try:
-        from agent.anthropic_adapter import (
+        from hermes_agent.agent.anthropic_adapter import (
             read_hermes_oauth_credentials,
             _HERMES_OAUTH_FILE,
         )
@@ -5103,16 +5103,16 @@ def _anthropic_oauth_status() -> Dict[str, Any]:
     # environment first (where Bitwarden-sourced secrets land) then .env.
     env_var_order: tuple = ("ANTHROPIC_API_KEY", "ANTHROPIC_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN")
     try:
-        from hermes_cli.auth import PROVIDER_REGISTRY
+        from hermes_agent.hermes_cli.auth import PROVIDER_REGISTRY
         env_var_order = PROVIDER_REGISTRY["anthropic"].api_key_env_vars
     except (ImportError, KeyError):
         pass
     try:
-        from hermes_cli.config import get_env_value
+        from hermes_agent.hermes_cli.config import get_env_value
     except ImportError:
         get_env_value = None  # type: ignore
     try:
-        from hermes_cli.env_loader import format_secret_source_suffix
+        from hermes_agent.hermes_cli.env_loader import format_secret_source_suffix
     except ImportError:
         format_secret_source_suffix = None  # type: ignore
 
@@ -5140,7 +5140,7 @@ def _claude_code_only_status() -> Dict[str, Any]:
     when they also have a separate Hermes-managed PKCE login.
     """
     try:
-        from agent.anthropic_adapter import read_claude_code_credentials
+        from hermes_agent.agent.anthropic_adapter import read_claude_code_credentials
         creds = read_claude_code_credentials()
     except Exception:
         creds = None
@@ -5242,7 +5242,7 @@ def _resolve_provider_status(provider_id: str, status_fn) -> Dict[str, Any]:
         except Exception as e:
             return {"logged_in": False, "error": str(e)}
     try:
-        from hermes_cli import auth as hauth
+        from hermes_agent.hermes_cli import auth as hauth
         if provider_id == "nous":
             raw = hauth.get_nous_auth_status()
             return {
@@ -5420,7 +5420,7 @@ async def disconnect_oauth_provider(
         if provider_id == "anthropic":
             cleared = False
             try:
-                from agent.anthropic_adapter import _HERMES_OAUTH_FILE
+                from hermes_agent.agent.anthropic_adapter import _HERMES_OAUTH_FILE
                 if _HERMES_OAUTH_FILE.exists():
                     _HERMES_OAUTH_FILE.unlink()
                     cleared = True
@@ -5428,7 +5428,7 @@ async def disconnect_oauth_provider(
                 pass
             # Also clear the credential pool entry if present.
             try:
-                from hermes_cli.auth import clear_provider_auth
+                from hermes_agent.hermes_cli.auth import clear_provider_auth
                 cleared = clear_provider_auth("anthropic") or cleared
             except Exception:
                 pass
@@ -5436,7 +5436,7 @@ async def disconnect_oauth_provider(
             return {"ok": bool(cleared), "provider": provider_id}
 
         try:
-            from hermes_cli.auth import clear_provider_auth, invalidate_nous_auth_status_cache
+            from hermes_agent.hermes_cli.auth import clear_provider_auth, invalidate_nous_auth_status_cache
             cleared = clear_provider_auth(provider_id)
             if provider_id == "nous":
                 invalidate_nous_auth_status_cache()
@@ -5504,7 +5504,7 @@ _oauth_sessions_lock = threading.Lock()
 # Guarded so hermes web still starts if anthropic_adapter is unavailable;
 # Phase 2 endpoints will return 501 in that case.
 try:
-    from agent.anthropic_adapter import (
+    from hermes_agent.agent.anthropic_adapter import (
         _OAUTH_CLIENT_ID as _ANTHROPIC_OAUTH_CLIENT_ID,
         _OAUTH_TOKEN_URL as _ANTHROPIC_OAUTH_TOKEN_URL,
         _OAUTH_REDIRECT_URI as _ANTHROPIC_OAUTH_REDIRECT_URI,
@@ -5578,7 +5578,7 @@ def _save_anthropic_oauth_creds(access_token: str, refresh_token: str, expires_a
     Mirrors what auth_commands.add_command does so the dashboard flow leaves
     the system in the same state as ``hermes auth add anthropic``.
     """
-    from agent.anthropic_adapter import _HERMES_OAUTH_FILE
+    from hermes_agent.agent.anthropic_adapter import _HERMES_OAUTH_FILE
     payload = {
         "accessToken": access_token,
         "refreshToken": refresh_token,
@@ -5608,7 +5608,7 @@ def _save_anthropic_oauth_creds(access_token: str, refresh_token: str, expires_a
     # the file write — pool registration only matters for the rotation
     # strategy, not for runtime credential resolution.
     try:
-        from agent.credential_pool import (
+        from hermes_agent.agent.credential_pool import (
             PooledCredential,
             load_pool,
             AUTH_TYPE_OAUTH,
@@ -5748,7 +5748,7 @@ async def _start_device_code_flow(
     so the UI can render the verification page link + user code.
     """
     if provider_id == "nous":
-        from hermes_cli.auth import (
+        from hermes_agent.hermes_cli.auth import (
             _request_device_code,
             PROVIDER_REGISTRY,
         )
@@ -5841,7 +5841,7 @@ async def _start_device_code_flow(
         # flow; the PKCE bit (verifier + challenge from
         # _minimax_pkce_pair) is a security extension that binds the
         # token exchange to the original session.
-        from hermes_cli.auth import (
+        from hermes_agent.hermes_cli.auth import (
             _minimax_pkce_pair,
             _minimax_request_user_code,
             MINIMAX_OAUTH_CLIENT_ID,
@@ -5929,7 +5929,7 @@ def _start_xai_loopback_flow(profile: Optional[str] = None) -> Dict[str, Any]:
     background worker that waits for the redirect and finishes the exchange.
     Returns the authorize URL for the client to open in the browser.
     """
-    from hermes_cli import auth as hauth
+    from hermes_agent.hermes_cli import auth as hauth
 
     discovery = hauth._xai_oauth_discovery()
     server, thread, callback_result, redirect_uri = hauth._xai_start_callback_server()
@@ -5988,7 +5988,7 @@ def _xai_loopback_worker(session_id: str) -> None:
     """Wait for the xAI loopback callback, exchange the code, persist tokens."""
     from datetime import datetime, timezone
 
-    from hermes_cli import auth as hauth
+    from hermes_agent.hermes_cli import auth as hauth
 
     with _oauth_sessions_lock:
         sess = _oauth_sessions.get(session_id)
@@ -6095,7 +6095,7 @@ def _add_xai_oauth_pool_entry(
     try:
         import uuid
 
-        from agent.credential_pool import (
+        from hermes_agent.agent.credential_pool import (
             PooledCredential,
             load_pool,
             AUTH_TYPE_OAUTH,
@@ -6130,7 +6130,7 @@ def _add_xai_oauth_pool_entry(
 
 def _nous_poller(session_id: str) -> None:
     """Background poller that drives a Nous device-code flow to completion."""
-    from hermes_cli.auth import (
+    from hermes_agent.hermes_cli.auth import (
         _poll_for_token,
         refresh_nous_oauth_from_state,
     )
@@ -6180,7 +6180,7 @@ def _nous_poller(session_id: str) -> None:
                 timeout_seconds=15.0,
                 force_refresh=False,
             )
-            from hermes_cli.auth import persist_nous_credentials
+            from hermes_agent.hermes_cli.auth import persist_nous_credentials
             persist_nous_credentials(full_state)
         with _oauth_sessions_lock:
             sess["status"] = "approved"
@@ -6203,7 +6203,7 @@ def _minimax_poller(session_id: str) -> None:
     path leaves the system in the same state as
     ``hermes auth add minimax-oauth``.
     """
-    from hermes_cli.auth import (
+    from hermes_agent.hermes_cli.auth import (
         _minimax_poll_token,
         _minimax_resolve_token_expiry_unix,
         _minimax_save_auth_state,
@@ -6293,7 +6293,7 @@ def _codex_full_login_worker(session_id: str) -> None:
     """
     try:
         import httpx
-        from hermes_cli.auth import (
+        from hermes_agent.hermes_cli.auth import (
             CODEX_OAUTH_CLIENT_ID,
             CODEX_OAUTH_TOKEN_URL,
             DEFAULT_CODEX_BASE_URL,
@@ -6376,7 +6376,7 @@ def _codex_full_login_worker(session_id: str) -> None:
         if not access_token:
             raise RuntimeError("token exchange did not return access_token")
 
-        from hermes_cli.auth import _save_codex_tokens
+        from hermes_agent.hermes_cli.auth import _save_codex_tokens
 
         with _profile_scope(_oauth_session_profile(session_id)):
             _save_codex_tokens({
@@ -6539,7 +6539,7 @@ def _session_latest_descendant(session_id: str):
     /model may create child sessions. Dashboard refresh should continue the
     newest child instead of reopening the old parent.
     """
-    from hermes_state import SessionDB
+    from hermes_agent.hermes_state import SessionDB
 
     def row_get(row, key, index):
         if isinstance(row, dict):
@@ -6757,7 +6757,7 @@ def _open_session_db_for_profile(profile: Optional[str]):
     ``state.db`` directly so the primary backend can serve cross-profile reads
     (transcripts, detail) without spawning that profile's backend.
     """
-    from hermes_state import SessionDB
+    from hermes_agent.hermes_state import SessionDB
     if not profile:
         return SessionDB()
     _name, home = _cron_profile_home(profile)
@@ -6916,7 +6916,7 @@ async def get_logs(
     component: Optional[str] = None,
     search: Optional[str] = None,
 ):
-    from hermes_cli.logs import _read_tail, LOG_FILES
+    from hermes_agent.hermes_cli.logs import _read_tail, LOG_FILES
 
     log_name = LOG_FILES.get(file)
     if not log_name:
@@ -6926,7 +6926,7 @@ async def get_logs(
         return {"file": file, "lines": []}
 
     try:
-        from hermes_logging import COMPONENT_PREFIXES
+        from hermes_agent.hermes_logging import COMPONENT_PREFIXES
     except ImportError:
         COMPONENT_PREFIXES = {}
 
@@ -6983,7 +6983,7 @@ _CRON_PROFILE_LOCK = threading.RLock()
 
 def _cron_profile_dicts() -> List[Dict[str, Any]]:
     """Return dashboard profile records, falling back to a directory scan."""
-    from hermes_cli import profiles as profiles_mod
+    from hermes_agent.hermes_cli import profiles as profiles_mod
     try:
         return [_profile_to_dict(p) for p in profiles_mod.list_profiles()]
     except Exception:
@@ -6993,7 +6993,7 @@ def _cron_profile_dicts() -> List[Dict[str, Any]]:
 
 def _cron_profile_home(profile: Optional[str]) -> Tuple[str, Path]:
     """Resolve a profile query value to (profile_name, HERMES_HOME)."""
-    from hermes_cli import profiles as profiles_mod
+    from hermes_agent.hermes_cli import profiles as profiles_mod
 
     raw = (profile or "default").strip() or "default"
     try:
@@ -7025,7 +7025,7 @@ def _call_cron_for_profile(profile: Optional[str], func_name: str, *args, **kwar
     """
     profile_name, home = _cron_profile_home(profile)
     with _CRON_PROFILE_LOCK:
-        from cron import jobs as cron_jobs
+        from hermes_agent.cron import jobs as cron_jobs
 
         old_cron_dir = cron_jobs.CRON_DIR
         old_jobs_file = cron_jobs.JOBS_FILE
@@ -7170,7 +7170,7 @@ async def get_cron_delivery_targets():
         }
     ]
     try:
-        from cron.scheduler import cron_delivery_targets
+        from hermes_agent.cron.scheduler import cron_delivery_targets
 
         targets.extend(cron_delivery_targets())
     except Exception:
@@ -7258,11 +7258,11 @@ async def list_cron_blueprints():
     form never offers a platform that isn't connected.
     """
     try:
-        from cron.blueprint_catalog import CATALOG, blueprint_catalog_entry
+        from hermes_agent.cron.blueprint_catalog import CATALOG, blueprint_catalog_entry
 
         deliver_options = None
         try:
-            from cron.scheduler import cron_delivery_targets
+            from hermes_agent.cron.scheduler import cron_delivery_targets
 
             platforms = [t["id"] for t in cron_delivery_targets() if t.get("id")]
             deliver_options = ["origin", "local", *platforms]
@@ -7287,7 +7287,7 @@ async def list_cron_blueprints():
 async def instantiate_blueprint(body: AutomationBlueprintInstantiate, profile: str = "default"):
     """Fill a blueprint's slots and create the cron job (form-submit path)."""
     try:
-        from cron.blueprint_catalog import fill_blueprint, get_blueprint, BlueprintFillError
+        from hermes_agent.cron.blueprint_catalog import fill_blueprint, get_blueprint, BlueprintFillError
 
         blueprint = get_blueprint(body.blueprint)
         if blueprint is None:
@@ -7359,7 +7359,7 @@ def _mcp_server_summary(name: str, cfg: Dict[str, Any]) -> Dict[str, Any]:
 
 @app.get("/api/mcp/servers")
 async def list_mcp_servers(profile: Optional[str] = None):
-    from hermes_cli.mcp_config import _get_mcp_servers
+    from hermes_agent.hermes_cli.mcp_config import _get_mcp_servers
 
     with _profile_scope(profile):
         servers = _get_mcp_servers()
@@ -7372,7 +7372,7 @@ async def list_mcp_servers(profile: Optional[str] = None):
 
 @app.post("/api/mcp/servers")
 async def add_mcp_server(body: MCPServerCreate, profile: Optional[str] = None):
-    from hermes_cli.mcp_config import _get_mcp_servers, _save_mcp_server
+    from hermes_agent.hermes_cli.mcp_config import _get_mcp_servers, _save_mcp_server
 
     name = (body.name or "").strip()
     if not name:
@@ -7417,7 +7417,7 @@ async def add_mcp_server(body: MCPServerCreate, profile: Optional[str] = None):
 
 @app.delete("/api/mcp/servers/{name}")
 async def remove_mcp_server(name: str, profile: Optional[str] = None):
-    from hermes_cli.mcp_config import _remove_mcp_server
+    from hermes_agent.hermes_cli.mcp_config import _remove_mcp_server
 
     with _profile_scope(profile):
         removed = _remove_mcp_server(name)
@@ -7429,7 +7429,7 @@ async def remove_mcp_server(name: str, profile: Optional[str] = None):
 @app.post("/api/mcp/servers/{name}/test")
 async def test_mcp_server(name: str, profile: Optional[str] = None):
     """Connect to the server, list its tools, disconnect.  Returns tool list."""
-    from hermes_cli.mcp_config import _get_mcp_servers, _probe_single_server
+    from hermes_agent.hermes_cli.mcp_config import _get_mcp_servers, _probe_single_server
 
     with _profile_scope(profile):
         servers = _get_mcp_servers()
@@ -7504,7 +7504,7 @@ async def list_mcp_catalog(profile: Optional[str] = None):
     and identical for every profile).
     """
     try:
-        from hermes_cli import mcp_catalog
+        from hermes_agent.hermes_cli import mcp_catalog
     except Exception as exc:
         _log.exception("mcp_catalog import failed")
         raise HTTPException(status_code=500, detail=f"Catalog unavailable: {exc}")
@@ -7569,7 +7569,7 @@ async def install_mcp_catalog_entry(body: MCPCatalogInstall, profile: Optional[s
     Entries that need a git bootstrap (``needs_install``) are installed via
     the CLI action path because the clone can take time.
     """
-    from hermes_cli import mcp_catalog
+    from hermes_agent.hermes_cli import mcp_catalog
 
     name = (body.name or "").strip()
     entry = mcp_catalog.get_entry(name)
@@ -7643,7 +7643,7 @@ class PairingRevoke(BaseModel):
 
 
 def _pairing_store():
-    from gateway.pairing import PairingStore
+    from hermes_agent.gateway.pairing import PairingStore
 
     return PairingStore()
 
@@ -7742,7 +7742,7 @@ def _webhook_route_summary(name: str, route: Dict[str, Any], base_url: str) -> D
 
 @app.get("/api/webhooks")
 async def list_webhooks():
-    import hermes_cli.webhook as wh
+    import hermes_agent.hermes_cli.webhook as wh
 
     base_url = wh._get_webhook_base_url()
     subs = wh._load_subscriptions()
@@ -7782,7 +7782,7 @@ async def create_webhook(body: WebhookCreate):
     import re as _re
     import secrets as _secrets
     import time as _time
-    import hermes_cli.webhook as wh
+    import hermes_agent.hermes_cli.webhook as wh
 
     if not wh._is_webhook_enabled():
         raise HTTPException(
@@ -7831,7 +7831,7 @@ async def create_webhook(body: WebhookCreate):
 
 @app.delete("/api/webhooks/{name}")
 async def delete_webhook(name: str):
-    import hermes_cli.webhook as wh
+    import hermes_agent.hermes_cli.webhook as wh
 
     key = (name or "").strip().lower()
     subs = wh._load_subscriptions()
@@ -7855,7 +7855,7 @@ async def set_webhook_enabled(name: str, body: WebhookEnabledToggle):
     gateway hot-reloads the subscriptions file, so this takes effect on the
     next event without a restart.
     """
-    import hermes_cli.webhook as wh
+    import hermes_agent.hermes_cli.webhook as wh
 
     key = (name or "").strip().lower()
     subs = wh._load_subscriptions()
@@ -7939,8 +7939,8 @@ def _pool_entry_summary(entry: Any, index: int) -> Dict[str, Any]:
 
 @app.get("/api/credentials/pool")
 async def list_credential_pool():
-    from agent.credential_pool import load_pool
-    from hermes_cli.auth import read_credential_pool
+    from hermes_agent.agent.credential_pool import load_pool
+    from hermes_agent.hermes_cli.auth import read_credential_pool
 
     providers = []
     # read_credential_pool(None) lists every provider that has pooled entries;
@@ -7967,7 +7967,7 @@ async def list_credential_pool():
 @app.post("/api/credentials/pool")
 async def add_credential_pool_entry(body: CredentialPoolAdd):
     import uuid as _uuid
-    from agent.credential_pool import (
+    from hermes_agent.agent.credential_pool import (
         load_pool,
         PooledCredential,
         AUTH_TYPE_API_KEY,
@@ -8001,7 +8001,7 @@ async def add_credential_pool_entry(body: CredentialPoolAdd):
 @app.delete("/api/credentials/pool/{provider}/{index}")
 async def remove_credential_pool_entry(provider: str, index: int):
     """Remove a pool entry.  ``index`` is 1-based (matches the list response)."""
-    from agent.credential_pool import load_pool
+    from hermes_agent.agent.credential_pool import load_pool
 
     provider = (provider or "").strip().lower()
     try:
@@ -8038,7 +8038,7 @@ class MemoryReset(BaseModel):
 
 @app.get("/api/memory")
 async def get_memory_status():
-    from plugins.memory import discover_memory_providers
+    from hermes_agent.plugins.memory import discover_memory_providers
 
     cfg = load_config()
     active = ""
@@ -8078,7 +8078,7 @@ async def set_memory_provider(body: MemoryProviderSelect):
         provider = ""
 
     if provider:
-        from plugins.memory import discover_memory_providers
+        from hermes_agent.plugins.memory import discover_memory_providers
 
         valid = {name for name, _d, _c in discover_memory_providers()}
         if provider not in valid:
@@ -8208,11 +8208,11 @@ async def list_hooks():
     currently executable, plus the set of valid hook events so the create
     form can offer them.
     """
-    from hermes_cli.config import load_config as _load_config
-    from agent import shell_hooks
+    from hermes_agent.hermes_cli.config import load_config as _load_config
+    from hermes_agent.agent import shell_hooks
 
     try:
-        from hermes_cli.plugins import VALID_HOOKS
+        from hermes_agent.hermes_cli.plugins import VALID_HOOKS
         valid_events = sorted(VALID_HOOKS)
     except Exception:
         valid_events = []
@@ -8268,7 +8268,7 @@ async def create_hook(body: HookCreate):
     consent in the allowlist so the hook actually fires.  Takes effect on the
     next session / gateway restart.
     """
-    from agent import shell_hooks
+    from hermes_agent.agent import shell_hooks
 
     event = (body.event or "").strip()
     command = (body.command or "").strip()
@@ -8276,7 +8276,7 @@ async def create_hook(body: HookCreate):
         raise HTTPException(status_code=400, detail="event and command are required")
 
     try:
-        from hermes_cli.plugins import VALID_HOOKS
+        from hermes_agent.hermes_cli.plugins import VALID_HOOKS
         if event not in VALID_HOOKS:
             raise HTTPException(
                 status_code=400,
@@ -8324,7 +8324,7 @@ class HookDelete(BaseModel):
 @app.delete("/api/ops/hooks")
 async def delete_hook(body: HookDelete):
     """Remove a hook from config.yaml and revoke its consent allowlist entry."""
-    from agent import shell_hooks
+    from hermes_agent.agent import shell_hooks
 
     event = (body.event or "").strip()
     command = (body.command or "").strip()
@@ -8427,7 +8427,7 @@ def _profile_cli_args(profile: Optional[str]) -> List[str]:
     requested = (profile or "").strip()
     if not requested or requested.lower() in {"current", "default"}:
         return []
-    from hermes_cli import profiles as profiles_mod
+    from hermes_agent.hermes_cli import profiles as profiles_mod
     _resolve_profile_dir(requested)
     return ["-p", profiles_mod.normalize_profile_name(requested)]
 
@@ -8532,7 +8532,7 @@ def _installed_hub_identifiers(profile: Optional[str] = None) -> dict:
     Best-effort: returns an empty dict if the lock file can't be read.
     """
     try:
-        from tools.skills_hub import HubLockFile
+        from hermes_agent.tools.skills_hub import HubLockFile
 
         requested = (profile or "").strip()
         if requested and requested.lower() != "current":
@@ -8566,7 +8566,7 @@ async def list_skills_hub_sources(profile: Optional[str] = None):
     """
 
     def _run():
-        from tools.skills_hub import create_source_router
+        from hermes_agent.tools.skills_hub import create_source_router
 
         sources = create_source_router()
         out = []
@@ -8631,7 +8631,7 @@ async def search_skills_hub(
         return {"results": [], "source_counts": {}, "timed_out": [], "installed": {}}
 
     def _run():
-        from tools.skills_hub import create_source_router, parallel_search_sources
+        from hermes_agent.tools.skills_hub import create_source_router, parallel_search_sources
 
         sources = create_source_router()
         capped = min(max(limit, 1), 50)
@@ -8679,8 +8679,8 @@ async def preview_skill_hub(identifier: str = ""):
         raise HTTPException(status_code=400, detail="identifier is required")
 
     def _run():
-        from hermes_cli.skills_hub import _resolve_source_meta_and_bundle
-        from tools.skills_hub import create_source_router
+        from hermes_agent.hermes_cli.skills_hub import _resolve_source_meta_and_bundle
+        from hermes_agent.tools.skills_hub import create_source_router
 
         sources = create_source_router()
         meta, bundle, _src = _resolve_source_meta_and_bundle(ident, sources)
@@ -8743,9 +8743,9 @@ async def scan_skill_hub(identifier: str = ""):
     def _run():
         import shutil as _shutil
 
-        from hermes_cli.skills_hub import _resolve_source_meta_and_bundle
-        from tools.skills_hub import create_source_router, quarantine_bundle
-        from tools.skills_guard import scan_skill, should_allow_install
+        from hermes_agent.hermes_cli.skills_hub import _resolve_source_meta_and_bundle
+        from hermes_agent.tools.skills_hub import create_source_router, quarantine_bundle
+        from hermes_agent.tools.skills_guard import scan_skill, should_allow_install
 
         sources = create_source_router()
         meta, bundle, _src = _resolve_source_meta_and_bundle(ident, sources)
@@ -8957,7 +8957,7 @@ def _fallback_profile_dicts(profiles_mod) -> List[Dict[str, Any]]:
 
 def _resolve_profile_dir(name: str) -> Path:
     """Validate ``name`` and resolve to its directory or raise an HTTPException."""
-    from hermes_cli import profiles as profiles_mod
+    from hermes_agent.hermes_cli import profiles as profiles_mod
     try:
         profiles_mod.validate_profile_name(name)
     except ValueError as e:
@@ -8982,7 +8982,7 @@ def _write_profile_model(profile_dir: Path, provider: str, model: str) -> None:
     Clears any stale ``base_url`` / ``context_length`` the same way
     ``POST /api/model/set`` does, since the new model may differ.
     """
-    from hermes_constants import set_hermes_home_override, reset_hermes_home_override
+    from hermes_agent.hermes_constants import set_hermes_home_override, reset_hermes_home_override
 
     token = set_hermes_home_override(str(profile_dir))
     try:
@@ -9006,8 +9006,8 @@ def _write_profile_mcp_servers(profile_dir: Path, servers: List["MCPServerCreate
     but batched so the whole profile-create write is a single config save.
     Returns the number of servers written.
     """
-    from hermes_constants import set_hermes_home_override, reset_hermes_home_override
-    from hermes_cli.mcp_security import validate_mcp_server_entry
+    from hermes_agent.hermes_constants import set_hermes_home_override, reset_hermes_home_override
+    from hermes_agent.hermes_cli.mcp_security import validate_mcp_server_entry
 
     written = 0
     token = set_hermes_home_override(str(profile_dir))
@@ -9062,8 +9062,8 @@ def _disable_unselected_skills(profile_dir: Path, keep: List[str]) -> int:
     install.) Scoped to the profile via the HERMES_HOME override. Returns the
     number of skills newly disabled.
     """
-    from hermes_constants import set_hermes_home_override, reset_hermes_home_override
-    from hermes_cli.skills_config import get_disabled_skills, save_disabled_skills
+    from hermes_agent.hermes_constants import set_hermes_home_override, reset_hermes_home_override
+    from hermes_agent.hermes_cli.skills_config import get_disabled_skills, save_disabled_skills
 
     keep_set = {s.strip() for s in keep if s and s.strip()}
     disabled_count = 0
@@ -9089,7 +9089,7 @@ def _disable_unselected_skills(profile_dir: Path, keep: List[str]) -> int:
 
 @app.get("/api/profiles")
 async def list_profiles_endpoint():
-    from hermes_cli import profiles as profiles_mod
+    from hermes_agent.hermes_cli import profiles as profiles_mod
     try:
         return {"profiles": [_profile_to_dict(p) for p in profiles_mod.list_profiles()]}
     except Exception:
@@ -9099,7 +9099,7 @@ async def list_profiles_endpoint():
 
 @app.post("/api/profiles")
 async def create_profile_endpoint(body: ProfileCreate):
-    from hermes_cli import profiles as profiles_mod
+    from hermes_agent.hermes_cli import profiles as profiles_mod
     explicit_source = (body.clone_from or "").strip()
     if explicit_source:
         # Duplicating a specific profile: clone its config/skills/SOUL (or full
@@ -9219,7 +9219,7 @@ async def get_active_profile_endpoint():
     the profile new CLI invocations pick up. ``current`` is the profile
     the running dashboard/gateway is scoped to (derived from HERMES_HOME).
     """
-    from hermes_cli import profiles as profiles_mod
+    from hermes_agent.hermes_cli import profiles as profiles_mod
     try:
         active = profiles_mod.get_active_profile() or "default"
     except Exception:
@@ -9238,7 +9238,7 @@ async def set_active_profile_endpoint(body: ProfileActiveUpdate):
     Note: this does not retarget the already-running dashboard process —
     it changes which profile subsequent CLI commands and gateways use.
     """
-    from hermes_cli import profiles as profiles_mod
+    from hermes_agent.hermes_cli import profiles as profiles_mod
     try:
         profiles_mod.set_active_profile(body.name)
     except FileNotFoundError as e:
@@ -9312,7 +9312,7 @@ async def open_profile_terminal_endpoint(name: str):
 
 @app.patch("/api/profiles/{name}")
 async def rename_profile_endpoint(name: str, body: ProfileRename):
-    from hermes_cli import profiles as profiles_mod
+    from hermes_agent.hermes_cli import profiles as profiles_mod
     try:
         path = profiles_mod.rename_profile(name, body.new_name)
     except FileNotFoundError as e:
@@ -9330,7 +9330,7 @@ async def delete_profile_endpoint(name: str):
     """Delete a profile. The dashboard collects the user's confirmation in
     its own dialog before this request, so we always pass ``yes=True`` to
     skip the CLI's interactive prompt."""
-    from hermes_cli import profiles as profiles_mod
+    from hermes_agent.hermes_cli import profiles as profiles_mod
     try:
         path = profiles_mod.delete_profile(name, yes=True)
     except FileNotFoundError as e:
@@ -9373,7 +9373,7 @@ async def update_profile_description_endpoint(name: str, body: ProfileDescriptio
     user-authored description (``description_auto: false``) so the
     auto-describer won't overwrite it on a sweep.
     """
-    from hermes_cli import profiles as profiles_mod
+    from hermes_agent.hermes_cli import profiles as profiles_mod
     profile_dir = _resolve_profile_dir(name)
     text = (body.description or "").strip()
     try:
@@ -9420,7 +9420,7 @@ async def describe_profile_auto_endpoint(name: str, body: ProfileDescribeAuto):
     """
     _resolve_profile_dir(name)
     try:
-        from hermes_cli import profile_describer
+        from hermes_agent.hermes_cli import profile_describer
         outcome = profile_describer.describe_profile(name, overwrite=bool(body.overwrite))
     except Exception as e:
         _log.exception("POST /api/profiles/%s/describe-auto failed", name)
@@ -9476,13 +9476,13 @@ def _profile_scope(profile: Optional[str]):
     """
     requested = (profile or "").strip()
 
-    from hermes_constants import (
+    from hermes_agent.hermes_constants import (
         get_hermes_home,
         set_hermes_home_override,
         reset_hermes_home_override,
     )
-    from tools import skills_tool as _skills_tool
-    from tools import skill_manager_tool as _skill_mgr
+    from hermes_agent.tools import skills_tool as _skills_tool
+    from hermes_agent.tools import skill_manager_tool as _skill_mgr
 
     token = None
     if not requested or requested.lower() == "current":
@@ -9532,7 +9532,7 @@ def _config_profile_scope(profile: Optional[str]):
         yield None
         return
 
-    from hermes_constants import (
+    from hermes_agent.hermes_constants import (
         set_hermes_home_override,
         reset_hermes_home_override,
     )
@@ -9553,8 +9553,8 @@ class SkillToggle(BaseModel):
 
 @app.get("/api/skills")
 async def get_skills(profile: Optional[str] = None):
-    from tools.skills_tool import _find_all_skills
-    from hermes_cli.skills_config import get_disabled_skills
+    from hermes_agent.tools.skills_tool import _find_all_skills
+    from hermes_agent.hermes_cli.skills_config import get_disabled_skills
     with _profile_scope(profile):
         config = load_config()
         disabled = get_disabled_skills(config)
@@ -9566,7 +9566,7 @@ async def get_skills(profile: Optional[str] = None):
 
 @app.put("/api/skills/toggle")
 async def toggle_skill(body: SkillToggle, profile: Optional[str] = None):
-    from hermes_cli.skills_config import get_disabled_skills, save_disabled_skills
+    from hermes_agent.hermes_cli.skills_config import get_disabled_skills, save_disabled_skills
     with _profile_scope(body.profile or profile):
         config = load_config()
         disabled = get_disabled_skills(config)
@@ -9598,7 +9598,7 @@ def _clear_skills_prompt_cache() -> None:
     up by the next session without a manual cache reset.
     """
     try:
-        from agent.prompt_builder import clear_skills_system_prompt_cache
+        from hermes_agent.agent.prompt_builder import clear_skills_system_prompt_cache
         clear_skills_system_prompt_cache(clear_snapshot=True)
     except Exception:
         pass
@@ -9607,7 +9607,7 @@ def _clear_skills_prompt_cache() -> None:
 @app.get("/api/skills/content")
 async def get_skill_content(name: str, profile: Optional[str] = None):
     """Return the raw SKILL.md text for a skill, for the dashboard editor."""
-    from tools.skill_manager_tool import _find_skill
+    from hermes_agent.tools.skill_manager_tool import _find_skill
 
     with _profile_scope(profile):
         found = _find_skill(name)
@@ -9632,7 +9632,7 @@ async def create_skill(body: SkillCreate):
     optional security scan) — but bypasses the agent write-approval gate:
     a write from the authenticated dashboard IS the user acting directly.
     """
-    from tools.skill_manager_tool import _create_skill
+    from hermes_agent.tools.skill_manager_tool import _create_skill
 
     with _profile_scope(body.profile):
         result = _create_skill(body.name, body.content, body.category or None)
@@ -9645,7 +9645,7 @@ async def create_skill(body: SkillCreate):
 @app.put("/api/skills/content")
 async def update_skill_content(body: SkillContentUpdate):
     """Replace the SKILL.md of an existing skill (full rewrite) from the editor."""
-    from tools.skill_manager_tool import _edit_skill
+    from hermes_agent.tools.skill_manager_tool import _edit_skill
 
     with _profile_scope(body.profile):
         result = _edit_skill(body.name, body.content)
@@ -9659,13 +9659,13 @@ async def update_skill_content(body: SkillContentUpdate):
 
 @app.get("/api/tools/toolsets")
 async def get_toolsets(profile: Optional[str] = None):
-    from hermes_cli.tools_config import (
+    from hermes_agent.hermes_cli.tools_config import (
         _get_effective_configurable_toolsets,
         _get_platform_tools,
         _toolset_has_keys,
         gui_toolset_label,
     )
-    from toolsets import resolve_toolset
+    from hermes_agent.toolsets import resolve_toolset
 
     with _profile_scope(profile):
         config = load_config()
@@ -9707,7 +9707,7 @@ async def toggle_toolset(name: str, body: ToolsetToggle, profile: Optional[str] 
     lockstep. Scoped to ``body.profile`` when provided. Returns 400 for
     unknown toolset keys.
     """
-    from hermes_cli.tools_config import (
+    from hermes_agent.hermes_cli.tools_config import (
         _get_effective_configurable_toolsets,
         _get_platform_tools,
         _save_platform_tools,
@@ -9740,13 +9740,13 @@ async def get_toolset_config(name: str, profile: Optional[str] = None):
     entry. Toolsets without a ``TOOL_CATEGORIES`` entry return an empty
     provider list and ``has_category: false``. Returns 400 for unknown keys.
     """
-    from hermes_cli.tools_config import (
+    from hermes_agent.hermes_cli.tools_config import (
         TOOL_CATEGORIES,
         _get_effective_configurable_toolsets,
         _is_provider_active,
         _visible_providers,
     )
-    from hermes_cli.config import get_env_value
+    from hermes_agent.hermes_cli.config import get_env_value
 
     valid = {ts_key for ts_key, _, _ in _get_effective_configurable_toolsets()}
     if name not in valid:
@@ -9810,7 +9810,7 @@ async def select_toolset_provider(
     API keys and post-setup flows are handled by separate endpoints. Returns
     400 for unknown toolset or provider names.
     """
-    from hermes_cli.tools_config import (
+    from hermes_agent.hermes_cli.tools_config import (
         apply_provider_selection,
         _get_effective_configurable_toolsets,
     )
@@ -9846,12 +9846,12 @@ async def save_toolset_env(name: str, body: ToolsetEnvUpdate, profile: Optional[
     "leave unchanged" and skipped. Returns the saved/skipped key lists and the
     refreshed ``is_set`` status. Returns 400 for unknown toolset or env keys.
     """
-    from hermes_cli.tools_config import (
+    from hermes_agent.hermes_cli.tools_config import (
         TOOL_CATEGORIES,
         _get_effective_configurable_toolsets,
         _visible_providers,
     )
-    from hermes_cli.config import get_env_value, save_env_value
+    from hermes_agent.hermes_cli.config import get_env_value, save_env_value
 
     valid_ts = {ts_key for ts_key, _, _ in _get_effective_configurable_toolsets()}
     if name not in valid_ts:
@@ -9914,7 +9914,7 @@ async def run_toolset_post_setup(
     write per-profile state must see the same HERMES_HOME the rest of the
     drawer's writes targeted — so the scope is threaded for consistency.
     """
-    from hermes_cli.tools_config import (
+    from hermes_agent.hermes_cli.tools_config import (
         _get_effective_configurable_toolsets,
         valid_post_setup_keys,
     )
@@ -9990,7 +9990,7 @@ async def update_config_raw(body: RawConfigUpdate, profile: Optional[str] = None
 
 @app.get("/api/analytics/usage")
 async def get_usage_analytics(days: int = 30, profile: Optional[str] = None):
-    from agent.insights import InsightsEngine
+    from hermes_agent.agent.insights import InsightsEngine
 
     db = _open_session_db_for_profile(profile)
     try:
@@ -10157,7 +10157,7 @@ async def get_models_analytics(days: int = 30, profile: Optional[str] = None):
             model_name = row["model"]
             caps = {}
             try:
-                from agent.models_dev import get_model_capabilities
+                from hermes_agent.agent.models_dev import get_model_capabilities
                 mc = get_model_capabilities(provider=provider, model=model_name)
                 if mc is not None:
                     caps = {
@@ -10231,7 +10231,7 @@ async def get_models_analytics(days: int = 30, profile: Optional[str] = None):
 # so the /api/pty WebSocket handler needs no platform guards.
 if sys.platform.startswith("win"):
     try:
-        from hermes_cli.win_pty_bridge import WinPtyBridge as PtyBridge, PtyUnavailableError
+        from hermes_agent.hermes_cli.win_pty_bridge import WinPtyBridge as PtyBridge, PtyUnavailableError
         _PTY_BRIDGE_AVAILABLE = True
     except ImportError:  # pragma: no cover - pywinpty missing
         PtyBridge = None  # type: ignore[assignment]
@@ -10242,7 +10242,7 @@ if sys.platform.startswith("win"):
             pass
 else:
     try:
-        from hermes_cli.pty_bridge import PtyBridge, PtyUnavailableError
+        from hermes_agent.hermes_cli.pty_bridge import PtyBridge, PtyUnavailableError
         _PTY_BRIDGE_AVAILABLE = True
     except ImportError:  # pragma: no cover - dev env without ptyprocess
         PtyBridge = None  # type: ignore[assignment]
@@ -10424,8 +10424,8 @@ def _ws_auth_reason(ws: "WebSocket") -> tuple[Optional[str], str]:
     if auth_required:
         # Lazy import — keeps this function importable in test harnesses
         # that don't bring in the dashboard_auth layer.
-        from hermes_cli.dashboard_auth.audit import AuditEvent, audit_log
-        from hermes_cli.dashboard_auth.ws_tickets import (
+        from hermes_agent.hermes_cli.dashboard_auth.audit import AuditEvent, audit_log
+        from hermes_agent.hermes_cli.dashboard_auth.ws_tickets import (
             TicketInvalid,
             consume_internal_credential,
             consume_ticket,
@@ -10517,7 +10517,7 @@ def _resolve_chat_argv(
     dashboard's in-memory gateway runs under the dashboard's own profile,
     so a profile-scoped chat must spawn its own gateway subprocess.
     """
-    from hermes_cli.main import PROJECT_ROOT, _make_tui_argv
+    from hermes_agent.hermes_cli.main import PROJECT_ROOT, _make_tui_argv
 
     profile_dir: Optional[Path] = None
     requested = (profile or "").strip()
@@ -10527,7 +10527,7 @@ def _resolve_chat_argv(
     argv, cwd = _make_tui_argv(PROJECT_ROOT / "ui-tui", tui_dev=False)
     env = os.environ.copy()
     try:
-        from hermes_cli.config import apply_terminal_config_to_env
+        from hermes_agent.hermes_cli.config import apply_terminal_config_to_env
         apply_terminal_config_to_env(env=env)
     except Exception:
         _log.debug("Failed to apply terminal config bridge for dashboard chat", exc_info=True)
@@ -10588,7 +10588,7 @@ def _build_gateway_ws_url() -> Optional[str]:
     )
 
     if getattr(app.state, "auth_required", False):
-        from hermes_cli.dashboard_auth.ws_tickets import internal_ws_credential
+        from hermes_agent.hermes_cli.dashboard_auth.ws_tickets import internal_ws_credential
 
         qs = urllib.parse.urlencode({"internal": internal_ws_credential()})
     else:
@@ -10622,7 +10622,7 @@ def _build_sidecar_url(channel: str) -> Optional[str]:
     if getattr(app.state, "auth_required", False):
         # Gated mode — use the internal credential so the WS upgrade survives
         # _ws_auth_ok and the child can reconnect.
-        from hermes_cli.dashboard_auth.ws_tickets import internal_ws_credential
+        from hermes_agent.hermes_cli.dashboard_auth.ws_tickets import internal_ws_credential
 
         qs = urllib.parse.urlencode(
             {"internal": internal_ws_credential(), "channel": channel}
@@ -10832,7 +10832,7 @@ async def gateway_ws(ws: WebSocket) -> None:
         await ws.close(code=4403)
         return
 
-    from tui_gateway.ws import handle_ws
+    from hermes_agent.tui_gateway.ws import handle_ws
 
     await handle_ws(ws)
 
@@ -10929,7 +10929,7 @@ def _normalise_prefix(raw: Optional[str]) -> str:
     the gate middleware, the OAuth routes, the cookie helpers, and the
     SPA mount all agree on validation rules.
     """
-    from hermes_cli.dashboard_auth.prefix import normalise_prefix
+    from hermes_agent.hermes_cli.dashboard_auth.prefix import normalise_prefix
     return normalise_prefix(raw)
 
 
@@ -11454,7 +11454,7 @@ def _discover_dashboard_plugins() -> list:
     plugins = []
     seen_names: set = set()
 
-    from hermes_cli.plugins import get_bundled_plugins_dir
+    from hermes_agent.hermes_cli.plugins import get_bundled_plugins_dir
     bundled_root = get_bundled_plugins_dir()
     search_dirs = [
         (get_hermes_home() / "plugins", "user"),
@@ -11595,7 +11595,7 @@ def _strip_dashboard_manifest(p: Dict[str, Any]) -> Dict[str, Any]:
 
 def _merged_plugins_hub() -> Dict[str, Any]:
     """Agent discovery + dashboard manifests + optional provider picker metadata."""
-    from hermes_cli.plugins_cmd import (
+    from hermes_agent.hermes_cli.plugins_cmd import (
         _discover_all_plugins,
         _get_current_context_engine,
         _get_current_memory_provider,
@@ -11655,7 +11655,7 @@ def _merged_plugins_hub() -> Dict[str, Any]:
         provides_tools = manifest_data.get("provides_tools") or []
         if provides_tools:
             try:
-                from tools.registry import registry
+                from hermes_agent.tools.registry import registry
                 for tname in provides_tools:
                     entry = registry.get_entry(tname)
                     if entry and entry.check_fn and not entry.check_fn():
@@ -11728,7 +11728,7 @@ async def get_plugins_hub(request: Request):
 @app.post("/api/dashboard/agent-plugins/install")
 async def post_agent_plugin_install(request: Request, body: _AgentPluginInstallBody):
     _require_token(request)
-    from hermes_cli.plugins_cmd import dashboard_install_plugin
+    from hermes_agent.hermes_cli.plugins_cmd import dashboard_install_plugin
 
     result = dashboard_install_plugin(
         body.identifier.strip(),
@@ -11758,7 +11758,7 @@ def _validate_plugin_name(name: str) -> str:
 async def post_agent_plugin_enable(request: Request, name: str):
     _require_token(request)
     name = _validate_plugin_name(name)
-    from hermes_cli.plugins_cmd import dashboard_set_agent_plugin_enabled
+    from hermes_agent.hermes_cli.plugins_cmd import dashboard_set_agent_plugin_enabled
 
     result = dashboard_set_agent_plugin_enabled(name, enabled=True)
     if not result.get("ok"):
@@ -11770,7 +11770,7 @@ async def post_agent_plugin_enable(request: Request, name: str):
 async def post_agent_plugin_disable(request: Request, name: str):
     _require_token(request)
     name = _validate_plugin_name(name)
-    from hermes_cli.plugins_cmd import dashboard_set_agent_plugin_enabled
+    from hermes_agent.hermes_cli.plugins_cmd import dashboard_set_agent_plugin_enabled
 
     result = dashboard_set_agent_plugin_enabled(name, enabled=False)
     if not result.get("ok"):
@@ -11782,7 +11782,7 @@ async def post_agent_plugin_disable(request: Request, name: str):
 async def post_agent_plugin_update(request: Request, name: str):
     _require_token(request)
     name = _validate_plugin_name(name)
-    from hermes_cli.plugins_cmd import dashboard_update_user_plugin
+    from hermes_agent.hermes_cli.plugins_cmd import dashboard_update_user_plugin
 
     result = dashboard_update_user_plugin(name)
     if not result.get("ok"):
@@ -11795,7 +11795,7 @@ async def post_agent_plugin_update(request: Request, name: str):
 async def delete_agent_plugin(request: Request, name: str):
     _require_token(request)
     name = _validate_plugin_name(name)
-    from hermes_cli.plugins_cmd import dashboard_remove_user_plugin
+    from hermes_agent.hermes_cli.plugins_cmd import dashboard_remove_user_plugin
 
     result = dashboard_remove_user_plugin(name)
     if not result.get("ok"):
@@ -11813,7 +11813,7 @@ class _PluginProvidersPutBody(BaseModel):
 async def put_plugin_providers(request: Request, body: _PluginProvidersPutBody):
     """Persist memory provider / context engine selection (writes config.yaml)."""
     _require_token(request)
-    from hermes_cli.plugins_cmd import (
+    from hermes_agent.hermes_cli.plugins_cmd import (
         _save_context_engine,
         _save_memory_provider,
     )
@@ -12001,7 +12001,7 @@ _mount_plugin_api_routes()
 # SPA catch-all so /{full_path:path} doesn't swallow them.  These are
 # always mounted — the gate middleware decides whether to enforce auth,
 # not whether the routes exist.
-from hermes_cli.dashboard_auth.routes import router as _dashboard_auth_router  # noqa: E402
+from hermes_agent.hermes_cli.dashboard_auth.routes import router as _dashboard_auth_router  # noqa: E402
 app.include_router(_dashboard_auth_router)
 
 mount_spa(app)
@@ -12089,7 +12089,7 @@ def start_server(
         # Phase 3.5: the gate engages on non-loopback binds.  The legacy
         # "refusing to bind" guard is replaced by "require at least one
         # provider to be registered, else fail closed".
-        from hermes_cli.dashboard_auth import list_providers
+        from hermes_agent.hermes_cli.dashboard_auth import list_providers
         if not list_providers():
             # Surface the *specific* reason any bundled provider declined
             # to register (e.g. missing HERMES_DASHBOARD_OAUTH_CLIENT_ID).
@@ -12099,7 +12099,7 @@ def start_server(
             # is misleading when the provider IS installed but unconfigured.
             skip_reasons: list[str] = []
             try:
-                from plugins.dashboard_auth import nous as _nous_plugin
+                from hermes_agent.plugins.dashboard_auth import nous as _nous_plugin
 
                 if _nous_plugin.LAST_SKIP_REASON:
                     skip_reasons.append(

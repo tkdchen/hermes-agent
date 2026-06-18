@@ -50,7 +50,7 @@ sys.modules.setdefault("fal_client", types.SimpleNamespace())
 def transport():
     """Fresh ``ResponsesApiTransport`` per test (it is stateless but
     the import has side-effects on a global transport registry)."""
-    from agent.transports.codex import ResponsesApiTransport
+    from hermes_agent.agent.transports.codex import ResponsesApiTransport
 
     return ResponsesApiTransport()
 

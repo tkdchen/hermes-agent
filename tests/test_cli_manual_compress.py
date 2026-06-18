@@ -1,6 +1,6 @@
 from contextlib import nullcontext
 
-from cli import HermesCLI
+from hermes_agent.cli import HermesCLI
 
 
 class DummyAgent:
@@ -38,7 +38,7 @@ def test_manual_compress_does_not_pass_cached_system_prompt(monkeypatch):
     cli._busy_command = lambda _message: nullcontext()
 
     monkeypatch.setattr(
-        "agent.manual_compression_feedback.summarize_manual_compression",
+        "hermes_agent.agent.manual_compression_feedback.summarize_manual_compression",
         lambda *args, **kwargs: {
             "noop": False,
             "headline": "compressed",

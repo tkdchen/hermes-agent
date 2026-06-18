@@ -26,7 +26,7 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from utils import atomic_json_write, atomic_replace, atomic_yaml_write
+from hermes_agent.utils import atomic_json_write, atomic_replace, atomic_yaml_write
 
 
 # ─── Direct helper ────────────────────────────────────────────────────────────
@@ -175,7 +175,7 @@ def test_atomic_replace_copy_fallback(
     def fail_replace(src: str, dst: str) -> None:
         raise OSError(fail_errno, os.strerror(fail_errno), src, None, dst)
 
-    monkeypatch.setattr("utils.os.replace", fail_replace)
+    monkeypatch.setattr("hermes_agent.utils.os.replace", fail_replace)
 
     assert Path(atomic_replace(tmp, target)) == target
     assert target.read_text(encoding="utf-8") == "new\n"
@@ -194,7 +194,7 @@ def test_atomic_replace_copy_fallback_preserves_symlink(
     def fail_replace(src: str, dst: str) -> None:
         raise OSError(errno.EXDEV, os.strerror(errno.EXDEV), src, None, dst)
 
-    monkeypatch.setattr("utils.os.replace", fail_replace)
+    monkeypatch.setattr("hermes_agent.utils.os.replace", fail_replace)
 
     assert Path(atomic_replace(tmp, link)) == real
     assert link.is_symlink()
@@ -217,7 +217,7 @@ def test_atomic_replace_copy_fallback_preserves_metadata(
     def fail_replace(src: str, dst: str) -> None:
         raise OSError(errno.EBUSY, os.strerror(errno.EBUSY), src, None, dst)
 
-    monkeypatch.setattr("utils.os.replace", fail_replace)
+    monkeypatch.setattr("hermes_agent.utils.os.replace", fail_replace)
 
     atomic_replace(tmp, target)
     assert target.read_text(encoding="utf-8") == "new\n"
@@ -234,7 +234,7 @@ def test_atomic_replace_other_oserror_propagates(
     def fail_replace(src: str, dst: str) -> None:
         raise OSError(errno.EACCES, os.strerror(errno.EACCES), src, None, dst)
 
-    monkeypatch.setattr("utils.os.replace", fail_replace)
+    monkeypatch.setattr("hermes_agent.utils.os.replace", fail_replace)
 
     with pytest.raises(OSError) as excinfo:
         atomic_replace(tmp, target)

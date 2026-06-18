@@ -46,7 +46,7 @@ import uuid
 _IS_WINDOWS = platform.system() == "Windows"
 from typing import Any, Dict, List, Optional
 
-from tools.thread_context import propagate_context_to_thread
+from hermes_agent.tools.thread_context import propagate_context_to_thread
 
 # Availability gate.  On Windows we fall back to loopback TCP for the
 # sandbox RPC transport (AF_UNIX is unreliable on Windows Python) — see
@@ -150,7 +150,7 @@ def _scrub_child_env(source_env, is_passthrough=None, is_windows=None):
     """
     if is_passthrough is None:
         try:
-            from tools.env_passthrough import is_env_passthrough as _ep
+            from hermes_agent.tools.env_passthrough import is_env_passthrough as _ep
         except Exception:
             _ep = lambda _: False  # noqa: E731
         is_passthrough = _ep
@@ -478,7 +478,7 @@ def _rpc_server_loop(
     Accept one client connection and dispatch tool-call requests until
     the client disconnects or the call limit is reached.
     """
-    from model_tools import handle_function_call
+    from hermes_agent.model_tools import handle_function_call
 
     conn = None
     try:
@@ -604,7 +604,7 @@ def _get_or_create_env(task_id: str):
     terminal and file tools use, creating one if it doesn't exist yet.
     Returns ``(env, env_type)`` tuple.
     """
-    from tools.terminal_tool import (
+    from hermes_agent.tools.terminal_tool import (
         _active_environments, _env_lock, _create_environment,
         _get_env_config, _last_activity, _start_cleanup_thread,
         _creation_locks, _creation_locks_lock, _task_env_overrides,
@@ -748,7 +748,7 @@ def _rpc_poll_loop(
     independent process, so these calls run safely concurrent with the
     script-execution thread.
     """
-    from model_tools import handle_function_call
+    from hermes_agent.model_tools import handle_function_call
 
     poll_interval = 0.1  # 100 ms
 
@@ -1028,11 +1028,11 @@ def _execute_remote(
         )
 
     # Strip ANSI escape sequences
-    from tools.ansi_strip import strip_ansi
+    from hermes_agent.tools.ansi_strip import strip_ansi
     stdout_text = strip_ansi(stdout_text)
 
     # Redact secrets
-    from agent.redact import redact_sensitive_text
+    from hermes_agent.agent.redact import redact_sensitive_text
     stdout_text = redact_sensitive_text(stdout_text)
 
     # Build response
@@ -1102,14 +1102,14 @@ def execute_code(
         return tool_error("No code provided.")
 
     # Dispatch: remote backends use file-based RPC, local uses UDS
-    from tools.terminal_tool import _get_env_config
+    from hermes_agent.tools.terminal_tool import _get_env_config
     env_type = _get_env_config()["env_type"]
 
     # execute_code runs arbitrary Python (subprocess/os.system/...) that never
     # passes through terminal()/DANGEROUS_PATTERNS, so guard the whole script
     # here before either dispatch path spawns it. Runs synchronously in the
     # caller (tool-executor) thread, which holds the session context (#30882).
-    from tools.approval import check_execute_code_guard
+    from hermes_agent.tools.approval import check_execute_code_guard
     _guard = check_execute_code_guard(code, env_type)
     if not _guard.get("approved", False):
         return json.dumps({
@@ -1125,7 +1125,7 @@ def execute_code(
     # --- Local execution path (UDS) --- below this line is unchanged ---
 
     # Import per-thread interrupt check (cooperative cancellation)
-    from tools.interrupt import is_interrupted as _is_interrupted
+    from hermes_agent.tools.interrupt import is_interrupted as _is_interrupted
 
     # Resolve config
     _cfg = _load_config()
@@ -1270,7 +1270,7 @@ def execute_code(
             child_env["TZ"] = _tz_name
         child_env.pop("HERMES_TIMEZONE", None)
 
-        from hermes_constants import apply_subprocess_home_env
+        from hermes_agent.hermes_constants import apply_subprocess_home_env
         apply_subprocess_home_env(child_env)
 
         # Resolve interpreter + CWD based on execute_code mode.
@@ -1375,7 +1375,7 @@ def execute_code(
             "start": exec_start,
         }
         try:
-            from tools.environments.base import touch_activity_if_due
+            from hermes_agent.tools.environments.base import touch_activity_if_due
         except Exception:
             touch_activity_if_due = None
         poll_interval = 0.005
@@ -1433,7 +1433,7 @@ def execute_code(
 
         # Strip ANSI escape sequences so the model never sees terminal
         # formatting — prevents it from copying escapes into file writes.
-        from tools.ansi_strip import strip_ansi
+        from hermes_agent.tools.ansi_strip import strip_ansi
         stdout_text = strip_ansi(stdout_text)
         stderr_text = strip_ansi(stderr_text)
 
@@ -1441,7 +1441,7 @@ def execute_code(
         # The sandbox env-var filter (lines 434-454) blocks os.environ access,
         # but scripts can still read secrets from disk (e.g. open('~/.hermes/.env')).
         # This ensures leaked secrets never enter the model context.
-        from agent.redact import redact_sensitive_text
+        from hermes_agent.agent.redact import redact_sensitive_text
         stdout_text = redact_sensitive_text(stdout_text)
         stderr_text = redact_sensitive_text(stderr_text)
 
@@ -1575,7 +1575,7 @@ def _load_config() -> dict:
     key cleanly falls back to DEFAULT_EXECUTION_MODE.
     """
     try:
-        from hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.config import read_raw_config
 
         cfg = read_raw_config().get("code_execution", {})
         return cfg if isinstance(cfg, dict) else {}
@@ -1832,7 +1832,7 @@ EXECUTE_CODE_SCHEMA = build_execute_code_schema()
 
 
 # --- Registry ---
-from tools.registry import registry, tool_error
+from hermes_agent.tools.registry import registry, tool_error
 
 registry.register(
     name="execute_code",

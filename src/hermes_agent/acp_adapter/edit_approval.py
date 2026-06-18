@@ -107,7 +107,7 @@ def _proposal_for_patch_replace(arguments: dict[str, Any]) -> EditProposal:
     if old_text is None:
         raise ValueError(f"Failed to read file: {path}")
 
-    from tools.fuzzy_match import fuzzy_find_and_replace
+    from hermes_agent.tools.fuzzy_match import fuzzy_find_and_replace
 
     new_text, match_count, _strategy, error = fuzzy_find_and_replace(
         old_text,
@@ -242,7 +242,7 @@ def make_acp_edit_approval_requester(
 
     def _requester(proposal: EditProposal) -> bool:
         from acp.schema import PermissionOption
-        from agent.async_utils import safe_schedule_threadsafe
+        from hermes_agent.agent.async_utils import safe_schedule_threadsafe
 
         if auto_approve_getter is not None:
             try:

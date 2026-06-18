@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from run_agent import AIAgent
+from hermes_agent.run_agent import AIAgent
 
 
 def _make_agent_openrouter():
@@ -90,7 +90,7 @@ def test_openai_client_rebuild_failure_rolls_back_to_original_state():
 
     agent._create_openai_client = boom
 
-    with patch("hermes_cli.timeouts.get_provider_request_timeout", return_value=None):
+    with patch("hermes_agent.hermes_cli.timeouts.get_provider_request_timeout", return_value=None):
         with pytest.raises(RuntimeError, match="simulated client build failure"):
             agent.switch_model(
                 new_model="openai/gpt-5",
@@ -120,15 +120,15 @@ def test_anthropic_client_rebuild_failure_rolls_back_to_original_state():
 
     with (
         patch(
-            "agent.anthropic_adapter.build_anthropic_client",
+            "hermes_agent.agent.anthropic_adapter.build_anthropic_client",
             side_effect=RuntimeError("simulated anthropic build failure"),
         ),
         patch(
-            "agent.anthropic_adapter.resolve_anthropic_token",
+            "hermes_agent.agent.anthropic_adapter.resolve_anthropic_token",
             return_value="sk-ant-resolved",
         ),
-        patch("agent.anthropic_adapter._is_oauth_token", return_value=False),
-        patch("hermes_cli.timeouts.get_provider_request_timeout", return_value=None),
+        patch("hermes_agent.agent.anthropic_adapter._is_oauth_token", return_value=False),
+        patch("hermes_agent.hermes_cli.timeouts.get_provider_request_timeout", return_value=None),
     ):
         with pytest.raises(RuntimeError, match="simulated anthropic build failure"):
             agent.switch_model(
@@ -164,7 +164,7 @@ def test_cross_branch_anthropic_to_openai_rebuild_failure_rolls_back():
 
     agent._create_openai_client = boom
 
-    with patch("hermes_cli.timeouts.get_provider_request_timeout", return_value=None):
+    with patch("hermes_agent.hermes_cli.timeouts.get_provider_request_timeout", return_value=None):
         with pytest.raises(RuntimeError, match="openai client failed"):
             agent.switch_model(
                 new_model="x-ai/grok-4",
@@ -189,7 +189,7 @@ def test_successful_switch_still_works_after_rollback_refactor():
     new_client = MagicMock(name="NewClient")
     agent._create_openai_client = lambda *_a, **_kw: new_client
 
-    with patch("hermes_cli.timeouts.get_provider_request_timeout", return_value=None):
+    with patch("hermes_agent.hermes_cli.timeouts.get_provider_request_timeout", return_value=None):
         agent.switch_model(
             new_model="openai/gpt-5",
             new_provider="openrouter",

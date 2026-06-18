@@ -18,8 +18,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 def _make_adapter():
     """Build a minimal APIServerAdapter with mocked internals."""
-    from gateway.platforms.api_server import APIServerAdapter
-    from gateway.config import PlatformConfig
+    from hermes_agent.gateway.platforms.api_server import APIServerAdapter
+    from hermes_agent.gateway.config import PlatformConfig
 
     config = PlatformConfig(enabled=True, token="test-key")
     adapter = APIServerAdapter(config)
@@ -76,7 +76,7 @@ class TestSSEAgentCancelOnDisconnect:
             with patch.object(type(adapter), '_write_sse_chat_completion',
                               adapter._write_sse_chat_completion):
                 # Patch StreamResponse creation
-                with patch("gateway.platforms.api_server.web.StreamResponse",
+                with patch("hermes_agent.gateway.platforms.api_server.web.StreamResponse",
                            return_value=mock_response):
                     await adapter._write_sse_chat_completion(
                         _make_request(), "cmpl-123", "gpt-4", 1234567890,
@@ -111,7 +111,7 @@ class TestSSEAgentCancelOnDisconnect:
             mock_response.write = AsyncMock()
             mock_response.prepare = AsyncMock()
 
-            with patch("gateway.platforms.api_server.web.StreamResponse",
+            with patch("hermes_agent.gateway.platforms.api_server.web.StreamResponse",
                        return_value=mock_response):
                 await adapter._write_sse_chat_completion(
                     _make_request(), "cmpl-456", "gpt-4", 1234567890,
@@ -143,7 +143,7 @@ class TestSSEAgentCancelOnDisconnect:
             mock_response.write = AsyncMock(side_effect=BrokenPipeError("pipe broken"))
             mock_response.prepare = AsyncMock()
 
-            with patch("gateway.platforms.api_server.web.StreamResponse",
+            with patch("hermes_agent.gateway.platforms.api_server.web.StreamResponse",
                        return_value=mock_response):
                 await adapter._write_sse_chat_completion(
                     _make_request(), "cmpl-789", "gpt-4", 1234567890,
@@ -182,7 +182,7 @@ class TestSSEAgentCancelOnDisconnect:
             mock_response.write = AsyncMock(side_effect=write_side_effect)
             mock_response.prepare = AsyncMock()
 
-            with patch("gateway.platforms.api_server.web.StreamResponse",
+            with patch("hermes_agent.gateway.platforms.api_server.web.StreamResponse",
                        return_value=mock_response):
                 await adapter._write_sse_chat_completion(
                     _make_request(), "cmpl-done", "gpt-4", 1234567890,
@@ -231,7 +231,7 @@ class TestSSEAgentCancelOnDisconnect:
             mock_response.write = AsyncMock(side_effect=write_side_effect)
             mock_response.prepare = AsyncMock()
 
-            with patch("gateway.platforms.api_server.web.StreamResponse",
+            with patch("hermes_agent.gateway.platforms.api_server.web.StreamResponse",
                        return_value=mock_response):
                 await adapter._write_sse_chat_completion(
                     _make_request(), "cmpl-int", "gpt-4", 1234567890,
@@ -265,7 +265,7 @@ class TestSSEAgentCancelOnDisconnect:
             mock_response.write = AsyncMock(side_effect=BrokenPipeError("gone"))
             mock_response.prepare = AsyncMock()
 
-            with patch("gateway.platforms.api_server.web.StreamResponse",
+            with patch("hermes_agent.gateway.platforms.api_server.web.StreamResponse",
                        return_value=mock_response):
                 # No agent_ref passed — should still handle disconnect cleanly
                 await adapter._write_sse_chat_completion(

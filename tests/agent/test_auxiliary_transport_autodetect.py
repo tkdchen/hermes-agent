@@ -50,7 +50,7 @@ def _clean_env(monkeypatch):
     (None, False, "None"),
 ])
 def test_endpoint_speaks_anthropic_messages(url, expected, label):
-    from agent.auxiliary_client import _endpoint_speaks_anthropic_messages
+    from hermes_agent.agent.auxiliary_client import _endpoint_speaks_anthropic_messages
     assert _endpoint_speaks_anthropic_messages(url) is expected, (
         f"{label}: {url!r} should be {expected}"
     )
@@ -62,13 +62,13 @@ def test_endpoint_speaks_anthropic_messages(url, expected, label):
 
 def test_maybe_wrap_anthropic_rewraps_kimi_coding_url():
     """Plain OpenAI client pointed at api.kimi.com/coding gets rewrapped."""
-    from agent.auxiliary_client import _maybe_wrap_anthropic, AnthropicAuxiliaryClient
+    from hermes_agent.agent.auxiliary_client import _maybe_wrap_anthropic, AnthropicAuxiliaryClient
 
     plain_client = MagicMock(name="plain_openai")
     fake_anthropic = MagicMock(name="anthropic_sdk_client")
 
     with patch(
-        "agent.anthropic_adapter.build_anthropic_client",
+        "hermes_agent.agent.anthropic_adapter.build_anthropic_client",
         return_value=fake_anthropic,
     ):
         result = _maybe_wrap_anthropic(
@@ -80,13 +80,13 @@ def test_maybe_wrap_anthropic_rewraps_kimi_coding_url():
 
 def test_maybe_wrap_anthropic_rewraps_slash_anthropic_url():
     """Plain OpenAI client pointed at any /anthropic URL gets rewrapped."""
-    from agent.auxiliary_client import _maybe_wrap_anthropic, AnthropicAuxiliaryClient
+    from hermes_agent.agent.auxiliary_client import _maybe_wrap_anthropic, AnthropicAuxiliaryClient
 
     plain_client = MagicMock(name="plain_openai")
     fake_anthropic = MagicMock(name="anthropic_sdk_client")
 
     with patch(
-        "agent.anthropic_adapter.build_anthropic_client",
+        "hermes_agent.agent.anthropic_adapter.build_anthropic_client",
         return_value=fake_anthropic,
     ):
         result = _maybe_wrap_anthropic(
@@ -98,7 +98,7 @@ def test_maybe_wrap_anthropic_rewraps_slash_anthropic_url():
 
 def test_maybe_wrap_anthropic_skips_openai_wire_urls():
     """OpenRouter / OpenAI / Moonshot-legacy stay as plain OpenAI clients."""
-    from agent.auxiliary_client import _maybe_wrap_anthropic, AnthropicAuxiliaryClient
+    from hermes_agent.agent.auxiliary_client import _maybe_wrap_anthropic, AnthropicAuxiliaryClient
 
     plain_client = MagicMock(name="plain_openai")
     # No patch on build_anthropic_client — if the function tried to call it,
@@ -113,7 +113,7 @@ def test_maybe_wrap_anthropic_skips_openai_wire_urls():
 
 def test_maybe_wrap_anthropic_respects_explicit_chat_completions():
     """api_mode=chat_completions overrides URL heuristics."""
-    from agent.auxiliary_client import _maybe_wrap_anthropic, AnthropicAuxiliaryClient
+    from hermes_agent.agent.auxiliary_client import _maybe_wrap_anthropic, AnthropicAuxiliaryClient
 
     plain_client = MagicMock(name="plain_openai")
     result = _maybe_wrap_anthropic(
@@ -127,13 +127,13 @@ def test_maybe_wrap_anthropic_respects_explicit_chat_completions():
 
 def test_maybe_wrap_anthropic_honors_explicit_anthropic_messages():
     """api_mode=anthropic_messages wraps even when URL wouldn't trigger."""
-    from agent.auxiliary_client import _maybe_wrap_anthropic, AnthropicAuxiliaryClient
+    from hermes_agent.agent.auxiliary_client import _maybe_wrap_anthropic, AnthropicAuxiliaryClient
 
     plain_client = MagicMock(name="plain_openai")
     fake_anthropic = MagicMock(name="anthropic_sdk_client")
 
     with patch(
-        "agent.anthropic_adapter.build_anthropic_client",
+        "hermes_agent.agent.anthropic_adapter.build_anthropic_client",
         return_value=fake_anthropic,
     ):
         result = _maybe_wrap_anthropic(
@@ -146,7 +146,7 @@ def test_maybe_wrap_anthropic_honors_explicit_anthropic_messages():
 
 def test_maybe_wrap_anthropic_double_wrap_safe():
     """Already-wrapped AnthropicAuxiliaryClient passes through unchanged."""
-    from agent.auxiliary_client import _maybe_wrap_anthropic, AnthropicAuxiliaryClient
+    from hermes_agent.agent.auxiliary_client import _maybe_wrap_anthropic, AnthropicAuxiliaryClient
 
     already_wrapped = MagicMock(spec=AnthropicAuxiliaryClient)
     result = _maybe_wrap_anthropic(
@@ -158,7 +158,7 @@ def test_maybe_wrap_anthropic_double_wrap_safe():
 
 def test_maybe_wrap_anthropic_codex_client_passes_through():
     """CodexAuxiliaryClient is never re-dispatched."""
-    from agent.auxiliary_client import (
+    from hermes_agent.agent.auxiliary_client import (
         _maybe_wrap_anthropic,
         CodexAuxiliaryClient,
         AnthropicAuxiliaryClient,
@@ -175,7 +175,7 @@ def test_maybe_wrap_anthropic_codex_client_passes_through():
 
 def test_maybe_wrap_anthropic_sdk_missing_falls_back():
     """ImportError on anthropic SDK returns plain client with warning."""
-    from agent.auxiliary_client import _maybe_wrap_anthropic, AnthropicAuxiliaryClient
+    from hermes_agent.agent.auxiliary_client import _maybe_wrap_anthropic, AnthropicAuxiliaryClient
 
     plain_client = MagicMock(name="plain_openai")
 
@@ -183,7 +183,7 @@ def test_maybe_wrap_anthropic_sdk_missing_falls_back():
         raise ImportError("no anthropic SDK")
 
     with patch(
-        "agent.anthropic_adapter.build_anthropic_client",
+        "hermes_agent.agent.anthropic_adapter.build_anthropic_client",
         side_effect=_raise_import,
     ):
         # The ImportError is caught on the `from ... import` line inside
@@ -191,8 +191,8 @@ def test_maybe_wrap_anthropic_sdk_missing_falls_back():
         # called. To exercise the ImportError path we need to patch the
         # module lookup itself.
         import sys as _sys
-        saved = _sys.modules.get("agent.anthropic_adapter")
-        _sys.modules["agent.anthropic_adapter"] = None  # force ImportError
+        saved = _sys.modules.get("hermes_agent.agent.anthropic_adapter")
+        _sys.modules["hermes_agent.agent.anthropic_adapter"] = None  # force ImportError
         try:
             result = _maybe_wrap_anthropic(
                 plain_client, "kimi-for-coding", "sk-kimi-test",
@@ -200,9 +200,9 @@ def test_maybe_wrap_anthropic_sdk_missing_falls_back():
             )
         finally:
             if saved is not None:
-                _sys.modules["agent.anthropic_adapter"] = saved
+                _sys.modules["hermes_agent.agent.anthropic_adapter"] = saved
             else:
-                _sys.modules.pop("agent.anthropic_adapter", None)
+                _sys.modules.pop("hermes_agent.agent.anthropic_adapter", None)
 
     assert result is plain_client
     assert not isinstance(result, AnthropicAuxiliaryClient)
@@ -220,7 +220,7 @@ def test_resolve_provider_client_kimi_coding_wraps_anthropic(monkeypatch, tmp_pa
     generation 404s on every Kimi Coding Plan user after the "main model
     for every user" aux design shipped.
     """
-    from agent.auxiliary_client import (
+    from hermes_agent.agent.auxiliary_client import (
         resolve_provider_client,
         AnthropicAuxiliaryClient,
     )

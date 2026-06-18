@@ -10,8 +10,8 @@ import time
 import pytest
 from unittest.mock import MagicMock, patch
 
-from tools.environments.local import _HERMES_PROVIDER_ENV_FORCE_PREFIX
-from tools.process_registry import (
+from hermes_agent.tools.environments.local import _HERMES_PROVIDER_ENV_FORCE_PREFIX
+from hermes_agent.tools.process_registry import (
     ProcessRegistry,
     ProcessSession,
     FINISHED_TTL_SECONDS,
@@ -75,7 +75,7 @@ def test_write_stdin_uses_str_for_windows_pty(monkeypatch, registry):
     session = _make_session(sid="pty-win")
     session._pty = _FakePty()
     registry._running[session.id] = session
-    monkeypatch.setattr("tools.process_registry._IS_WINDOWS", True)
+    monkeypatch.setattr("hermes_agent.tools.process_registry._IS_WINDOWS", True)
 
     result = registry.write_stdin(session.id, "hello\n")
 
@@ -94,7 +94,7 @@ def test_write_stdin_uses_bytes_for_posix_pty(monkeypatch, registry):
     session = _make_session(sid="pty-posix")
     session._pty = _FakePty()
     registry._running[session.id] = session
-    monkeypatch.setattr("tools.process_registry._IS_WINDOWS", False)
+    monkeypatch.setattr("hermes_agent.tools.process_registry._IS_WINDOWS", False)
 
     result = registry.write_stdin(session.id, "hello\n")
 
@@ -516,7 +516,7 @@ class TestSpawnEnvSanitization:
             "TELEGRAM_BOT_TOKEN": "bot-secret",
             "FIRECRAWL_API_KEY": "fc-secret",
         }, clear=True), \
-            patch("tools.process_registry._find_shell", return_value="/bin/bash"), \
+            patch("hermes_agent.tools.process_registry._find_shell", return_value="/bin/bash"), \
             patch("subprocess.Popen", side_effect=fake_popen), \
             patch("threading.Thread", return_value=fake_thread), \
             patch.object(registry, "_write_checkpoint"):
@@ -552,7 +552,7 @@ class TestSpawnEnvSanitization:
         env = FakeEnv()
         fake_thread = MagicMock()
 
-        with patch("tools.process_registry.threading.Thread", return_value=fake_thread), \
+        with patch("hermes_agent.tools.process_registry.threading.Thread", return_value=fake_thread), \
             patch.object(registry, "_write_checkpoint"):
             session = registry.spawn_via_env(env, "echo hello")
 
@@ -577,7 +577,7 @@ class TestSpawnEnvSanitization:
         env = FakeEnv()
         fake_thread = MagicMock()
 
-        with patch("tools.process_registry.threading.Thread", return_value=fake_thread), \
+        with patch("hermes_agent.tools.process_registry.threading.Thread", return_value=fake_thread), \
             patch.object(registry, "_write_checkpoint"):
             session = registry.spawn_via_env(env, "echo hello")
 
@@ -604,7 +604,7 @@ class TestSpawnEnvSanitization:
         env = FakeEnv()
         fake_thread = MagicMock()
 
-        with patch("tools.process_registry.threading.Thread", return_value=fake_thread), \
+        with patch("hermes_agent.tools.process_registry.threading.Thread", return_value=fake_thread), \
             patch.object(registry, "_write_checkpoint"):
             registry.spawn_via_env(env, "echo hello")
 
@@ -630,7 +630,7 @@ class TestSpawnEnvSanitization:
 
         env = FakeEnv()
 
-        with patch("tools.process_registry.time.sleep", return_value=None), \
+        with patch("hermes_agent.tools.process_registry.time.sleep", return_value=None), \
             patch.object(registry, "_move_to_finished"):
             registry._env_poller_loop(
                 session,
@@ -679,7 +679,7 @@ class TestPopenLeakOnSetupFailure:
         # and a real risk of SIGKILLing an innocent process group. Force the
         # ProcessLookupError fallback so the test deterministically exercises
         # proc.kill() and never issues a real killpg.
-        with patch("tools.process_registry._find_shell", return_value="/bin/bash"), \
+        with patch("hermes_agent.tools.process_registry._find_shell", return_value="/bin/bash"), \
              patch("subprocess.Popen", return_value=proc), \
              patch("threading.Thread", side_effect=boom), \
              patch("os.getpgid", side_effect=ProcessLookupError), \
@@ -711,7 +711,7 @@ class TestPopenLeakOnSetupFailure:
         # ProcessLookupError fallback so cleanup deterministically calls
         # proc.kill() instead of issuing a real os.killpg against whatever
         # process group happens to own the fake PID on the host.
-        with patch("tools.process_registry._find_shell", return_value="/bin/bash"), \
+        with patch("hermes_agent.tools.process_registry._find_shell", return_value="/bin/bash"), \
              patch("subprocess.Popen", return_value=proc), \
              patch("threading.Thread", return_value=fake_thread), \
              patch("os.getpgid", side_effect=ProcessLookupError), \
@@ -739,7 +739,7 @@ class TestPopenLeakOnSetupFailure:
 
         fake_thread = MagicMock()
 
-        with patch("tools.process_registry._find_shell", return_value="/bin/bash"), \
+        with patch("hermes_agent.tools.process_registry._find_shell", return_value="/bin/bash"), \
              patch("subprocess.Popen", return_value=proc), \
              patch("threading.Thread", return_value=fake_thread), \
              patch.object(registry, "_write_checkpoint"):
@@ -755,7 +755,7 @@ class TestPopenLeakOnSetupFailure:
 
 class TestCheckpoint:
     def test_write_checkpoint(self, registry, tmp_path):
-        with patch("tools.process_registry.CHECKPOINT_PATH", tmp_path / "procs.json"):
+        with patch("hermes_agent.tools.process_registry.CHECKPOINT_PATH", tmp_path / "procs.json"):
             s = _make_session()
             registry._running[s.id] = s
             registry._write_checkpoint()
@@ -765,7 +765,7 @@ class TestCheckpoint:
             assert data[0]["session_id"] == s.id
 
     def test_recover_no_file(self, registry, tmp_path):
-        with patch("tools.process_registry.CHECKPOINT_PATH", tmp_path / "missing.json"):
+        with patch("hermes_agent.tools.process_registry.CHECKPOINT_PATH", tmp_path / "missing.json"):
             assert registry.recover_from_checkpoint() == 0
 
     def test_recover_dead_pid(self, registry, tmp_path):
@@ -776,12 +776,12 @@ class TestCheckpoint:
             "pid": 999999999,  # almost certainly not running
             "task_id": "t1",
         }]))
-        with patch("tools.process_registry.CHECKPOINT_PATH", checkpoint):
+        with patch("hermes_agent.tools.process_registry.CHECKPOINT_PATH", checkpoint):
             recovered = registry.recover_from_checkpoint()
             assert recovered == 0
 
     def test_write_checkpoint_includes_watcher_metadata(self, registry, tmp_path):
-        with patch("tools.process_registry.CHECKPOINT_PATH", tmp_path / "procs.json"):
+        with patch("hermes_agent.tools.process_registry.CHECKPOINT_PATH", tmp_path / "procs.json"):
             s = _make_session()
             s.watcher_platform = "telegram"
             s.watcher_chat_id = "999"
@@ -816,7 +816,7 @@ class TestCheckpoint:
             "watcher_thread_id": "42",
             "watcher_interval": 60,
         }]))
-        with patch("tools.process_registry.CHECKPOINT_PATH", checkpoint):
+        with patch("hermes_agent.tools.process_registry.CHECKPOINT_PATH", checkpoint):
             recovered = registry.recover_from_checkpoint()
             assert recovered == 1
             assert len(registry.pending_watchers) == 1
@@ -838,7 +838,7 @@ class TestCheckpoint:
             "task_id": "t1",
             "watcher_interval": 0,
         }]))
-        with patch("tools.process_registry.CHECKPOINT_PATH", checkpoint):
+        with patch("hermes_agent.tools.process_registry.CHECKPOINT_PATH", checkpoint):
             recovered = registry.recover_from_checkpoint()
             assert recovered == 1
             assert len(registry.pending_watchers) == 0
@@ -853,7 +853,7 @@ class TestCheckpoint:
             "session_key": "sk1",
         }]))
 
-        with patch("tools.process_registry.CHECKPOINT_PATH", checkpoint):
+        with patch("hermes_agent.tools.process_registry.CHECKPOINT_PATH", checkpoint):
             recovered = registry.recover_from_checkpoint()
             assert recovered == 1
             assert registry.get("proc_live") is not None
@@ -875,7 +875,7 @@ class TestCheckpoint:
         }]
         checkpoint.write_text(json.dumps(original))
 
-        with patch("tools.process_registry.CHECKPOINT_PATH", checkpoint):
+        with patch("hermes_agent.tools.process_registry.CHECKPOINT_PATH", checkpoint):
             recovered = registry.recover_from_checkpoint()
             assert recovered == 0
             assert registry.get("proc_remote") is None
@@ -895,7 +895,7 @@ class TestCheckpoint:
         }]))
 
         try:
-            with patch("tools.process_registry.CHECKPOINT_PATH", checkpoint):
+            with patch("hermes_agent.tools.process_registry.CHECKPOINT_PATH", checkpoint):
                 recovered = registry.recover_from_checkpoint()
                 assert recovered == 1
 
@@ -965,7 +965,7 @@ class TestKillProcess:
             # ``gateway.status._pid_exists``), and the actual kill on POSIX
             # routes through ``psutil.Process(pid).terminate()``. Neither
             # touches ``os.kill`` directly. Mock both seams.
-            with patch("gateway.status._pid_exists", return_value=True), \
+            with patch("hermes_agent.gateway.status._pid_exists", return_value=True), \
                  patch.object(_psutil, "Process", side_effect=lambda pid: FakeProcess(pid)):
                 result = registry.kill_process(s.id)
 
@@ -981,17 +981,17 @@ class TestKillProcess:
 
 class TestProcessToolHandler:
     def test_list_action(self):
-        from tools.process_registry import _handle_process
+        from hermes_agent.tools.process_registry import _handle_process
         result = json.loads(_handle_process({"action": "list"}))
         assert "processes" in result
 
     def test_poll_missing_session_id(self):
-        from tools.process_registry import _handle_process
+        from hermes_agent.tools.process_registry import _handle_process
         result = json.loads(_handle_process({"action": "poll"}))
         assert "error" in result
 
     def test_unknown_action(self):
-        from tools.process_registry import _handle_process
+        from hermes_agent.tools.process_registry import _handle_process
         result = json.loads(_handle_process({"action": "unknown_action"}))
         assert "error" in result
 
@@ -1000,7 +1000,7 @@ class TestProcessToolHandler:
 # format_process_notification + drain_notifications (shared helpers)
 # =========================================================================
 
-from tools.process_registry import format_process_notification
+from hermes_agent.tools.process_registry import format_process_notification
 
 
 def test_format_completion_event():
@@ -1091,7 +1091,7 @@ def test_format_returns_none_for_empty_event():
 
 
 def test_drain_notifications_returns_pending_events():
-    from tools.process_registry import process_registry
+    from hermes_agent.tools.process_registry import process_registry
 
     while not process_registry.completion_queue.empty():
         process_registry.completion_queue.get_nowait()
@@ -1127,7 +1127,7 @@ def test_drain_notifications_returns_pending_events():
 
 
 def test_drain_notifications_skips_consumed():
-    from tools.process_registry import process_registry
+    from hermes_agent.tools.process_registry import process_registry
 
     while not process_registry.completion_queue.empty():
         process_registry.completion_queue.get_nowait()
@@ -1151,7 +1151,7 @@ def test_drain_notifications_skips_consumed():
 
 
 def test_drain_notifications_empty_queue():
-    from tools.process_registry import process_registry
+    from hermes_agent.tools.process_registry import process_registry
 
     while not process_registry.completion_queue.empty():
         process_registry.completion_queue.get_nowait()
@@ -1176,7 +1176,7 @@ class TestTerminateHostPidWindows:
 
     def test_windows_invokes_taskkill_with_tree_and_force_flags(self, monkeypatch):
         """The Windows branch must shell out to ``taskkill /PID N /T /F``."""
-        from tools import process_registry as pr
+        from hermes_agent.tools import process_registry as pr
 
         captured = {}
 
@@ -1199,7 +1199,7 @@ class TestTerminateHostPidWindows:
     def test_windows_falls_back_to_os_kill_when_taskkill_missing(self, monkeypatch):
         """If ``taskkill.exe`` is somehow unavailable, fall back to a bare
         ``os.kill(pid, SIGTERM)`` so we at least try to kill the parent."""
-        from tools import process_registry as pr
+        from hermes_agent.tools import process_registry as pr
 
         kill_calls = []
 
@@ -1220,7 +1220,7 @@ class TestTerminateHostPidWindows:
     def test_windows_does_not_call_psutil(self, monkeypatch):
         """The Windows branch must NOT exercise the psutil tree-walk
         (it's unreliable on Windows — see the function docstring)."""
-        from tools import process_registry as pr
+        from hermes_agent.tools import process_registry as pr
         import psutil
 
         psutil_calls = []
@@ -1254,7 +1254,7 @@ class TestTerminateHostPidPosix:
     """POSIX branch walks the tree via psutil and SIGTERMs children first."""
 
     def test_posix_walks_tree_and_terminates_children_then_parent(self, monkeypatch):
-        from tools import process_registry as pr
+        from hermes_agent.tools import process_registry as pr
         import psutil
 
         terminate_order = []
@@ -1287,7 +1287,7 @@ class TestTerminateHostPidPosix:
         )
 
     def test_posix_no_such_process_swallowed(self, monkeypatch):
-        from tools import process_registry as pr
+        from hermes_agent.tools import process_registry as pr
         import psutil
 
         def boom(pid):
@@ -1300,7 +1300,7 @@ class TestTerminateHostPidPosix:
         pr.ProcessRegistry._terminate_host_pid(999999999)
 
     def test_posix_oserror_falls_back_to_os_kill(self, monkeypatch):
-        from tools import process_registry as pr
+        from hermes_agent.tools import process_registry as pr
         import psutil
 
         def boom(pid):

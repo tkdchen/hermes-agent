@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-from hermes_cli import security_audit as sa
+from hermes_agent.hermes_cli import security_audit as sa
 
 
 # ─── Parsers ──────────────────────────────────────────────────────────────────

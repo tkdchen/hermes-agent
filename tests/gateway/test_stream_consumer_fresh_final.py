@@ -16,7 +16,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from gateway.stream_consumer import GatewayStreamConsumer, StreamConsumerConfig
+from hermes_agent.gateway.stream_consumer import GatewayStreamConsumer, StreamConsumerConfig
 
 
 def _make_adapter(*, supports_delete: bool = True) -> MagicMock:
@@ -618,17 +618,17 @@ class TestStreamingConfigFreshFinalField:
     """The gateway-level StreamingConfig carries the setting."""
 
     def test_default_is_disabled(self):
-        from gateway.config import StreamingConfig
+        from hermes_agent.gateway.config import StreamingConfig
         cfg = StreamingConfig()
         assert cfg.fresh_final_after_seconds == 0.0
 
     def test_from_dict_uses_default_when_missing(self):
-        from gateway.config import StreamingConfig
+        from hermes_agent.gateway.config import StreamingConfig
         cfg = StreamingConfig.from_dict({"enabled": True})
         assert cfg.fresh_final_after_seconds == 0.0
 
     def test_from_dict_respects_explicit_zero(self):
-        from gateway.config import StreamingConfig
+        from hermes_agent.gateway.config import StreamingConfig
         cfg = StreamingConfig.from_dict({
             "enabled": True,
             "fresh_final_after_seconds": 0,
@@ -636,7 +636,7 @@ class TestStreamingConfigFreshFinalField:
         assert cfg.fresh_final_after_seconds == 0.0
 
     def test_to_dict_round_trip(self):
-        from gateway.config import StreamingConfig
+        from hermes_agent.gateway.config import StreamingConfig
         original = StreamingConfig(fresh_final_after_seconds=90.0)
         restored = StreamingConfig.from_dict(original.to_dict())
         assert restored.fresh_final_after_seconds == 90.0
@@ -646,7 +646,7 @@ class TestTelegramAdapterDeleteMessage:
     """Contract: Telegram adapter implements ``delete_message``."""
 
     def test_delete_message_method_exists(self):
-        telegram = pytest.importorskip("gateway.platforms.telegram")
+        telegram = pytest.importorskip("hermes_agent.gateway.platforms.telegram")
         import inspect
         cls = telegram.TelegramAdapter
         assert hasattr(cls, "delete_message"), (
@@ -659,7 +659,7 @@ class TestTelegramAdapterDeleteMessage:
 
     def test_base_adapter_default_returns_false(self):
         """BasePlatformAdapter.delete_message default = no-op returning False."""
-        from gateway.platforms.base import BasePlatformAdapter
+        from hermes_agent.gateway.platforms.base import BasePlatformAdapter
         import inspect
         sig = inspect.signature(BasePlatformAdapter.delete_message)
         assert list(sig.parameters)[:3] == ["self", "chat_id", "message_id"]

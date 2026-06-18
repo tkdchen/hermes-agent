@@ -17,7 +17,7 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
-from hermes_cli import main as hermes_main
+from hermes_agent.hermes_cli import main as hermes_main
 
 
 # ---------------------------------------------------------------------------
@@ -121,7 +121,7 @@ def test_validate_critical_files_syntax_tolerates_missing_files(tmp_path):
     guard should skip missing files, not falsely flag the install as broken."""
     # Populate everything except hermes_constants.py
     for relpath in hermes_main._UPDATE_CRITICAL_FILES:
-        if relpath == "hermes_constants.py":
+        if relpath == "hermes_agent.hermes_constants.py":
             continue
         path = tmp_path / relpath
         path.parent.mkdir(parents=True, exist_ok=True)

@@ -14,15 +14,15 @@ from types import SimpleNamespace
 
 import pytest
 
-from gateway.config import PlatformConfig, Platform
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import PlatformConfig, Platform
+from hermes_agent.gateway.platforms.base import (
     MessageEvent,
     MessageType,
     SendResult,
     _reply_anchor_for_event,
     _thread_metadata_for_source,
 )
-from gateway.session import build_session_key
+from hermes_agent.gateway.session import build_session_key
 
 
 # ── Fake telegram.error hierarchy ──────────────────────────────────────
@@ -116,7 +116,7 @@ def _inject_fake_telegram(monkeypatch):
 
 
 def _make_adapter():
-    from gateway.platforms.telegram import TelegramAdapter
+    from hermes_agent.gateway.platforms.telegram import TelegramAdapter
 
     config = PlatformConfig(enabled=True, token="fake-token")
     adapter = object.__new__(TelegramAdapter)
@@ -137,7 +137,7 @@ def _make_adapter():
 
 def test_non_forum_group_reply_thread_id_does_not_fork_session_key():
     """Reply-derived thread ids in ordinary groups must not create topic lanes."""
-    from gateway.platforms import telegram as telegram_mod
+    from hermes_agent.gateway.platforms import telegram as telegram_mod
 
     adapter = _make_adapter()
     message = SimpleNamespace(
@@ -171,7 +171,7 @@ def test_non_forum_group_reply_thread_id_does_not_fork_session_key():
 
 def test_forum_group_topic_message_preserves_thread_session_key():
     """Real Telegram forum-topic messages should still route by topic id."""
-    from gateway.platforms import telegram as telegram_mod
+    from hermes_agent.gateway.platforms import telegram as telegram_mod
 
     adapter = _make_adapter()
     message = SimpleNamespace(
@@ -201,7 +201,7 @@ def test_forum_group_topic_message_preserves_thread_session_key():
 
 def test_forum_general_topic_without_message_thread_id_keeps_thread_context():
     """Forum General-topic messages should keep synthetic thread context."""
-    from gateway.platforms import telegram as telegram_mod
+    from hermes_agent.gateway.platforms import telegram as telegram_mod
 
     adapter = _make_adapter()
     message = SimpleNamespace(
@@ -509,7 +509,7 @@ def test_base_gateway_replies_to_triggering_message_for_telegram_dm_topic():
 @pytest.mark.asyncio
 async def test_gateway_runner_busy_ack_replies_to_triggering_message_for_telegram_dm_topic(monkeypatch, tmp_path):
     """GatewayRunner's duplicate thread metadata must match the base helper."""
-    from gateway import run as gateway_run
+    from hermes_agent.gateway import run as gateway_run
 
     monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
     GatewayRunner = gateway_run.GatewayRunner
@@ -952,7 +952,7 @@ async def test_send_image_url_dm_topic_reply_not_found_retry_drops_thread_id(mon
         return SimpleNamespace(message_id=784)
 
     adapter._bot = SimpleNamespace(send_photo=mock_send_photo)
-    import tools.url_safety as url_safety
+    import hermes_agent.tools.url_safety as url_safety
 
     monkeypatch.setattr(url_safety, "is_safe_url", lambda _url: True)
 
@@ -1012,7 +1012,7 @@ async def test_send_image_upload_dm_topic_reply_not_found_retry_drops_thread_id(
         SimpleNamespace(AsyncClient=_FakeAsyncClient),
     )
     adapter._bot = SimpleNamespace(send_photo=mock_send_photo)
-    import tools.url_safety as url_safety
+    import hermes_agent.tools.url_safety as url_safety
 
     monkeypatch.setattr(url_safety, "is_safe_url", lambda _url: True)
 
@@ -1050,7 +1050,7 @@ async def test_slash_confirm_private_topic_callback_followup_sends_thread_and_re
     async def resolve(_session_key, _confirm_id, _choice):
         return "done"
 
-    from tools import slash_confirm
+    from hermes_agent.tools import slash_confirm
 
     monkeypatch.setattr(slash_confirm, "resolve", resolve)
     adapter._bot = SimpleNamespace(send_message=mock_send_message)
@@ -1092,7 +1092,7 @@ async def test_slash_confirm_forum_callback_followup_keeps_existing_thread_behav
     async def resolve(_session_key, _confirm_id, _choice):
         return "done"
 
-    from tools import slash_confirm
+    from hermes_agent.tools import slash_confirm
 
     monkeypatch.setattr(slash_confirm, "resolve", resolve)
     adapter._bot = SimpleNamespace(send_message=mock_send_message)
@@ -1124,7 +1124,7 @@ async def test_slash_confirm_forum_callback_followup_keeps_existing_thread_behav
 @pytest.mark.asyncio
 async def test_base_send_image_fallback_preserves_metadata():
     """Base image fallback should pass metadata through instead of referencing kwargs."""
-    from gateway.platforms.base import BasePlatformAdapter
+    from hermes_agent.gateway.platforms.base import BasePlatformAdapter
 
     class _ConcreteBaseAdapter(BasePlatformAdapter):
         async def connect(self):

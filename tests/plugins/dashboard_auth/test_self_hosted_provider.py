@@ -29,8 +29,8 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-import plugins.dashboard_auth.self_hosted as oidc_plugin
-from hermes_cli.dashboard_auth import (
+import hermes_agent.plugins.dashboard_auth.self_hosted as oidc_plugin
+from hermes_agent.hermes_cli.dashboard_auth import (
     InvalidCodeError,
     LoginStart,
     ProviderError,
@@ -241,7 +241,7 @@ class TestDiscovery:
         p = self._provider()
         mock_resp = self._mock_get(200, dict(_DISCOVERY_DOC))
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.get", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.get", return_value=mock_resp
         ) as mock_get:
             disco1 = p._get_discovery()
             disco2 = p._get_discovery()
@@ -257,7 +257,7 @@ class TestDiscovery:
         p = self._provider()
         mock_resp = self._mock_get(404, {})
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.get", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.get", return_value=mock_resp
         ):
             with pytest.raises(ProviderError, match="404"):
                 p._get_discovery()
@@ -265,7 +265,7 @@ class TestDiscovery:
     def test_discovery_unreachable_raises(self):
         p = self._provider()
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.get",
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.get",
             side_effect=httpx.ConnectError("no route"),
         ):
             with pytest.raises(ProviderError, match="unreachable"):
@@ -277,7 +277,7 @@ class TestDiscovery:
         del doc["token_endpoint"]
         mock_resp = self._mock_get(200, doc)
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.get", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.get", return_value=mock_resp
         ):
             with pytest.raises(ProviderError, match="token_endpoint"):
                 p._get_discovery()
@@ -288,7 +288,7 @@ class TestDiscovery:
         doc["issuer"] = "https://evil.example"
         mock_resp = self._mock_get(200, doc)
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.get", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.get", return_value=mock_resp
         ):
             with pytest.raises(ProviderError, match="issuer mismatch"):
                 p._get_discovery()
@@ -299,7 +299,7 @@ class TestDiscovery:
         doc["issuer"] = _ISSUER + "/"  # only a trailing-slash difference
         mock_resp = self._mock_get(200, doc)
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.get", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.get", return_value=mock_resp
         ):
             disco = p._get_discovery()
         assert disco["token_endpoint"] == f"{_ISSUER}/token"
@@ -310,7 +310,7 @@ class TestDiscovery:
         doc["token_endpoint"] = "http://auth.example.com/token"  # not loopback
         mock_resp = self._mock_get(200, doc)
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.get", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.get", return_value=mock_resp
         ):
             with pytest.raises(ProviderError, match="https"):
                 p._get_discovery()
@@ -435,7 +435,7 @@ class TestCompleteLogin:
             },
         )
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
         ):
             session = provider.complete_login(
                 code="abc",
@@ -458,7 +458,7 @@ class TestCompleteLogin:
             200, {"id_token": id_token, "token_type": "Bearer"}
         )
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
         ):
             session = provider.complete_login(
                 code="abc",
@@ -473,7 +473,7 @@ class TestCompleteLogin:
             200, {"access_token": "opaque", "token_type": "Bearer"}
         )
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
         ):
             with pytest.raises(ProviderError, match="id_token"):
                 provider.complete_login(
@@ -486,7 +486,7 @@ class TestCompleteLogin:
     def test_400_raises_invalid_code(self, provider):
         mock_resp = _mock_post(400, {"error": "invalid_grant"})
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
         ):
             with pytest.raises(InvalidCodeError, match="invalid_grant"):
                 provider.complete_login(
@@ -499,7 +499,7 @@ class TestCompleteLogin:
     def test_500_raises_provider_error(self, provider):
         mock_resp = _mock_post(500, "boom", ctype="text/plain")
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
         ):
             with pytest.raises(ProviderError, match="500"):
                 provider.complete_login(
@@ -511,7 +511,7 @@ class TestCompleteLogin:
 
     def test_network_error_raises_provider_error(self, provider):
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post",
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post",
             side_effect=httpx.ConnectError("conn refused"),
         ):
             with pytest.raises(ProviderError, match="unreachable"):
@@ -528,7 +528,7 @@ class TestCompleteLogin:
             200, {"id_token": id_token, "token_type": "DPoP"}
         )
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
         ):
             with pytest.raises(ProviderError, match="token_type"):
                 provider.complete_login(
@@ -542,7 +542,7 @@ class TestCompleteLogin:
         id_token = _mint_id_token(rsa_keypair)
         mock_resp = _mock_post(200, {"id_token": id_token, "token_type": "Bearer"})
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
         ) as mock_post:
             provider.complete_login(
                 code="the-code",
@@ -665,7 +665,7 @@ class TestRefreshAndRevoke:
             },
         )
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
         ) as mock_post:
             session = provider.refresh_session(refresh_token="rt_old")
         assert isinstance(session, Session)
@@ -682,7 +682,7 @@ class TestRefreshAndRevoke:
         id_token = _mint_id_token(rsa_keypair)
         mock_resp = _mock_post(200, {"id_token": id_token, "token_type": "Bearer"})
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
         ):
             session = provider.refresh_session(refresh_token="rt_kept")
         assert session.refresh_token == "rt_kept"
@@ -690,20 +690,20 @@ class TestRefreshAndRevoke:
     def test_refresh_400_raises_refresh_expired(self, provider):
         mock_resp = _mock_post(400, {"error": "invalid_grant"})
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post", return_value=mock_resp
         ):
             with pytest.raises(RefreshExpiredError, match="invalid_grant"):
                 provider.refresh_session(refresh_token="rt_dead")
 
     def test_refresh_empty_token_no_network(self, provider):
-        with patch("plugins.dashboard_auth.self_hosted.httpx.post") as mock_post:
+        with patch("hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post") as mock_post:
             with pytest.raises(RefreshExpiredError):
                 provider.refresh_session(refresh_token="")
         mock_post.assert_not_called()
 
     def test_refresh_network_error_raises_provider_error(self, provider):
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post",
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post",
             side_effect=httpx.RequestError("boom"),
         ):
             with pytest.raises(ProviderError, match="unreachable"):
@@ -711,7 +711,7 @@ class TestRefreshAndRevoke:
 
     def test_revoke_posts_to_revocation_endpoint(self, provider):
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post"
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post"
         ) as mock_post:
             provider.revoke_session(refresh_token="rt_x")
         mock_post.assert_called_once()
@@ -721,14 +721,14 @@ class TestRefreshAndRevoke:
 
     def test_revoke_empty_token_noop(self, provider):
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post"
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post"
         ) as mock_post:
             assert provider.revoke_session(refresh_token="") is None
         mock_post.assert_not_called()
 
     def test_revoke_swallows_errors(self, provider):
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post",
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post",
             side_effect=httpx.RequestError("down"),
         ):
             # Must not raise.
@@ -737,7 +737,7 @@ class TestRefreshAndRevoke:
     def test_revoke_noop_when_no_revocation_endpoint(self, provider):
         provider._discovery["revocation_endpoint"] = ""
         with patch(
-            "plugins.dashboard_auth.self_hosted.httpx.post"
+            "hermes_agent.plugins.dashboard_auth.self_hosted.httpx.post"
         ) as mock_post:
             assert provider.revoke_session(refresh_token="rt_x") is None
         mock_post.assert_not_called()
@@ -764,7 +764,7 @@ class TestPluginRegister:
             cfg = {}
             if oauth_block is not None:
                 cfg = {"dashboard": {"oauth": oauth_block}}
-            monkeypatch.setattr("hermes_cli.config.load_config", lambda: cfg)
+            monkeypatch.setattr("hermes_agent.hermes_cli.config.load_config", lambda: cfg)
 
         return _set
 
@@ -856,14 +856,14 @@ class TestPluginRegister:
         def _broken():
             raise OSError("unreadable")
 
-        monkeypatch.setattr("hermes_cli.config.load_config", _broken)
+        monkeypatch.setattr("hermes_agent.hermes_cli.config.load_config", _broken)
         ctx = MagicMock()
         oidc_plugin.register(ctx)  # must not raise
         ctx.register_dashboard_auth_provider.assert_not_called()
 
     def test_non_dict_oauth_section_tolerated(self, monkeypatch):
         monkeypatch.setattr(
-            "hermes_cli.config.load_config",
+            "hermes_agent.hermes_cli.config.load_config",
             lambda: {"dashboard": {"oauth": "wrong type"}},
         )
         ctx = MagicMock()

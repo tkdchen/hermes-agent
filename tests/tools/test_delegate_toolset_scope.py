@@ -8,7 +8,7 @@ arbitrary toolsets.
 
 from types import SimpleNamespace
 
-from tools.delegate_tool import _strip_blocked_tools
+from hermes_agent.tools.delegate_tool import _strip_blocked_tools
 
 
 class TestToolsetIntersection:

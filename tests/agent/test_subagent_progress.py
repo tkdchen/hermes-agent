@@ -13,8 +13,8 @@ import sys
 import pytest
 from unittest.mock import MagicMock
 
-from agent.display import KawaiiSpinner
-from tools.delegate_tool import _build_child_progress_callback
+from hermes_agent.agent.display import KawaiiSpinner
+from hermes_agent.tools.delegate_tool import _build_child_progress_callback
 
 
 # =========================================================================

@@ -20,7 +20,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from agent.conversation_loop import _restore_or_build_system_prompt
+from hermes_agent.agent.conversation_loop import _restore_or_build_system_prompt
 
 
 def _make_agent(session_db=None, prebuilt_prompt: str = "BUILT_PROMPT"):
@@ -49,7 +49,7 @@ class TestStoredPromptReuse:
         db.get_session.return_value = {"system_prompt": stored}
         agent = _make_agent(session_db=db)
 
-        with caplog.at_level(logging.WARNING, logger="agent.conversation_loop"):
+        with caplog.at_level(logging.WARNING, logger="hermes_agent.agent.conversation_loop"):
             _restore_or_build_system_prompt(agent, None, [{"role": "user", "content": "hi"}])
 
         assert agent._cached_system_prompt == stored
@@ -97,7 +97,7 @@ class TestStoredPromptReuse:
         )
         agent.model = "openai/gpt-5.5"
 
-        with caplog.at_level(logging.INFO, logger="agent.conversation_loop"):
+        with caplog.at_level(logging.INFO, logger="hermes_agent.agent.conversation_loop"):
             _restore_or_build_system_prompt(agent, None, [{"role": "user", "content": "hi"}])
 
         assert agent._cached_system_prompt.endswith(
@@ -121,7 +121,7 @@ class TestLegitimateFreshBuild:
         db = MagicMock()
         agent = _make_agent(session_db=db)
 
-        with caplog.at_level(logging.WARNING, logger="agent.conversation_loop"):
+        with caplog.at_level(logging.WARNING, logger="hermes_agent.agent.conversation_loop"):
             _restore_or_build_system_prompt(agent, None, [])
 
         # No history → DB read skipped entirely
@@ -152,7 +152,7 @@ class TestSilentFailureWarnings:
         db.get_session.side_effect = RuntimeError("disk full")
         agent = _make_agent(session_db=db)
 
-        with caplog.at_level(logging.WARNING, logger="agent.conversation_loop"):
+        with caplog.at_level(logging.WARNING, logger="hermes_agent.agent.conversation_loop"):
             _restore_or_build_system_prompt(agent, None, [{"role": "user", "content": "hi"}])
 
         # Built fresh
@@ -170,7 +170,7 @@ class TestSilentFailureWarnings:
         db.get_session.return_value = {"system_prompt": None}
         agent = _make_agent(session_db=db)
 
-        with caplog.at_level(logging.WARNING, logger="agent.conversation_loop"):
+        with caplog.at_level(logging.WARNING, logger="hermes_agent.agent.conversation_loop"):
             _restore_or_build_system_prompt(agent, None, [{"role": "user", "content": "hi"}])
 
         agent._build_system_prompt.assert_called_once()
@@ -184,7 +184,7 @@ class TestSilentFailureWarnings:
         db.get_session.return_value = {"system_prompt": ""}
         agent = _make_agent(session_db=db)
 
-        with caplog.at_level(logging.WARNING, logger="agent.conversation_loop"):
+        with caplog.at_level(logging.WARNING, logger="hermes_agent.agent.conversation_loop"):
             _restore_or_build_system_prompt(agent, None, [{"role": "user", "content": "hi"}])
 
         agent._build_system_prompt.assert_called_once()
@@ -200,7 +200,7 @@ class TestSilentFailureWarnings:
         db.update_system_prompt.side_effect = RuntimeError("database is locked")
         agent = _make_agent(session_db=db)
 
-        with caplog.at_level(logging.WARNING, logger="agent.conversation_loop"):
+        with caplog.at_level(logging.WARNING, logger="hermes_agent.agent.conversation_loop"):
             _restore_or_build_system_prompt(agent, None, [])
 
         # Built and assigned the cache anyway
@@ -219,7 +219,7 @@ class TestSilentFailureWarnings:
         db.get_session.return_value = {"system_prompt": None}
         agent = _make_agent(session_db=db)
 
-        with caplog.at_level(logging.WARNING, logger="agent.conversation_loop"):
+        with caplog.at_level(logging.WARNING, logger="hermes_agent.agent.conversation_loop"):
             # Empty history → DB read is skipped entirely
             _restore_or_build_system_prompt(agent, None, [])
 

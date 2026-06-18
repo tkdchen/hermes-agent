@@ -97,17 +97,17 @@ with open(config_path, "w") as f:
 
 # Fresh import — must not have anything cached from prior runs.
 for name in list(sys.modules):
-    if (name.startswith("tools.")
-            or name.startswith("agent.")
-            or name.startswith("plugins.")
-            or name.startswith("hermes_cli.")):
+    if (name.startswith("hermes_agent.tools.")
+            or name.startswith("hermes_agent.agent.")
+            or name.startswith("hermes_agent.plugins.")
+            or name.startswith("hermes_agent.hermes_cli.")):
         sys.modules.pop(name, None)
 
 # Try importing tts_registry — only exists on PR side.
 have_plugin_hook = False
 try:
-    from agent import tts_registry
-    from agent.tts_provider import TTSProvider
+    from hermes_agent.agent import tts_registry
+    from hermes_agent.agent.tts_provider import TTSProvider
     have_plugin_hook = True
 
     if plugin_register == "yes":
@@ -122,7 +122,7 @@ try:
 except ImportError:
     pass
 
-import tools.tts_tool as tts_tool
+import hermes_agent.tools.tts_tool as tts_tool
 
 # Read the config the same way text_to_speech_tool() does.
 tts_config = tts_tool._load_tts_config()

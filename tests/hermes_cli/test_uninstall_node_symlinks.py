@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-import hermes_cli.uninstall as uninstall
+import hermes_agent.hermes_cli.uninstall as uninstall
 
 
 @pytest.fixture

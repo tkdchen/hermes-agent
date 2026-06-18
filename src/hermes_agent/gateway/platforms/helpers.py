@@ -13,10 +13,10 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict
 
-from utils import atomic_json_write
+from hermes_agent.utils import atomic_json_write
 
 if TYPE_CHECKING:
-    from gateway.platforms.base import MessageEvent
+    from hermes_agent.gateway.platforms.base import MessageEvent
 
 logger = logging.getLogger(__name__)
 
@@ -227,7 +227,7 @@ class ThreadParticipationTracker:
         }
 
     def _state_path(self) -> Path:
-        from hermes_constants import get_hermes_home
+        from hermes_agent.hermes_constants import get_hermes_home
         return get_hermes_home() / f"{self._platform}_threads.json"
 
     def _load(self) -> list[str]:

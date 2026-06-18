@@ -10,12 +10,12 @@ Verifies that:
 from datetime import datetime, timedelta
 
 
-from gateway.config import (
+from hermes_agent.gateway.config import (
     GatewayConfig,
     Platform,
     SessionResetPolicy,
 )
-from gateway.session import SessionEntry, SessionSource, SessionStore
+from hermes_agent.gateway.session import SessionEntry, SessionSource, SessionStore
 
 
 # ---------------------------------------------------------------------------

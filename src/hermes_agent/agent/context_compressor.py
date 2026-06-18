@@ -23,14 +23,14 @@ import re
 import time
 from typing import Any, Dict, List, Optional
 
-from agent.auxiliary_client import call_llm, _is_connection_error
-from agent.context_engine import ContextEngine
-from agent.model_metadata import (
+from hermes_agent.agent.auxiliary_client import call_llm, _is_connection_error
+from hermes_agent.agent.context_engine import ContextEngine
+from hermes_agent.agent.model_metadata import (
     MINIMUM_CONTEXT_LENGTH,
     get_model_context_length,
     estimate_messages_tokens_rough,
 )
-from agent.redact import redact_sensitive_text
+from hermes_agent.agent.redact import redact_sensitive_text
 
 logger = logging.getLogger(__name__)
 
@@ -1342,7 +1342,7 @@ Summary generation was unavailable, so this is a best-effort deterministic fallb
         # date here never affects prompt-cache stability. Resolved defensively —
         # a clock failure must never block compaction.
         try:
-            from hermes_time import now as _hermes_now
+            from hermes_agent.hermes_time import now as _hermes_now
 
             _today_str = _hermes_now().strftime("%Y-%m-%d")
         except Exception:  # pragma: no cover - clock resolution is best-effort

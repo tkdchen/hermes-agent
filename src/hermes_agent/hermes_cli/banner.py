@@ -12,7 +12,7 @@ import threading
 import time
 from pathlib import Path
 from urllib.parse import urlparse
-from hermes_constants import get_hermes_home
+from hermes_agent.hermes_constants import get_hermes_home
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 # rich and prompt_toolkit are imported lazily (inside the functions that use
@@ -51,7 +51,7 @@ def cprint(text: str):
 def _skin_color(key: str, fallback: str) -> str:
     """Get a color from the active skin, or return fallback."""
     try:
-        from hermes_cli.skin_engine import get_active_skin
+        from hermes_agent.hermes_cli.skin_engine import get_active_skin
         return get_active_skin().get_color(key, fallback)
     except Exception:
         return fallback
@@ -59,7 +59,7 @@ def _skin_color(key: str, fallback: str) -> str:
 # ASCII Art & Branding
 # =========================================================================
 
-from hermes_cli import __version__ as VERSION, __release_date__ as RELEASE_DATE
+from hermes_agent.hermes_cli import __version__ as VERSION, __release_date__ as RELEASE_DATE
 
 HERMES_AGENT_LOGO = """[bold #FFD700]██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗   ██╗████████╗[/]
 [bold #FFD700]██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝[/]
@@ -98,7 +98,7 @@ def get_available_skills() -> Dict[str, List[str]]:
     user's ``skills.disabled`` config list.
     """
     try:
-        from tools.skills_tool import _find_all_skills
+        from hermes_agent.tools.skills_tool import _find_all_skills
         all_skills = _find_all_skills()  # already filtered
     except Exception:
         return {}
@@ -291,7 +291,7 @@ def check_for_updates() -> Optional[int]:
     # both the Rich banner (build_welcome_banner) and the Ink badge
     # (branding.tsx, guarded on `typeof === 'number' && > 0`) show nothing.
     try:
-        from hermes_cli.config import detect_install_method
+        from hermes_agent.hermes_cli.config import detect_install_method
         if detect_install_method() == "docker":
             return None
     except Exception:
@@ -388,7 +388,7 @@ def get_git_banner_state(repo_dir: Optional[Path] = None) -> Optional[dict]:
     if repo_dir is None:
         # No git checkout — try the baked build SHA (Docker image path).
         try:
-            from hermes_cli.build_info import get_build_sha
+            from hermes_agent.hermes_cli.build_info import get_build_sha
             baked = get_build_sha(short=8)
             if baked:
                 return {"upstream": baked, "local": baked, "ahead": 0}
@@ -402,7 +402,7 @@ def get_git_banner_state(repo_dir: Optional[Path] = None) -> Optional[dict]:
         # Live-git lookup failed (e.g. shallow clone without origin/main).
         # Fall back to the baked build SHA if available.
         try:
-            from hermes_cli.build_info import get_build_sha
+            from hermes_agent.hermes_cli.build_info import get_build_sha
             baked = get_build_sha(short=8)
             if baked:
                 return {"upstream": baked, "local": baked, "ahead": 0}
@@ -565,11 +565,11 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
         get_toolset_for_tool: Callable to map tool name -> toolset name.
         context_length: Model's context window size in tokens.
     """
-    from model_tools import check_tool_availability, TOOLSET_REQUIREMENTS
+    from hermes_agent.model_tools import check_tool_availability, TOOLSET_REQUIREMENTS
     from rich.panel import Panel
     from rich.table import Table
     if get_toolset_for_tool is None:
-        from model_tools import get_toolset_for_tool
+        from hermes_agent.model_tools import get_toolset_for_tool
 
     tools = tools or []
     enabled_toolsets = enabled_toolsets or []
@@ -601,7 +601,7 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
 
     # Use skin's custom caduceus art if provided
     try:
-        from hermes_cli.skin_engine import get_active_skin
+        from hermes_agent.hermes_cli.skin_engine import get_active_skin
         _bskin = get_active_skin()
         _hero = _bskin.banner_hero if hasattr(_bskin, 'banner_hero') and _bskin.banner_hero else HERMES_CADUCEUS
     except Exception:
@@ -684,7 +684,7 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
 
     # MCP Servers section (only if configured)
     try:
-        from tools.mcp_tool import get_mcp_status
+        from hermes_agent.tools.mcp_tool import get_mcp_status
         mcp_status = get_mcp_status()
     except Exception:
         mcp_status = []
@@ -749,8 +749,8 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
     # understand why tool counts may not match what's actually reachable
     # (codex builds its own tool list inside the spawned subprocess).
     try:
-        from hermes_cli.codex_runtime_switch import get_current_runtime
-        from hermes_cli.config import load_config as _load_cfg
+        from hermes_agent.hermes_cli.codex_runtime_switch import get_current_runtime
+        from hermes_agent.hermes_cli.config import load_config as _load_cfg
         if get_current_runtime(_load_cfg()) == "codex_app_server":
             right_lines.append(
                 f"[bold {accent}]Runtime:[/] [{text}]codex app-server[/] "
@@ -760,7 +760,7 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
         pass
     # Show active profile name when not 'default'
     try:
-        from hermes_cli.profiles import get_active_profile_name
+        from hermes_agent.hermes_cli.profiles import get_active_profile_name
         _profile_name = get_active_profile_name()
         if _profile_name and _profile_name != "default":
             right_lines.append(f"[bold {accent}]Profile:[/] [{text}]{_profile_name}[/]")
@@ -773,7 +773,7 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
     try:
         behind = get_update_result(timeout=0.5)
         if behind is not None and behind != 0:
-            from hermes_cli.config import get_managed_update_command, recommended_update_command
+            from hermes_agent.hermes_cli.config import get_managed_update_command, recommended_update_command
             if behind > 0:
                 commits_word = "commit" if behind == 1 else "commits"
                 right_lines.append(
@@ -797,7 +797,7 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
     # Such installs miss the git checkout + installer-managed deps, so updates,
     # self-update, and issue triage don't behave correctly. Warn, don't block.
     try:
-        from hermes_cli.config import detect_install_method
+        from hermes_agent.hermes_cli.config import detect_install_method
         if detect_install_method() == "pip":
             right_lines.append(
                 "[bold yellow]⚠ pip install not officially supported[/]"

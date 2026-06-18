@@ -27,7 +27,7 @@ from unittest.mock import patch, MagicMock, AsyncMock
 
 import pytest
 
-from agent.auxiliary_client import (
+from hermes_agent.agent.auxiliary_client import (
     call_llm,
     async_call_llm,
     _is_unsupported_temperature_error,
@@ -92,11 +92,11 @@ class TestCallLlmUnsupportedTemperatureRetry:
         client = self._setup(RuntimeError(error_message))
 
         with (
-            patch("agent.auxiliary_client._resolve_task_provider_model",
+            patch("hermes_agent.agent.auxiliary_client._resolve_task_provider_model",
                   return_value=("openai-codex", "gpt-5.5", None, None, None)),
-            patch("agent.auxiliary_client._get_cached_client",
+            patch("hermes_agent.agent.auxiliary_client._get_cached_client",
                   return_value=(client, "gpt-5.5")),
-            patch("agent.auxiliary_client._validate_llm_response",
+            patch("hermes_agent.agent.auxiliary_client._validate_llm_response",
                   side_effect=lambda resp, _task: resp),
         ):
             result = call_llm(
@@ -130,13 +130,13 @@ class TestCallLlmUnsupportedTemperatureRetry:
         client.chat.completions.create.side_effect = non_temp_err
 
         with (
-            patch("agent.auxiliary_client._resolve_task_provider_model",
+            patch("hermes_agent.agent.auxiliary_client._resolve_task_provider_model",
                   return_value=("openai-codex", "gpt-5.5", None, None, None)),
-            patch("agent.auxiliary_client._get_cached_client",
+            patch("hermes_agent.agent.auxiliary_client._get_cached_client",
                   return_value=(client, "gpt-5.5")),
-            patch("agent.auxiliary_client._validate_llm_response",
+            patch("hermes_agent.agent.auxiliary_client._validate_llm_response",
                   side_effect=lambda resp, _task: resp),
-            patch("agent.auxiliary_client._try_payment_fallback",
+            patch("hermes_agent.agent.auxiliary_client._try_payment_fallback",
                   return_value=None),
         ):
             with pytest.raises(RuntimeError, match="Invalid value"):
@@ -160,13 +160,13 @@ class TestCallLlmUnsupportedTemperatureRetry:
         client.chat.completions.create.side_effect = err
 
         with (
-            patch("agent.auxiliary_client._resolve_task_provider_model",
+            patch("hermes_agent.agent.auxiliary_client._resolve_task_provider_model",
                   return_value=("openai-codex", "gpt-5.5", None, None, None)),
-            patch("agent.auxiliary_client._get_cached_client",
+            patch("hermes_agent.agent.auxiliary_client._get_cached_client",
                   return_value=(client, "gpt-5.5")),
-            patch("agent.auxiliary_client._validate_llm_response",
+            patch("hermes_agent.agent.auxiliary_client._validate_llm_response",
                   side_effect=lambda resp, _task: resp),
-            patch("agent.auxiliary_client._try_payment_fallback",
+            patch("hermes_agent.agent.auxiliary_client._try_payment_fallback",
                   return_value=None),
         ):
             with pytest.raises(RuntimeError):
@@ -192,11 +192,11 @@ class TestAsyncCallLlmUnsupportedTemperatureRetry:
         ])
 
         with (
-            patch("agent.auxiliary_client._resolve_task_provider_model",
+            patch("hermes_agent.agent.auxiliary_client._resolve_task_provider_model",
                   return_value=("openai-codex", "gpt-5.5", None, None, None)),
-            patch("agent.auxiliary_client._get_cached_client",
+            patch("hermes_agent.agent.auxiliary_client._get_cached_client",
                   return_value=(client, "gpt-5.5")),
-            patch("agent.auxiliary_client._validate_llm_response",
+            patch("hermes_agent.agent.auxiliary_client._validate_llm_response",
                   side_effect=lambda resp, _task: resp),
         ):
             result = await async_call_llm(
@@ -227,13 +227,13 @@ class TestAsyncCallLlmUnsupportedTemperatureRetry:
         )
 
         with (
-            patch("agent.auxiliary_client._resolve_task_provider_model",
+            patch("hermes_agent.agent.auxiliary_client._resolve_task_provider_model",
                   return_value=("openai-codex", "gpt-5.5", None, None, None)),
-            patch("agent.auxiliary_client._get_cached_client",
+            patch("hermes_agent.agent.auxiliary_client._get_cached_client",
                   return_value=(client, "gpt-5.5")),
-            patch("agent.auxiliary_client._validate_llm_response",
+            patch("hermes_agent.agent.auxiliary_client._validate_llm_response",
                   side_effect=lambda resp, _task: resp),
-            patch("agent.auxiliary_client._try_payment_fallback",
+            patch("hermes_agent.agent.auxiliary_client._try_payment_fallback",
                   return_value=None),
         ):
             with pytest.raises(RuntimeError, match="Invalid value"):

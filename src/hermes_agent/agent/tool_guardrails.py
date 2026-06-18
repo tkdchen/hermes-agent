@@ -13,8 +13,8 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Mapping
 
-from utils import safe_json_loads
-from agent.tool_result_classification import file_mutation_result_landed
+from hermes_agent.utils import safe_json_loads
+from hermes_agent.agent.tool_result_classification import file_mutation_result_landed
 
 
 IDEMPOTENT_TOOL_NAMES = frozenset(

@@ -148,7 +148,7 @@ def blueprint_spec_for_installed(skill_name: str) -> Optional[BlueprintSpec]:
     None if the skill isn't found or isn't a blueprint.
     """
     try:
-        from tools.skills_hub import SKILLS_DIR
+        from hermes_agent.tools.skills_hub import SKILLS_DIR
     except Exception:  # pragma: no cover - import guard
         return None
 
@@ -206,7 +206,7 @@ def create_blueprint_job(
     optional ``prompt`` becomes the task instruction. Delivery, model, and
     toolsets carry through. Returns the created job dict.
     """
-    from cron.jobs import create_job
+    from hermes_agent.cron.jobs import create_job
 
     job_spec = blueprint_to_job_spec(spec, name=name)
     if origin is not None:
@@ -226,7 +226,7 @@ def register_blueprint_suggestion(spec: BlueprintSpec) -> Optional[Dict[str, Any
     if not spec.skill_name:
         return None
     try:
-        from cron.suggestions import add_suggestion
+        from hermes_agent.cron.suggestions import add_suggestion
     except Exception:  # pragma: no cover - import guard
         return None
 

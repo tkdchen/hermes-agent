@@ -22,7 +22,7 @@ import os
 from pathlib import Path
 from typing import Iterable, Optional, Tuple
 
-logger = logging.getLogger("agent.lsp.workspace")
+logger = logging.getLogger("hermes_agent.agent.lsp.workspace")
 
 # Cache: cwd → (worktree_root, is_git) so repeated calls don't re-stat.
 # Cleared on shutdown.  Keyed by absolute resolved path so symlink

@@ -15,7 +15,7 @@ These tests pin two fixes:
 
 import threading
 
-import gateway.run as gateway_run
+import hermes_agent.gateway.run as gateway_run
 
 
 def _make_runner():
@@ -115,7 +115,7 @@ def test_bare_runner_without_cache_attr_does_not_crash(monkeypatch):
 
 
 def _bare_agent():
-    import run_agent
+    import hermes_agent.run_agent as run_agent
 
     return object.__new__(run_agent.AIAgent)
 

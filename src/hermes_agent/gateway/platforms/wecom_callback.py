@@ -45,9 +45,9 @@ except ImportError:
     httpx = None  # type: ignore[assignment]
     HTTPX_AVAILABLE = False
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import BasePlatformAdapter, MessageEvent, MessageType, SendResult
-from gateway.platforms.wecom_crypto import WXBizMsgCrypt, WeComCryptoError
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import BasePlatformAdapter, MessageEvent, MessageType, SendResult
+from hermes_agent.gateway.platforms.wecom_crypto import WXBizMsgCrypt, WeComCryptoError
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +130,7 @@ class WecomCallbackAdapter(BasePlatformAdapter):
 
         try:
             # Tighter keepalive so idle CLOSE_WAIT drains promptly (#18451).
-            from gateway.platforms._http_client_limits import platform_httpx_limits
+            from hermes_agent.gateway.platforms._http_client_limits import platform_httpx_limits
             self._http_client = httpx.AsyncClient(timeout=20.0, limits=platform_httpx_limits())
             self._app = web.Application()
             self._app.router.add_get("/health", self._handle_health)

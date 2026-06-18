@@ -15,23 +15,23 @@ from typing import Any, Awaitable, Callable, Optional
 
 import httpx
 
-from agent.auxiliary_client import async_call_llm, extract_content_or_reasoning
-from hermes_constants import get_hermes_home
-from plugins.teams_pipeline.meetings import (
+from hermes_agent.agent.auxiliary_client import async_call_llm, extract_content_or_reasoning
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.plugins.teams_pipeline.meetings import (
     download_recording_artifact,
     enrich_meeting_with_call_record,
     fetch_preferred_transcript_text,
     list_recording_artifacts,
     resolve_meeting_reference,
 )
-from plugins.teams_pipeline.models import (
+from hermes_agent.plugins.teams_pipeline.models import (
     MeetingArtifact,
     TeamsMeetingPipelineJob,
     TeamsMeetingRef,
     TeamsMeetingSummaryPayload,
 )
-from plugins.teams_pipeline.store import TeamsPipelineStore
-from tools.transcription_tools import transcribe_audio
+from hermes_agent.plugins.teams_pipeline.store import TeamsPipelineStore
+from hermes_agent.tools.transcription_tools import transcribe_audio
 
 logger = logging.getLogger(__name__)
 

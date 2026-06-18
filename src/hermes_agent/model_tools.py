@@ -29,8 +29,8 @@ import threading
 import time
 from typing import Dict, Any, List, Optional, Tuple
 
-from tools.registry import discover_builtin_tools, registry
-from toolsets import resolve_toolset, validate_toolset
+from hermes_agent.tools.registry import discover_builtin_tools, registry
+from hermes_agent.toolsets import resolve_toolset, validate_toolset
 
 logger = logging.getLogger(__name__)
 
@@ -194,7 +194,7 @@ discover_builtin_tools()
 
 # Plugin tool discovery (user/project/pip plugins)
 try:
-    from hermes_cli.plugins import discover_plugins
+    from hermes_agent.hermes_cli.plugins import discover_plugins
     discover_plugins()
 except Exception as e:
     logger.debug("Plugin discovery failed: %s", e)
@@ -303,7 +303,7 @@ def get_tool_definitions(
     # invalidate hook on every config-writer.
     if quiet_mode:
         try:
-            from hermes_cli.config import get_config_path
+            from hermes_agent.hermes_cli.config import get_config_path
             cfg_path = get_config_path()
             cfg_stat = cfg_path.stat()
             cfg_fp = (cfg_stat.st_mtime_ns, cfg_stat.st_size)
@@ -381,7 +381,7 @@ def _compute_tool_definitions(
                 print(f"⚠️  Unknown toolset: {toolset_name}")
     else:
         # Default: start with everything
-        from toolsets import get_all_toolsets
+        from hermes_agent.toolsets import get_all_toolsets
         for ts_name in get_all_toolsets():
             tools_to_include.update(resolve_toolset(ts_name))
 
@@ -424,7 +424,7 @@ def _compute_tool_definitions(
     # execute_code" even when the API key isn't configured or the toolset is
     # disabled (#560-discord).
     if "execute_code" in available_tool_names:
-        from tools.code_execution_tool import SANDBOX_ALLOWED_TOOLS, build_execute_code_schema, _get_execution_mode
+        from hermes_agent.tools.code_execution_tool import SANDBOX_ALLOWED_TOOLS, build_execute_code_schema, _get_execution_mode
         sandbox_enabled = SANDBOX_ALLOWED_TOOLS & available_tool_names
         dynamic_schema = build_execute_code_schema(sandbox_enabled, mode=_get_execution_mode())
         for i, td in enumerate(filtered_tools):
@@ -444,7 +444,7 @@ def _compute_tool_definitions(
     for discord_tool_name in _discord_schema_fns:
         if discord_tool_name in available_tool_names:
             try:
-                from tools import discord_tool as _dt
+                from hermes_agent.tools import discord_tool as _dt
                 schema_fn = getattr(_dt, _discord_schema_fns[discord_tool_name])
                 dynamic = schema_fn()
             except Exception:
@@ -498,7 +498,7 @@ def _compute_tool_definitions(
     # string-valued schema nodes from malformed MCP servers, etc. This
     # is a no-op for schemas that are already well-formed.
     try:
-        from tools.schema_sanitizer import sanitize_tool_schemas
+        from hermes_agent.tools.schema_sanitizer import sanitize_tool_schemas
         filtered_tools = sanitize_tool_schemas(filtered_tools)
     except Exception as e:  # pragma: no cover — defensive
         logger.warning("Schema sanitization skipped: %s", e)
@@ -514,7 +514,7 @@ def _compute_tool_definitions(
     # has already normalized schemas, and the assembly is idempotent in
     # case some caller invokes get_tool_definitions twice.
     try:
-        from tools.tool_search import assemble_tool_defs, load_config as _load_ts_config
+        from hermes_agent.tools.tool_search import assemble_tool_defs, load_config as _load_ts_config
         ts_cfg = _load_ts_config()
         if not skip_tool_search_assembly and ts_cfg.enabled != "off":
             context_length = _resolve_active_context_length()
@@ -543,7 +543,7 @@ def _resolve_active_context_length() -> int:
     back to a fixed token cutoff in that case.
     """
     try:
-        from hermes_cli.config import load_config as _load
+        from hermes_agent.hermes_cli.config import load_config as _load
         cfg = _load() or {}
         model_cfg = cfg.get("model") if isinstance(cfg.get("model"), dict) else {}
         if not isinstance(model_cfg, dict):
@@ -551,7 +551,7 @@ def _resolve_active_context_length() -> int:
         model_id = (model_cfg.get("model") or model_cfg.get("default") or "").strip()
         if not model_id:
             return 0
-        from agent.model_metadata import get_model_context_length
+        from hermes_agent.agent.model_metadata import get_model_context_length
         return int(get_model_context_length(model_id) or 0)
     except Exception as e:
         logger.debug("Could not resolve active context length: %s", e)
@@ -848,7 +848,7 @@ def _emit_post_tool_call_hook(
     listener will actually consume it).
     """
     try:
-        from hermes_cli.plugins import has_hook, invoke_hook
+        from hermes_agent.hermes_cli.plugins import has_hook, invoke_hook
         if not has_hook("post_tool_call"):
             return
         if status is None:
@@ -926,7 +926,7 @@ def handle_function_call(
     # tool name, not the bridge.
     _ts_mod = None
     try:
-        from tools import tool_search as _ts_mod  # noqa: F401
+        from hermes_agent.tools import tool_search as _ts_mod  # noqa: F401
     except Exception:
         _ts_mod = None
 
@@ -997,7 +997,7 @@ def handle_function_call(
     _tool_original_args = dict(function_args)
     if not skip_tool_request_middleware:
         try:
-            from hermes_cli.middleware import apply_tool_request_middleware
+            from hermes_agent.hermes_cli.middleware import apply_tool_request_middleware
 
             _tool_request_mw = apply_tool_request_middleware(
                 function_name,
@@ -1031,7 +1031,7 @@ def handle_function_call(
         if not skip_pre_tool_call_hook:
             block_message: Optional[str] = None
             try:
-                from hermes_cli.plugins import get_pre_tool_call_block_message
+                from hermes_agent.hermes_cli.plugins import get_pre_tool_call_block_message
                 block_message = get_pre_tool_call_block_message(
                     function_name,
                     function_args,
@@ -1067,7 +1067,7 @@ def handle_function_call(
         # is bound via ContextVar only for ACP sessions, so CLI/gateway paths
         # are unaffected when it is unset.
         try:
-            from acp_adapter.edit_approval import maybe_require_edit_approval
+            from hermes_agent.acp_adapter.edit_approval import maybe_require_edit_approval
 
             edit_block_message = maybe_require_edit_approval(function_name, function_args)
             if edit_block_message is not None:
@@ -1081,7 +1081,7 @@ def handle_function_call(
         # so the *consecutive* counter resets (reads after other work are fine).
         if function_name not in _READ_SEARCH_TOOLS:
             try:
-                from tools.file_tools import notify_other_tool_call
+                from hermes_agent.tools.file_tools import notify_other_tool_call
                 notify_other_tool_call(task_id or "default")
             except Exception:
                 pass  # file_tools may not be loaded yet
@@ -1096,7 +1096,7 @@ def handle_function_call(
         _dispatch_start = time.monotonic()
         _approval_tokens = None
         try:
-            from tools.approval import (
+            from hermes_agent.tools.approval import (
                 reset_current_observability_context,
                 set_current_observability_context,
             )
@@ -1126,7 +1126,7 @@ def handle_function_call(
                         session_id=session_id,
                         user_task=user_task,
                     )
-            from hermes_cli.middleware import run_tool_execution_middleware
+            from hermes_agent.hermes_cli.middleware import run_tool_execution_middleware
 
             result = run_tool_execution_middleware(
                 function_name,
@@ -1169,7 +1169,7 @@ def handle_function_call(
         # Gated on has_hook so the no-listener path skips both the result
         # field derivation and the payload dispatch.
         try:
-            from hermes_cli.plugins import has_hook, invoke_hook
+            from hermes_agent.hermes_cli.plugins import has_hook, invoke_hook
             if has_hook("transform_tool_result"):
                 status, error_type, error_message = _tool_result_observer_fields(result)
                 hook_results = invoke_hook(

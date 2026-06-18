@@ -6,8 +6,8 @@ from unittest.mock import patch, MagicMock, mock_open
 
 import pytest
 
-import hermes_cli.gateway as gateway
-import hermes_constants
+import hermes_agent.hermes_cli.gateway as gateway
+import hermes_agent.hermes_constants as hermes_constants
 
 
 # =============================================================================

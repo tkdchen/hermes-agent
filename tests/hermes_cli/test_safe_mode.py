@@ -53,7 +53,7 @@ class TestSafeModePluginDiscovery:
 
     def test_discovery_skipped(self, monkeypatch):
         monkeypatch.setenv("HERMES_SAFE_MODE", "1")
-        from hermes_cli.plugins import PluginManager
+        from hermes_agent.hermes_cli.plugins import PluginManager
 
         mgr = PluginManager()
         called = []
@@ -67,7 +67,7 @@ class TestSafeModePluginDiscovery:
 
     def test_discovery_runs_without_safe_mode(self, monkeypatch):
         monkeypatch.delenv("HERMES_SAFE_MODE", raising=False)
-        from hermes_cli.plugins import PluginManager
+        from hermes_agent.hermes_cli.plugins import PluginManager
 
         mgr = PluginManager()
         called = []
@@ -83,22 +83,22 @@ class TestSafeModeMCP:
 
     def test_mcp_servers_empty(self, monkeypatch):
         monkeypatch.setenv("HERMES_SAFE_MODE", "1")
-        from tools.mcp_tool import _load_mcp_config
+        from hermes_agent.tools.mcp_tool import _load_mcp_config
 
         with pytest.MonkeyPatch.context() as mp:
             mp.setattr(
-                "hermes_cli.config.load_config",
+                "hermes_agent.hermes_cli.config.load_config",
                 lambda: {"mcp_servers": {"github": {"url": "https://example.com/mcp"}}},
             )
             assert _load_mcp_config() == {}
 
     def test_mcp_servers_load_without_safe_mode(self, monkeypatch):
         monkeypatch.delenv("HERMES_SAFE_MODE", raising=False)
-        from tools.mcp_tool import _load_mcp_config
+        from hermes_agent.tools.mcp_tool import _load_mcp_config
 
         with pytest.MonkeyPatch.context() as mp:
             mp.setattr(
-                "hermes_cli.config.load_config",
+                "hermes_agent.hermes_cli.config.load_config",
                 lambda: {"mcp_servers": {"github": {"url": "https://example.com/mcp"}}},
             )
             servers = _load_mcp_config()
@@ -109,21 +109,21 @@ class TestSafeModeParser:
     """--safe-mode must parse on both the root parser and `hermes chat`."""
 
     def test_chat_subcommand_accepts_flag(self):
-        from hermes_cli._parser import build_top_level_parser
+        from hermes_agent.hermes_cli._parser import build_top_level_parser
 
         parser, _subparsers, _chat = build_top_level_parser()
         args = parser.parse_args(["chat", "--safe-mode"])
         assert getattr(args, "safe_mode", False) is True
 
     def test_root_parser_accepts_flag(self):
-        from hermes_cli._parser import build_top_level_parser
+        from hermes_agent.hermes_cli._parser import build_top_level_parser
 
         parser, _subparsers, _chat = build_top_level_parser()
         args = parser.parse_args(["--safe-mode"])
         assert getattr(args, "safe_mode", False) is True
 
     def test_default_is_off(self):
-        from hermes_cli._parser import build_top_level_parser
+        from hermes_agent.hermes_cli._parser import build_top_level_parser
 
         parser, _subparsers, _chat = build_top_level_parser()
         args = parser.parse_args(["chat"])

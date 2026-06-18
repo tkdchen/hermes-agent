@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
-from tools.file_operations import _is_write_denied
+from hermes_agent.tools.file_operations import _is_write_denied
 
 
 class TestWriteDenyExactPaths:
@@ -35,7 +35,7 @@ class TestWriteDenyExactPaths:
         # ``~/.hermes``) must be write-denied. The hermetic test conftest
         # points HERMES_HOME at a tempdir — resolve via get_hermes_home()
         # to match the denylist.
-        from hermes_constants import get_hermes_home
+        from hermes_agent.hermes_constants import get_hermes_home
         path = str(get_hermes_home() / ".env")
         assert _is_write_denied(path) is True
 
@@ -58,7 +58,7 @@ class TestWriteDenyExactPaths:
         monkeypatch.setenv("HERMES_HOME", str(profile_home))
 
         # Sanity check: HERMES_HOME does point to the profile dir, not the root.
-        from hermes_constants import get_hermes_home, get_default_hermes_root
+        from hermes_agent.hermes_constants import get_hermes_home, get_default_hermes_root
         assert get_hermes_home() == profile_home
         assert get_default_hermes_root() == root
 
@@ -104,7 +104,7 @@ class TestWriteDenyPrefixes:
         fake_etc.mkdir(parents=True)
         target = str(fake_etc / "evil.service")
         # Patch the prefix builder to include our tmp_path prefix
-        import agent.file_safety as _fs
+        import hermes_agent.agent.file_safety as _fs
         _orig = _fs.build_write_denied_prefixes
         _extra_prefix = str(tmp_path / "etc" / "systemd") + os.sep
         def _patched(home):
@@ -121,7 +121,7 @@ class TestWriteAllowed:
         assert _is_write_denied("/home/user/project/main.py") is False
 
     def test_hermes_control_files_requested_writable(self):
-        from hermes_constants import get_hermes_home
+        from hermes_agent.hermes_constants import get_hermes_home
 
         home = get_hermes_home()
         for name in ["auth.json", "config.yaml", "webhook_subscriptions.json"]:

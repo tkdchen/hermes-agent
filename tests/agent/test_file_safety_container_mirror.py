@@ -15,13 +15,13 @@ import pytest
 class TestClassifyContainerMirrorTarget:
     def test_returns_none_without_context(self):
         """No Docker context — /root/.hermes/… must not be flagged."""
-        from agent.file_safety import classify_container_mirror_target
+        from hermes_agent.agent.file_safety import classify_container_mirror_target
 
         assert classify_container_mirror_target("/root/.hermes/profiles/group1/SOUL.md") is None
 
     def test_catches_soul_md_with_context(self):
         """Primary failure mode from #32049: agent writes SOUL.md via container path."""
-        from agent.file_safety import classify_container_mirror_target
+        from hermes_agent.agent.file_safety import classify_container_mirror_target
 
         result = classify_container_mirror_target(
             "/root/.hermes/profiles/group1/SOUL.md",
@@ -36,7 +36,7 @@ class TestClassifyContainerMirrorTarget:
         "memories/MEMORY.md",
     ])
     def test_catches_authoritative_profile_files(self, inner):
-        from agent.file_safety import classify_container_mirror_target
+        from hermes_agent.agent.file_safety import classify_container_mirror_target
 
         result = classify_container_mirror_target(
             f"/root/.hermes/{inner}",
@@ -47,7 +47,7 @@ class TestClassifyContainerMirrorTarget:
 
     def test_non_hermes_path_not_flagged(self):
         """/root/workspace/… is not .hermes state and must not be blocked."""
-        from agent.file_safety import classify_container_mirror_target
+        from hermes_agent.agent.file_safety import classify_container_mirror_target
 
         assert (
             classify_container_mirror_target(
@@ -60,7 +60,7 @@ class TestClassifyContainerMirrorTarget:
 
 class TestGetContainerMirrorWarning:
     def test_warning_names_inner_path_and_bypass(self):
-        from agent.file_safety import get_container_mirror_warning
+        from hermes_agent.agent.file_safety import get_container_mirror_warning
 
         warn = get_container_mirror_warning(
             "/root/.hermes/profiles/group1/SOUL.md",
@@ -76,7 +76,7 @@ class TestOrthogonality:
 
     def test_inner_container_path_caught_by_context_guard(self):
         """No sandboxes/ segment — shape guard passes, context guard blocks."""
-        from agent.file_safety import classify_container_mirror_target
+        from hermes_agent.agent.file_safety import classify_container_mirror_target
 
         path = "/root/.hermes/profiles/group1/SOUL.md"
 
@@ -88,7 +88,7 @@ class TestFileToolIntegration:
     """file_tools must catch the mirror path before creating DockerEnvironment."""
 
     def test_guard_uses_current_docker_config_before_env_exists(self, monkeypatch):
-        import tools.file_tools as file_tools
+        import hermes_agent.tools.file_tools as file_tools
 
         monkeypatch.setattr(
             file_tools,

@@ -72,7 +72,7 @@ def _extract_dict_keys(source: str, dict_name: str) -> set[str]:
 
 def _cli_env_map_keys() -> set[str]:
     """terminal config keys bridged by cli.load_cli_config()."""
-    import cli
+    import hermes_agent.cli as cli
     source = inspect.getsource(cli.load_cli_config)
     return _extract_dict_keys(source, "env_mappings")
 
@@ -81,7 +81,7 @@ def _gateway_env_map_keys() -> set[str]:
     """terminal config keys bridged by gateway/run.py at module load."""
     # gateway/run.py builds the dict at module top-level (not inside a
     # function), so inspect the whole module source.
-    import gateway.run as gr
+    import hermes_agent.gateway.run as gr
     source = inspect.getsource(gr)
     return _extract_dict_keys(source, "_terminal_env_map")
 
@@ -96,7 +96,7 @@ def _save_config_env_sync_keys() -> set[str]:
     source of truth that the config-set path uses, rather than a string
     literal that the consolidation removed.
     """
-    from hermes_cli import config as hc_config
+    from hermes_agent.hermes_cli import config as hc_config
     # set_config_value bridges every TERMINAL_CONFIG_ENV_MAP key except
     # terminal.cwd (see the ``key != "terminal.cwd"`` guard in
     # set_config_value); mirror that exclusion here.
@@ -120,7 +120,7 @@ _CLI_ONLY_OK = frozenset({
 
 def _terminal_tool_env_var_names() -> set[str]:
     """All TERMINAL_* env vars actually consumed by terminal_tool."""
-    import tools.terminal_tool as tt
+    import hermes_agent.tools.terminal_tool as tt
     source = inspect.getsource(tt)
     # Naive scan: every os.getenv("TERMINAL_X", ...) and _parse_env_var("TERMINAL_X", ...).
     import re
@@ -129,7 +129,7 @@ def _terminal_tool_env_var_names() -> set[str]:
 
 
 def test_cli_and_gateway_env_maps_agree():
-    """cli.py and gateway/run.py must bridge the same set of terminal keys.
+    """hermes_agent.cli.py and gateway/run.py must bridge the same set of terminal keys.
 
     Both feed the same downstream consumer (terminal_tool).  Drift between
     them means a config.yaml setting that "works in CLI mode but not gateway

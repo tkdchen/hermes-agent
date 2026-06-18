@@ -23,12 +23,12 @@ def _restore_stdout():
 def server():
     with patch.dict("sys.modules", {
         "hermes_constants": MagicMock(get_hermes_home=MagicMock(return_value="/tmp/hermes_test")),
-        "hermes_cli.env_loader": MagicMock(),
-        "hermes_cli.banner": MagicMock(),
+        "hermes_agent.hermes_cli.env_loader": MagicMock(),
+        "hermes_agent.hermes_cli.banner": MagicMock(),
         "hermes_state": MagicMock(),
     }):
         import importlib
-        mod = importlib.import_module("tui_gateway.server")
+        mod = importlib.import_module("hermes_agent.tui_gateway.server")
         yield mod
         # Reset module-level session state without re-importing. importlib.reload
         # would re-register the module's atexit hooks (ThreadPoolExecutor
@@ -181,7 +181,7 @@ def test_write_json_skips_flush_when_disable_flush_true(monkeypatch):
     """
     import importlib
 
-    transport_mod = importlib.import_module("tui_gateway.transport")
+    transport_mod = importlib.import_module("hermes_agent.tui_gateway.transport")
     monkeypatch.setattr(transport_mod, "_DISABLE_FLUSH", True)
 
     flushed = {"count": 0}
@@ -207,7 +207,7 @@ def test_disable_flush_env_var_actually_wires_to_module_constant(monkeypatch):
     import importlib
 
     monkeypatch.setenv("HERMES_TUI_GATEWAY_NO_FLUSH", "1")
-    transport_mod = importlib.reload(importlib.import_module("tui_gateway.transport"))
+    transport_mod = importlib.reload(importlib.import_module("hermes_agent.tui_gateway.transport"))
 
     try:
         assert transport_mod._DISABLE_FLUSH is True
@@ -680,7 +680,7 @@ def test_session_resume_reuses_existing_live_session(server, monkeypatch):
         register_gateway_notify=lambda *_args, **_kwargs: None,
     )
 
-    with patch.dict(sys.modules, {"tools.approval": fake_approval}):
+    with patch.dict(sys.modules, {"hermes_agent.tools.approval": fake_approval}):
         first_holder = {}
 
         def resume_first():
@@ -791,7 +791,7 @@ def test_session_resume_live_payload_uses_current_history_with_ancestors(server,
         register_gateway_notify=lambda *_args, **_kwargs: None,
     )
 
-    with patch.dict(sys.modules, {"tools.approval": fake_approval}):
+    with patch.dict(sys.modules, {"hermes_agent.tools.approval": fake_approval}):
         first = server.handle_request(
             {
                 "id": "first",
@@ -944,10 +944,10 @@ def test_make_agent_accepts_list_system_prompt(server, monkeypatch):
             captured.update(kwargs)
             self.model = kwargs.get("model", "")
 
-    monkeypatch.setitem(sys.modules, "run_agent", types.SimpleNamespace(AIAgent=_Agent))
+    monkeypatch.setitem(sys.modules, "hermes_agent.run_agent", types.SimpleNamespace(AIAgent=_Agent))
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.runtime_provider",
+        "hermes_agent.hermes_cli.runtime_provider",
         types.SimpleNamespace(
             resolve_runtime_provider=lambda **_kwargs: {
                 "provider": "test",
@@ -1014,7 +1014,7 @@ def test_slash_exec_rejects_skill_commands(server):
     # Mock scan_skill_commands to return a known skill
     fake_skills = {"/hermes-agent-dev": {"name": "hermes-agent-dev", "description": "Dev workflow"}}
 
-    with patch("agent.skill_commands.get_skill_commands", return_value=fake_skills):
+    with patch("hermes_agent.agent.skill_commands.get_skill_commands", return_value=fake_skills):
         resp = server.handle_request({
             "id": "r1",
             "method": "slash.exec",
@@ -1043,7 +1043,7 @@ def test_slash_exec_handles_plugin_commands_in_live_gateway(server):
     server._sessions[sid] = {"session_key": sid, "agent": None, "slash_worker": worker}
 
     with patch(
-        "hermes_cli.plugins.get_plugin_command_handler",
+        "hermes_agent.hermes_cli.plugins.get_plugin_command_handler",
         lambda name: (lambda arg: f"plugin:{arg}") if name == "plugin-cmd" else None,
     ):
         resp = server.handle_request({
@@ -1073,7 +1073,7 @@ def test_slash_exec_plugin_lookup_failure_falls_back_to_worker(server):
     server._sessions[sid] = {"session_key": sid, "agent": None, "slash_worker": worker}
 
     with patch(
-        "hermes_cli.plugins.get_plugin_command_handler",
+        "hermes_agent.hermes_cli.plugins.get_plugin_command_handler",
         side_effect=RuntimeError("discovery boom"),
     ):
         resp = server.handle_request({
@@ -1106,7 +1106,7 @@ def test_slash_exec_plugin_handler_error_returns_output(server):
     server._sessions[sid] = {"session_key": sid, "agent": None, "slash_worker": worker}
 
     with patch(
-        "hermes_cli.plugins.get_plugin_command_handler",
+        "hermes_agent.hermes_cli.plugins.get_plugin_command_handler",
         lambda name: handler if name == "plugin-cmd" else None,
     ):
         resp = server.handle_request({
@@ -1183,7 +1183,7 @@ def test_skills_manage_search_uses_tools_hub_sources(server):
         unified_search=search,
     )
 
-    with patch.dict(sys.modules, {"tools.skills_hub": fake_hub}):
+    with patch.dict(sys.modules, {"hermes_agent.tools.skills_hub": fake_hub}):
         resp = server.handle_request({
             "id": "skills-search",
             "method": "skills.manage",
@@ -1308,8 +1308,8 @@ def test_command_dispatch_returns_skill_payload(server):
     fake_skills = {"/hermes-agent-dev": {"name": "hermes-agent-dev", "description": "Dev workflow"}}
     fake_msg = "Loaded skill content here"
 
-    with patch("agent.skill_commands.scan_skill_commands", return_value=fake_skills), \
-         patch("agent.skill_commands.build_skill_invocation_message", return_value=fake_msg):
+    with patch("hermes_agent.agent.skill_commands.scan_skill_commands", return_value=fake_skills), \
+         patch("hermes_agent.agent.skill_commands.build_skill_invocation_message", return_value=fake_msg):
         resp = server.handle_request({
             "id": "r2",
             "method": "command.dispatch",
@@ -1328,7 +1328,7 @@ def test_command_dispatch_awaits_async_plugin_handler(server):
         return f"async:{arg}"
 
     with patch(
-        "hermes_cli.plugins.get_plugin_command_handler",
+        "hermes_agent.hermes_cli.plugins.get_plugin_command_handler",
         lambda name: _handler if name == "async-cmd" else None,
     ):
         resp = server.handle_request({

@@ -25,15 +25,15 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     EphemeralReply,
     MessageEvent,
     MessageType,
     SendResult,
 )
-from gateway.session import SessionSource
+from hermes_agent.gateway.session import SessionSource
 
 
 class _NoDeleteAdapter(BasePlatformAdapter):
@@ -177,7 +177,7 @@ async def test_schedule_ephemeral_delete_calls_delete_after_ttl():
     # floors sleeps at 1s via ``max(1, int(ttl_seconds))``.  Patch asyncio.sleep
     # inside the module under test; the test body uses the real one for
     # scheduler pumping.
-    import gateway.platforms.base as base_module
+    import hermes_agent.gateway.platforms.base as base_module
 
     sleeps: list[float] = []
     _real_sleep = base_module.asyncio.sleep
@@ -208,7 +208,7 @@ async def test_schedule_ephemeral_delete_swallows_errors():
         raise RuntimeError("permission denied")
 
     adapter.delete_message = _boom  # type: ignore[assignment]
-    with patch("gateway.platforms.base.asyncio.sleep", AsyncMock()):
+    with patch("hermes_agent.gateway.platforms.base.asyncio.sleep", AsyncMock()):
         adapter._schedule_ephemeral_delete(
             chat_id="42", message_id="m-2", ttl_seconds=1
         )
@@ -252,7 +252,7 @@ async def test_process_message_unwraps_ephemeral_before_send():
 
     event = _make_event()
     session_key = "agent:main:telegram:private:42"
-    with patch("gateway.platforms.base.asyncio.sleep", _fake_sleep), patch.object(
+    with patch("hermes_agent.gateway.platforms.base.asyncio.sleep", _fake_sleep), patch.object(
         adapter, "_keep_typing", new=AsyncMock()
     ):
         await adapter._process_message_background(event, session_key)
@@ -289,7 +289,7 @@ async def test_process_message_ephemeral_reply_does_not_auto_upload_bare_paths(t
 
     event = _make_event(text="/new")
     session_key = "agent:main:telegram:private:42"
-    with patch("gateway.platforms.base.asyncio.sleep", AsyncMock()), patch.object(
+    with patch("hermes_agent.gateway.platforms.base.asyncio.sleep", AsyncMock()), patch.object(
         adapter, "_keep_typing", new=AsyncMock()
     ):
         await adapter._process_message_background(event, session_key)
@@ -322,7 +322,7 @@ async def test_process_message_incapable_platform_does_not_schedule_delete():
 
     event = _make_event()
     session_key = "agent:main:telegram:private:42"
-    with patch("gateway.platforms.base.asyncio.sleep", AsyncMock()), patch.object(
+    with patch("hermes_agent.gateway.platforms.base.asyncio.sleep", AsyncMock()), patch.object(
         adapter, "_keep_typing", new=AsyncMock()
     ):
         await adapter._process_message_background(event, session_key)
@@ -355,7 +355,7 @@ async def test_process_message_plain_string_behaves_unchanged():
 
     event = _make_event()
     session_key = "agent:main:telegram:private:42"
-    with patch("gateway.platforms.base.asyncio.sleep", AsyncMock()), patch.object(
+    with patch("hermes_agent.gateway.platforms.base.asyncio.sleep", AsyncMock()), patch.object(
         adapter, "_keep_typing", new=AsyncMock()
     ):
         await adapter._process_message_background(event, session_key)

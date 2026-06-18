@@ -19,9 +19,9 @@ These tests exercise the contract at the unit level; the E2E case
 """
 from __future__ import annotations
 
-from agent.lsp.client import _diagnostic_key
-from agent.lsp.manager import _diag_key
-from agent.lsp.range_shift import (
+from hermes_agent.agent.lsp.client import _diagnostic_key
+from hermes_agent.agent.lsp.manager import _diag_key
+from hermes_agent.agent.lsp.range_shift import (
     build_line_shift,
     shift_baseline,
     shift_diagnostic_range,

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from hermes_cli.runtime_provider import (
+from hermes_agent.hermes_cli.runtime_provider import (
     _VALID_API_MODES,
     _maybe_apply_codex_app_server_runtime,
 )
@@ -108,35 +108,35 @@ class TestCodexAppServerModule:
     """Module-surface tests for the JSON-RPC speaker. Don't require codex CLI."""
 
     def test_module_imports(self) -> None:
-        from agent.transports import codex_app_server
+        from hermes_agent.agent.transports import codex_app_server
 
         assert codex_app_server.MIN_CODEX_VERSION >= (0, 1, 0)
         assert callable(codex_app_server.parse_codex_version)
         assert callable(codex_app_server.check_codex_binary)
 
     def test_parse_codex_version_valid(self) -> None:
-        from agent.transports.codex_app_server import parse_codex_version
+        from hermes_agent.agent.transports.codex_app_server import parse_codex_version
 
         assert parse_codex_version("codex-cli 0.130.0") == (0, 130, 0)
         assert parse_codex_version("codex-cli 1.2.3 (extra metadata)") == (1, 2, 3)
         assert parse_codex_version("codex 99.0.1\n") == (99, 0, 1)
 
     def test_parse_codex_version_invalid(self) -> None:
-        from agent.transports.codex_app_server import parse_codex_version
+        from hermes_agent.agent.transports.codex_app_server import parse_codex_version
 
         assert parse_codex_version("nope") is None
         assert parse_codex_version("") is None
         assert parse_codex_version(None) is None  # type: ignore[arg-type]
 
     def test_check_binary_handles_missing_executable(self) -> None:
-        from agent.transports.codex_app_server import check_codex_binary
+        from hermes_agent.agent.transports.codex_app_server import check_codex_binary
 
         ok, msg = check_codex_binary(codex_bin="/nonexistent/codex/binary/path")
         assert ok is False
         assert "not found" in msg.lower() or "no such" in msg.lower()
 
     def test_codex_error_class_is_runtimeerror(self) -> None:
-        from agent.transports.codex_app_server import CodexAppServerError
+        from hermes_agent.agent.transports.codex_app_server import CodexAppServerError
 
         err = CodexAppServerError(code=-32600, message="boom")
         assert isinstance(err, RuntimeError)
@@ -161,7 +161,7 @@ class TestSpawnEnvIsolation:
         """The spawn env must contain the parent process's HOME unchanged.
         Verifies via a subprocess-monkey-patch."""
         import subprocess
-        from agent.transports import codex_app_server as cas
+        from hermes_agent.agent.transports import codex_app_server as cas
 
         captured = {}
 
@@ -205,7 +205,7 @@ class TestSpawnEnvIsolation:
         """CODEX_HOME isolation must still work — that's the whole point
         of the codex_home arg."""
         import subprocess
-        from agent.transports import codex_app_server as cas
+        from hermes_agent.agent.transports import codex_app_server as cas
 
         captured = {}
 
@@ -249,7 +249,7 @@ class TestSpawnEnvIsolation:
         for the Kanban root only.
         """
         import subprocess
-        from agent.transports import codex_app_server as cas
+        from hermes_agent.agent.transports import codex_app_server as cas
 
         captured = {}
 

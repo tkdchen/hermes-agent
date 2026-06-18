@@ -10,9 +10,9 @@ from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
-from hermes_cli import auth as auth_mod
-from agent.credential_pool import CredentialPool, PooledCredential, get_custom_provider_pool_key, load_pool
-from hermes_cli.auth import (
+from hermes_agent.hermes_cli import auth as auth_mod
+from hermes_agent.agent.credential_pool import CredentialPool, PooledCredential, get_custom_provider_pool_key, load_pool
+from hermes_agent.hermes_cli.auth import (
     AuthError,
     DEFAULT_CODEX_BASE_URL,
     DEFAULT_QWEN_BASE_URL,
@@ -30,9 +30,9 @@ from hermes_cli.auth import (
     resolve_external_process_provider_credentials,
     has_usable_secret,
 )
-from hermes_cli.config import get_compatible_custom_providers, load_config
-from hermes_constants import OPENROUTER_BASE_URL
-from utils import base_url_host_matches, base_url_hostname, env_int
+from hermes_agent.hermes_cli.config import get_compatible_custom_providers, load_config
+from hermes_agent.hermes_constants import OPENROUTER_BASE_URL
+from hermes_agent.utils import base_url_host_matches, base_url_hostname, env_int
 
 
 def _normalize_custom_provider_name(value: str) -> str:
@@ -63,7 +63,7 @@ def _config_base_url_trustworthy_for_bare_custom(cfg_base_url: str, cfg_provider
     # is, otherwise a legit LAN/WireGuard ollama endpoint silently falls
     # through to OpenRouter.
     try:
-        from hermes_cli.auth import resolve_provider as _resolve_provider
+        from hermes_agent.hermes_cli.auth import resolve_provider as _resolve_provider
 
         if _resolve_provider(cfg_provider_norm) == "custom":
             return True
@@ -232,7 +232,7 @@ def _copilot_runtime_api_mode(model_cfg: Dict[str, Any], api_key: str) -> str:
         return "chat_completions"
 
     try:
-        from hermes_cli.models import copilot_model_api_mode
+        from hermes_agent.hermes_cli.models import copilot_model_api_mode
 
         return copilot_model_api_mode(model_name, api_key=api_key)
     except Exception:
@@ -360,7 +360,7 @@ def _resolve_runtime_from_pool_entry(
         # explicitly picked anthropic_messages (Anthropic-style endpoint).
         if effective_model and api_mode != "anthropic_messages":
             try:
-                from hermes_cli.models import azure_foundry_model_api_mode
+                from hermes_agent.hermes_cli.models import azure_foundry_model_api_mode
 
                 inferred = azure_foundry_model_api_mode(effective_model)
             except Exception:
@@ -389,7 +389,7 @@ def _resolve_runtime_from_pool_entry(
             # anthropic_messages and chat_completions models, so the previous
             # session's mode must not leak across /model switches.
             # Refs #16878.
-            from hermes_cli.models import opencode_model_api_mode
+            from hermes_agent.hermes_cli.models import opencode_model_api_mode
             api_mode = opencode_model_api_mode(provider, effective_model)
         elif configured_mode and _provider_supports_explicit_api_mode(provider, configured_provider):
             api_mode = configured_mode
@@ -741,7 +741,7 @@ def _resolve_named_custom_runtime(
     requested_norm = (requested_provider or "").strip().lower()
     if requested_norm and requested_norm != "custom":
         try:
-            from hermes_cli.auth import resolve_provider as _resolve_provider
+            from hermes_agent.hermes_cli.auth import resolve_provider as _resolve_provider
 
             if _resolve_provider(requested_norm) == "custom":
                 requested_norm = "custom"
@@ -871,7 +871,7 @@ def _resolve_openrouter_runtime(
     # gate up the stack — alias-aware without duplicating the alias map.
     if requested_norm and requested_norm != "custom":
         try:
-            from hermes_cli.auth import resolve_provider as _resolve_provider
+            from hermes_agent.hermes_cli.auth import resolve_provider as _resolve_provider
 
             if _resolve_provider(requested_norm) == "custom":
                 requested_norm = "custom"
@@ -1037,7 +1037,7 @@ def _resolve_azure_foundry_runtime(
     effective_model = str(target_model or model_cfg.get("default") or "").strip()
     if effective_model and cfg_api_mode != "anthropic_messages":
         try:
-            from hermes_cli.models import azure_foundry_model_api_mode
+            from hermes_agent.hermes_cli.models import azure_foundry_model_api_mode
 
             inferred = azure_foundry_model_api_mode(effective_model)
         except Exception:
@@ -1081,7 +1081,7 @@ def _resolve_azure_foundry_runtime(
             auth_mode = "api_key"
         else:
             try:
-                from agent.azure_identity_adapter import (
+                from hermes_agent.agent.azure_identity_adapter import (
                     EntraIdentityConfig,
                     SCOPE_AI_AZURE_DEFAULT,
                     build_token_provider,
@@ -1129,7 +1129,7 @@ def _resolve_azure_foundry_runtime(
     api_key = explicit_api_key
     if not api_key:
         try:
-            from hermes_cli.config import get_env_value
+            from hermes_agent.hermes_cli.config import get_env_value
             api_key = get_env_value("AZURE_FOUNDRY_API_KEY") or ""
         except Exception:
             api_key = ""
@@ -1177,7 +1177,7 @@ def _resolve_explicit_runtime(
         base_url = explicit_base_url or cfg_base_url or "https://api.anthropic.com"
         api_key = explicit_api_key
         if not api_key:
-            from agent.anthropic_adapter import resolve_anthropic_token
+            from hermes_agent.agent.anthropic_adapter import resolve_anthropic_token
 
             api_key = resolve_anthropic_token()
             if not api_key:
@@ -1526,7 +1526,7 @@ def resolve_runtime_provider(
     if provider == "minimax-oauth":
         pconfig = PROVIDER_REGISTRY.get(provider)
         if pconfig and pconfig.auth_type == "oauth_minimax":
-            from hermes_cli.auth import resolve_minimax_oauth_runtime_credentials
+            from hermes_agent.hermes_cli.auth import resolve_minimax_oauth_runtime_credentials
             creds = resolve_minimax_oauth_runtime_credentials()
             return {
                 "provider": provider,
@@ -1621,7 +1621,7 @@ def resolve_runtime_provider(
                     "config.yaml model section at a custom env var."
                 )
         else:
-            from agent.anthropic_adapter import resolve_anthropic_token
+            from hermes_agent.agent.anthropic_adapter import resolve_anthropic_token
             token = resolve_anthropic_token()
             if not token:
                 raise AuthError(
@@ -1639,7 +1639,7 @@ def resolve_runtime_provider(
 
     # AWS Bedrock (native Converse API via boto3)
     if provider == "bedrock":
-        from agent.bedrock_adapter import (
+        from hermes_agent.agent.bedrock_adapter import (
             has_aws_credentials,
             resolve_aws_auth_env_var,
             resolve_bedrock_region,
@@ -1738,7 +1738,7 @@ def resolve_runtime_provider(
                 # otherwise carry the previous mode forward, stripping /v1
                 # from base_url for chat_completions models and 404'ing.
                 # Refs #16878.
-                from hermes_cli.models import opencode_model_api_mode
+                from hermes_agent.hermes_cli.models import opencode_model_api_mode
                 _effective = target_model or model_cfg.get("default", "")
                 api_mode = opencode_model_api_mode(provider, _effective)
             elif configured_mode and _provider_supports_explicit_api_mode(provider, configured_provider):

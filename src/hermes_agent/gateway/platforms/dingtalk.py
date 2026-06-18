@@ -87,9 +87,9 @@ except ImportError:
     open_api_models = None
     tea_util_models = None
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.helpers import MessageDeduplicator
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.helpers import MessageDeduplicator
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
@@ -120,7 +120,7 @@ def check_dingtalk_requirements() -> bool:
     global HTTPX_AVAILABLE, httpx
     if not DINGTALK_STREAM_AVAILABLE or not HTTPX_AVAILABLE:
         try:
-            from tools.lazy_deps import ensure as _lazy_ensure
+            from hermes_agent.tools.lazy_deps import ensure as _lazy_ensure
             _lazy_ensure("platform.dingtalk", prompt=False)
         except Exception:
             return False
@@ -253,7 +253,7 @@ class DingTalkAdapter(BasePlatformAdapter):
 
         try:
             # Tighter keepalive so idle CLOSE_WAIT drains promptly (#18451).
-            from gateway.platforms._http_client_limits import platform_httpx_limits
+            from hermes_agent.gateway.platforms._http_client_limits import platform_httpx_limits
             self._http_client = httpx.AsyncClient(
                 timeout=30.0, limits=platform_httpx_limits(),
             )

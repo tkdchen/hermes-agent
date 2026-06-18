@@ -4,8 +4,8 @@ Covers render_notice_line — the pure helper that turns an AgentNotice into the
 single plaintext line pushed standalone over a messaging platform (no status
 bar, unlike the TUI). Behavior contracts, not data snapshots.
 """
-from agent.credits_tracker import AgentNotice
-from gateway.run import render_notice_line
+from hermes_agent.agent.credits_tracker import AgentNotice
+from hermes_agent.gateway.run import render_notice_line
 
 
 class TestRenderNoticeLine:
@@ -60,7 +60,7 @@ def test_real_policy_notices_render_without_doubling():
     """End-to-end regression: every notice evaluate_credits_notices emits already
     carries its glyph, so render_notice_line must return it unchanged (no second
     glyph prepended) for the messaging push."""
-    from agent.credits_tracker import CreditsState, evaluate_credits_notices
+    from hermes_agent.agent.credits_tracker import CreditsState, evaluate_credits_notices
 
     def _emitted(uf=None, paid=True, purchased=0):
         latch = {"active": set(), "seen_below_90": True, "usage_band": None}
@@ -111,7 +111,7 @@ def _make_source(platform_value="telegram", chat_id="555", user_id="u1"):
 
 
 def _make_runner_with_adapter(source, adapter):
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = object.__new__(GatewayRunner)
     runner.adapters = {source.platform: adapter}
@@ -167,7 +167,7 @@ class TestDeliverNoticeLine:
     @pytest.mark.asyncio
     async def test_no_adapter_is_a_noop(self):
         source = _make_source()
-        runner = object.__new__(__import__("gateway.run", fromlist=["GatewayRunner"]).GatewayRunner)
+        runner = object.__new__(__import__("hermes_agent.gateway.run", fromlist=["GatewayRunner"]).GatewayRunner)
         runner.adapters = {}
         # Must not raise when the platform has no registered adapter.
         await runner._deliver_platform_notice(source, "• anything")

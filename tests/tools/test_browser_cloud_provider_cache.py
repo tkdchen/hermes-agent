@@ -14,7 +14,7 @@ from unittest.mock import Mock
 
 import pytest
 
-import tools.browser_tool as browser_tool
+import hermes_agent.tools.browser_tool as browser_tool
 
 
 @pytest.fixture(autouse=True)
@@ -28,7 +28,7 @@ class TestCloudProviderCachePolicy:
     def test_explicit_local_caches_permanently(self, monkeypatch):
         """`cloud_provider: local` is a positive choice and must stick."""
         monkeypatch.setattr(
-            "hermes_cli.config.read_raw_config",
+            "hermes_agent.hermes_cli.config.read_raw_config",
             lambda: {"browser": {"cloud_provider": "local"}},
         )
 
@@ -37,7 +37,7 @@ class TestCloudProviderCachePolicy:
 
         # Even if config later changes, the cache stays.
         monkeypatch.setattr(
-            "hermes_cli.config.read_raw_config",
+            "hermes_agent.hermes_cli.config.read_raw_config",
             lambda: {"browser": {"cloud_provider": "browser-use"}},
         )
         assert browser_tool._get_cloud_provider() is None
@@ -50,7 +50,7 @@ class TestCloudProviderCachePolicy:
             browser_tool, "_PROVIDER_REGISTRY", {"browser-use": factory}
         )
         monkeypatch.setattr(
-            "hermes_cli.config.read_raw_config",
+            "hermes_agent.hermes_cli.config.read_raw_config",
             lambda: {"browser": {"cloud_provider": "browser-use"}},
         )
 
@@ -64,7 +64,7 @@ class TestCloudProviderCachePolicy:
     def test_no_credentials_yet_does_not_cache_none(self, monkeypatch):
         """Auto-detect path with no creds: must NOT poison the cache."""
         monkeypatch.setattr(
-            "hermes_cli.config.read_raw_config",
+            "hermes_agent.hermes_cli.config.read_raw_config",
             lambda: {"browser": {}},
         )
 
@@ -95,7 +95,7 @@ class TestCloudProviderCachePolicy:
         def boom():
             raise OSError("config file locked")
 
-        monkeypatch.setattr("hermes_cli.config.read_raw_config", boom)
+        monkeypatch.setattr("hermes_agent.hermes_cli.config.read_raw_config", boom)
 
         assert browser_tool._get_cloud_provider() is None
         assert browser_tool._cloud_provider_resolved is False
@@ -111,11 +111,11 @@ class TestCloudProviderCachePolicy:
             browser_tool, "_PROVIDER_REGISTRY", {"browser-use": exploding_factory}
         )
         monkeypatch.setattr(
-            "hermes_cli.config.read_raw_config",
+            "hermes_agent.hermes_cli.config.read_raw_config",
             lambda: {"browser": {"cloud_provider": "browser-use"}},
         )
 
-        with caplog.at_level(logging.WARNING, logger="tools.browser_tool"):
+        with caplog.at_level(logging.WARNING, logger="hermes_agent.tools.browser_tool"):
             assert browser_tool._get_cloud_provider() is None
 
         assert browser_tool._cloud_provider_resolved is False

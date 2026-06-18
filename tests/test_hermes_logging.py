@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 import pytest
 
-import hermes_logging
+import hermes_agent.hermes_logging as hermes_logging
 
 
 @pytest.fixture(autouse=True)
@@ -77,7 +77,7 @@ class TestSetupLogging:
         agent_handlers = [
             h for h in root.handlers
             if isinstance(h, RotatingFileHandler)
-            and "agent.log" in getattr(h, "baseFilename", "")
+            and "hermes_agent.agent.log" in getattr(h, "baseFilename", "")
         ]
         assert len(agent_handlers) == 1
         assert agent_handlers[0].level == logging.INFO
@@ -102,7 +102,7 @@ class TestSetupLogging:
         agent_handlers = [
             h for h in root.handlers
             if isinstance(h, RotatingFileHandler)
-            and "agent.log" in getattr(h, "baseFilename", "")
+            and "hermes_agent.agent.log" in getattr(h, "baseFilename", "")
         ]
         assert len(agent_handlers) == 1
 
@@ -116,7 +116,7 @@ class TestSetupLogging:
         agent_handlers = [
             h for h in root.handlers
             if isinstance(h, RotatingFileHandler)
-            and "agent.log" in getattr(h, "baseFilename", "")
+            and "hermes_agent.agent.log" in getattr(h, "baseFilename", "")
         ]
         assert len(agent_handlers) == 1
 
@@ -127,7 +127,7 @@ class TestSetupLogging:
         agent_handlers = [
             h for h in root.handlers
             if isinstance(h, RotatingFileHandler)
-            and "agent.log" in getattr(h, "baseFilename", "")
+            and "hermes_agent.agent.log" in getattr(h, "baseFilename", "")
         ]
         assert agent_handlers[0].level == logging.DEBUG
 
@@ -140,7 +140,7 @@ class TestSetupLogging:
         agent_handlers = [
             h for h in root.handlers
             if isinstance(h, RotatingFileHandler)
-            and "agent.log" in getattr(h, "baseFilename", "")
+            and "hermes_agent.agent.log" in getattr(h, "baseFilename", "")
         ]
         assert agent_handlers[0].maxBytes == 10 * 1024 * 1024
         assert agent_handlers[0].backupCount == 5
@@ -162,7 +162,7 @@ class TestSetupLogging:
         for h in logging.getLogger().handlers:
             h.flush()
 
-        agent_log = hermes_home / "logs" / "agent.log"
+        agent_log = hermes_home / "logs" / "hermes_agent.agent.log"
         assert agent_log.exists()
         content = agent_log.read_text()
         assert "test message for agent.log" in content
@@ -176,7 +176,7 @@ class TestSetupLogging:
         for h in logging.getLogger().handlers:
             h.flush()
 
-        agent_log = hermes_home / "logs" / "agent.log"
+        agent_log = hermes_home / "logs" / "hermes_agent.agent.log"
         errors_log = hermes_home / "logs" / "errors.log"
         assert "this is a warning" in agent_log.read_text()
         assert "this is a warning" in errors_log.read_text()
@@ -206,7 +206,7 @@ class TestSetupLogging:
         agent_handlers = [
             h for h in root.handlers
             if isinstance(h, RotatingFileHandler)
-            and "agent.log" in getattr(h, "baseFilename", "")
+            and "hermes_agent.agent.log" in getattr(h, "baseFilename", "")
         ]
         assert agent_handlers[0].level == logging.DEBUG
         assert agent_handlers[0].maxBytes == 2 * 1024 * 1024
@@ -224,7 +224,7 @@ class TestSetupLogging:
         agent_handlers = [
             h for h in root.handlers
             if isinstance(h, RotatingFileHandler)
-            and "agent.log" in getattr(h, "baseFilename", "")
+            and "hermes_agent.agent.log" in getattr(h, "baseFilename", "")
         ]
         assert agent_handlers[0].level == logging.WARNING
 
@@ -250,7 +250,7 @@ class TestGatewayMode:
         gw_handlers = [
             h for h in root.handlers
             if isinstance(h, RotatingFileHandler)
-            and "gateway.log" in getattr(h, "baseFilename", "")
+            and "hermes_agent.gateway.log" in getattr(h, "baseFilename", "")
         ]
         assert len(gw_handlers) == 1
 
@@ -261,7 +261,7 @@ class TestGatewayMode:
         gw_handlers = [
             h for h in root.handlers
             if isinstance(h, RotatingFileHandler)
-            and "gateway.log" in getattr(h, "baseFilename", "")
+            and "hermes_agent.gateway.log" in getattr(h, "baseFilename", "")
         ]
         assert len(gw_handlers) == 0
 
@@ -274,16 +274,16 @@ class TestGatewayMode:
         gw_handlers = [
             h for h in root.handlers
             if isinstance(h, RotatingFileHandler)
-            and "gateway.log" in getattr(h, "baseFilename", "")
+            and "hermes_agent.gateway.log" in getattr(h, "baseFilename", "")
         ]
         assert len(gw_handlers) == 1
 
-        logging.getLogger("gateway.run").info("gateway connected after cli init")
+        logging.getLogger("hermes_agent.gateway.run").info("gateway connected after cli init")
 
         for h in root.handlers:
             h.flush()
 
-        gw_log = hermes_home / "logs" / "gateway.log"
+        gw_log = hermes_home / "logs" / "hermes_agent.gateway.log"
         assert gw_log.exists()
         assert "gateway connected after cli init" in gw_log.read_text()
 
@@ -297,49 +297,49 @@ class TestGatewayMode:
         gw_handlers = [
             h for h in root.handlers
             if isinstance(h, RotatingFileHandler)
-            and "gateway.log" in getattr(h, "baseFilename", "")
+            and "hermes_agent.gateway.log" in getattr(h, "baseFilename", "")
         ]
         assert len(gw_handlers) == 1
 
     def test_gateway_log_receives_gateway_records(self, hermes_home):
-        """gateway.log captures records from gateway.* loggers."""
+        """hermes_agent.gateway.log captures records from gateway.* loggers."""
         hermes_logging.setup_logging(hermes_home=hermes_home, mode="gateway")
 
-        gw_logger = logging.getLogger("gateway.platforms.telegram")
+        gw_logger = logging.getLogger("hermes_agent.gateway.platforms.telegram")
         gw_logger.info("telegram connected")
 
         for h in logging.getLogger().handlers:
             h.flush()
 
-        gw_log = hermes_home / "logs" / "gateway.log"
+        gw_log = hermes_home / "logs" / "hermes_agent.gateway.log"
         assert gw_log.exists()
         assert "telegram connected" in gw_log.read_text()
 
     def test_gateway_log_rejects_non_gateway_records(self, hermes_home):
-        """gateway.log does NOT capture records from tools.*, agent.*, etc."""
+        """hermes_agent.gateway.log does NOT capture records from tools.*, agent.*, etc."""
         hermes_logging.setup_logging(hermes_home=hermes_home, mode="gateway")
 
-        tool_logger = logging.getLogger("tools.terminal_tool")
+        tool_logger = logging.getLogger("hermes_agent.tools.terminal_tool")
         tool_logger.info("running command")
 
-        agent_logger = logging.getLogger("agent.context_compressor")
+        agent_logger = logging.getLogger("hermes_agent.agent.context_compressor")
         agent_logger.info("compressing context")
 
         for h in logging.getLogger().handlers:
             h.flush()
 
-        gw_log = hermes_home / "logs" / "gateway.log"
+        gw_log = hermes_home / "logs" / "hermes_agent.gateway.log"
         if gw_log.exists():
             content = gw_log.read_text()
             assert "running command" not in content
             assert "compressing context" not in content
 
     def test_agent_log_still_receives_all(self, hermes_home):
-        """agent.log (catch-all) still receives gateway AND tool records."""
+        """hermes_agent.agent.log (catch-all) still receives gateway AND tool records."""
         hermes_logging.setup_logging(hermes_home=hermes_home, mode="gateway")
 
-        gw_logger = logging.getLogger("gateway.run")
-        file_logger = logging.getLogger("tools.file_tools")
+        gw_logger = logging.getLogger("hermes_agent.gateway.run")
+        file_logger = logging.getLogger("hermes_agent.tools.file_tools")
         # Ensure propagation and levels are clean (cross-test pollution defense)
         gw_logger.propagate = True
         file_logger.propagate = True
@@ -353,7 +353,7 @@ class TestGatewayMode:
         for h in logging.getLogger().handlers:
             h.flush()
 
-        agent_log = hermes_home / "logs" / "agent.log"
+        agent_log = hermes_home / "logs" / "hermes_agent.agent.log"
         content = agent_log.read_text()
         assert "gateway msg" in content
         assert "file msg" in content
@@ -388,9 +388,9 @@ class TestGuiMode:
     def test_gui_log_receives_only_gui_components(self, hermes_home):
         hermes_logging.setup_logging(hermes_home=hermes_home, mode="gui")
 
-        logging.getLogger("hermes_cli.web_server").info("dashboard online")
-        logging.getLogger("tui_gateway.ws").info("ws connected")
-        logging.getLogger("gateway.run").info("gateway event")
+        logging.getLogger("hermes_agent.hermes_cli.web_server").info("dashboard online")
+        logging.getLogger("hermes_agent.tui_gateway.ws").info("ws connected")
+        logging.getLogger("hermes_agent.gateway.run").info("gateway event")
 
         for h in logging.getLogger().handlers:
             h.flush()
@@ -417,7 +417,7 @@ class TestSessionContext:
         for h in logging.getLogger().handlers:
             h.flush()
 
-        agent_log = hermes_home / "logs" / "agent.log"
+        agent_log = hermes_home / "logs" / "hermes_agent.agent.log"
         content = agent_log.read_text()
         assert "[abc123]" in content
         assert "tagged message" in content
@@ -433,7 +433,7 @@ class TestSessionContext:
         for h in logging.getLogger().handlers:
             h.flush()
 
-        agent_log = hermes_home / "logs" / "agent.log"
+        agent_log = hermes_home / "logs" / "hermes_agent.agent.log"
         content = agent_log.read_text()
         assert "untagged message" in content
         # Should not have any [xxx] session tag
@@ -454,7 +454,7 @@ class TestSessionContext:
         for h in logging.getLogger().handlers:
             h.flush()
 
-        agent_log = hermes_home / "logs" / "agent.log"
+        agent_log = hermes_home / "logs" / "hermes_agent.agent.log"
         content = agent_log.read_text()
         assert "[xyz789]" not in content
 
@@ -483,7 +483,7 @@ class TestSessionContext:
         tb.start()
         tb.join()
 
-        agent_log = hermes_home / "logs" / "agent.log"
+        agent_log = hermes_home / "logs" / "hermes_agent.agent.log"
         content = agent_log.read_text()
 
         # Each thread's message should have its own session tag
@@ -547,28 +547,28 @@ class TestComponentFilter:
     def test_passes_matching_prefix(self):
         f = hermes_logging._ComponentFilter(("gateway",))
         record = logging.LogRecord(
-            "gateway.run", logging.INFO, "", 0, "msg", (), None
+            "hermes_agent.gateway.run", logging.INFO, "", 0, "msg", (), None
         )
         assert f.filter(record) is True
 
     def test_passes_nested_matching_prefix(self):
         f = hermes_logging._ComponentFilter(("gateway",))
         record = logging.LogRecord(
-            "gateway.platforms.telegram", logging.INFO, "", 0, "msg", (), None
+            "hermes_agent.gateway.platforms.telegram", logging.INFO, "", 0, "msg", (), None
         )
         assert f.filter(record) is True
 
     def test_blocks_non_matching(self):
         f = hermes_logging._ComponentFilter(("gateway",))
         record = logging.LogRecord(
-            "tools.terminal_tool", logging.INFO, "", 0, "msg", (), None
+            "hermes_agent.tools.terminal_tool", logging.INFO, "", 0, "msg", (), None
         )
         assert f.filter(record) is False
 
     def test_multiple_prefixes(self):
         f = hermes_logging._ComponentFilter(("agent", "run_agent", "model_tools"))
         assert f.filter(logging.LogRecord(
-            "agent.compressor", logging.INFO, "", 0, "", (), None
+            "hermes_agent.agent.compressor", logging.INFO, "", 0, "", (), None
         ))
         assert f.filter(logging.LogRecord(
             "run_agent", logging.INFO, "", 0, "", (), None
@@ -577,7 +577,7 @@ class TestComponentFilter:
             "model_tools", logging.INFO, "", 0, "", (), None
         ))
         assert not f.filter(logging.LogRecord(
-            "tools.browser", logging.INFO, "", 0, "", (), None
+            "hermes_agent.tools.browser", logging.INFO, "", 0, "", (), None
         ))
 
 
@@ -610,7 +610,7 @@ class TestComponentPrefixes:
 
     def test_gui_prefix(self):
         prefixes = hermes_logging.COMPONENT_PREFIXES["gui"]
-        assert "hermes_cli.web_server" in prefixes
+        assert "hermes_agent.hermes_cli.web_server" in prefixes
         assert "tui_gateway" in prefixes
 
 
@@ -754,7 +754,7 @@ class TestAddRotatingHandler:
 
         old_umask = os.umask(0o022)
         try:
-            with patch("hermes_cli.config.is_managed", return_value=True):
+            with patch("hermes_agent.hermes_cli.config.is_managed", return_value=True):
                 hermes_logging._add_rotating_handler(
                     logger, log_path,
                     level=logging.INFO, max_bytes=1024, backup_count=1,
@@ -778,7 +778,7 @@ class TestAddRotatingHandler:
 
         old_umask = os.umask(0o022)
         try:
-            with patch("hermes_cli.config.is_managed", return_value=True):
+            with patch("hermes_agent.hermes_cli.config.is_managed", return_value=True):
                 hermes_logging._add_rotating_handler(
                     logger, log_path,
                     level=logging.INFO, max_bytes=1, backup_count=1,
@@ -851,7 +851,7 @@ class TestExternalRotationRecovery:
 
     def _emit(self, handler: logging.Handler, msg: str) -> None:
         record = logging.LogRecord(
-            name="gateway.run", level=logging.INFO, pathname="", lineno=0,
+            name="hermes_agent.gateway.run", level=logging.INFO, pathname="", lineno=0,
             msg=msg, args=(), exc_info=None,
         )
         # Match the record factory that hermes_logging installs at import time.
@@ -866,8 +866,8 @@ class TestExternalRotationRecovery:
         go to ``gateway.log.1`` forever.  After fix, the handler reopens
         ``gateway.log`` at the original path.
         """
-        log_path = tmp_path / "gateway.log"
-        rotated = tmp_path / "gateway.log.1"
+        log_path = tmp_path / "hermes_agent.gateway.log"
+        rotated = tmp_path / "hermes_agent.gateway.log.1"
         handler = self._make_handler(log_path)
         try:
             self._emit(handler, "before rotation")
@@ -889,7 +889,7 @@ class TestExternalRotationRecovery:
 
     def test_recovers_after_external_unlink(self, tmp_path):
         """``rm gateway.log`` then keep writing — handler recreates the file."""
-        log_path = tmp_path / "gateway.log"
+        log_path = tmp_path / "hermes_agent.gateway.log"
         handler = self._make_handler(log_path)
         try:
             self._emit(handler, "before unlink")
@@ -913,7 +913,7 @@ class TestExternalRotationRecovery:
         new writes — i.e. the handler correctly does NOT detect this as
         an inode change.
         """
-        log_path = tmp_path / "gateway.log"
+        log_path = tmp_path / "hermes_agent.gateway.log"
         handler = self._make_handler(log_path)
         try:
             self._emit(handler, "AAAA" * 32)
@@ -935,8 +935,8 @@ class TestExternalRotationRecovery:
         in ``doRollover()`` so the very next emit doesn't mistake our own
         rollover for an external one and double-reopen.
         """
-        log_path = tmp_path / "gateway.log"
-        rotated = tmp_path / "gateway.log.1"
+        log_path = tmp_path / "hermes_agent.gateway.log"
+        rotated = tmp_path / "hermes_agent.gateway.log.1"
 
         # Tiny maxBytes forces rollover after the first record.
         handler = hermes_logging._ManagedRotatingFileHandler(
@@ -969,10 +969,10 @@ class TestExternalRotationRecovery:
         file between setup_logging() calls.
         """
         hermes_logging.setup_logging(hermes_home=hermes_home, mode="gateway")
-        gw_path = hermes_home / "logs" / "gateway.log"
-        rotated = hermes_home / "logs" / "gateway.log.1"
+        gw_path = hermes_home / "logs" / "hermes_agent.gateway.log"
+        rotated = hermes_home / "logs" / "hermes_agent.gateway.log.1"
 
-        logging.getLogger("gateway.run").info("line BEFORE rotation")
+        logging.getLogger("hermes_agent.gateway.run").info("line BEFORE rotation")
         for h in logging.getLogger().handlers:
             try: h.flush()
             except Exception: pass
@@ -987,7 +987,7 @@ class TestExternalRotationRecovery:
         # stale fd in place.
         hermes_logging.setup_logging(hermes_home=hermes_home, mode="gateway")
 
-        logging.getLogger("gateway.run").info("line AFTER rotation")
+        logging.getLogger("hermes_agent.gateway.run").info("line AFTER rotation")
         for h in logging.getLogger().handlers:
             try: h.flush()
             except Exception: pass
@@ -995,7 +995,7 @@ class TestExternalRotationRecovery:
         # The new record must reach the live gateway.log, not the rotated
         # backup.  Allen's logs had everything past the rotation point
         # going into agent.log only, never gateway.log.
-        assert gw_path.exists(), "gateway.log was never recreated"
+        assert gw_path.exists(), "hermes_agent.gateway.log was never recreated"
         assert "AFTER rotation" in gw_path.read_text()
         assert "AFTER rotation" not in rotated.read_text()
 

@@ -4,15 +4,15 @@ from argparse import Namespace
 
 import pytest
 
-from cron.jobs import create_job, get_job, list_jobs
-from hermes_cli.cron import cron_command
+from hermes_agent.cron.jobs import create_job, get_job, list_jobs
+from hermes_agent.hermes_cli.cron import cron_command
 
 
 @pytest.fixture()
 def tmp_cron_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr("cron.jobs.CRON_DIR", tmp_path / "cron")
-    monkeypatch.setattr("cron.jobs.JOBS_FILE", tmp_path / "cron" / "jobs.json")
-    monkeypatch.setattr("cron.jobs.OUTPUT_DIR", tmp_path / "cron" / "output")
+    monkeypatch.setattr("hermes_agent.cron.jobs.CRON_DIR", tmp_path / "cron")
+    monkeypatch.setattr("hermes_agent.cron.jobs.JOBS_FILE", tmp_path / "cron" / "jobs.json")
+    monkeypatch.setattr("hermes_agent.cron.jobs.OUTPUT_DIR", tmp_path / "cron" / "output")
     return tmp_path
 
 
@@ -109,7 +109,7 @@ class TestCronCommandLifecycle:
     def test_list_does_not_crash_when_repeat_is_null(self, tmp_cron_dir, capsys):
         """A one-shot job can be persisted with ``"repeat": null``. `cron
         list` must render it as ∞ rather than crashing on .get(...)\\.get."""
-        from cron.jobs import load_jobs, save_jobs
+        from hermes_agent.cron.jobs import load_jobs, save_jobs
 
         create_job(prompt="One shot", schedule="every 1h")
         # Force the present-but-null shape that .get("repeat", {}) mishandles.

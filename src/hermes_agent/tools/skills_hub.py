@@ -25,19 +25,19 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
-from hermes_constants import get_hermes_home
-from agent.skill_utils import is_excluded_skill_path
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.agent.skill_utils import is_excluded_skill_path
 from typing import Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urljoin, urlparse, urlunparse
 
 import httpx
 import yaml
 
-from tools.skills_guard import (
+from hermes_agent.tools.skills_guard import (
     ScanResult, content_hash, TRUSTED_REPOS,
 )
-from tools.url_safety import is_safe_url
-from tools.website_policy import check_website_access
+from hermes_agent.tools.url_safety import is_safe_url
+from hermes_agent.tools.website_policy import check_website_access
 
 logger = logging.getLogger(__name__)
 
@@ -2932,7 +2932,7 @@ class OptionalSkillSource(SkillSource):
     """
 
     def __init__(self):
-        from hermes_constants import get_optional_skills_dir
+        from hermes_agent.hermes_constants import get_optional_skills_dir
 
         self._optional_dir = get_optional_skills_dir(
             Path(__file__).parent.parent / "optional-skills"

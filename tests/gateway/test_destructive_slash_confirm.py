@@ -15,9 +15,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from gateway.config import GatewayConfig, Platform, PlatformConfig
-from gateway.platforms.base import MessageEvent
-from gateway.session import SessionEntry, SessionSource, build_session_key
+from hermes_agent.gateway.config import GatewayConfig, Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import MessageEvent
+from hermes_agent.gateway.session import SessionEntry, SessionSource, build_session_key
 
 
 def _make_source() -> SessionSource:
@@ -36,7 +36,7 @@ def _make_event(text: str) -> MessageEvent:
 
 def _make_runner():
     """Mirror tests/gateway/test_unknown_command.py::_make_runner."""
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = object.__new__(GatewayRunner)
     runner.config = GatewayConfig(
@@ -129,7 +129,7 @@ async def test_gate_on_text_fallback_returns_prompt_without_executing(monkeypatc
 async def test_gate_on_pending_confirm_registered(monkeypatch):
     """When the gate is on, a pending slash-confirm entry is registered for
     the session — the user's /approve reply will resolve it."""
-    from tools import slash_confirm as _slash_confirm_mod
+    from hermes_agent.tools import slash_confirm as _slash_confirm_mod
     runner = _make_runner()
     runner._read_user_config = lambda: {"approvals": {"destructive_slash_confirm": True}}
     session_key = build_session_key(_make_source())
@@ -156,7 +156,7 @@ async def test_gate_on_pending_confirm_registered(monkeypatch):
 async def test_resolve_once_runs_execute_and_returns_result():
     """Resolving the pending confirm with 'once' runs the destructive
     action and returns its output."""
-    from tools import slash_confirm as _slash_confirm_mod
+    from hermes_agent.tools import slash_confirm as _slash_confirm_mod
     runner = _make_runner()
     runner._read_user_config = lambda: {"approvals": {"destructive_slash_confirm": True}}
     session_key = build_session_key(_make_source())
@@ -189,7 +189,7 @@ async def test_resolve_once_runs_execute_and_returns_result():
 @pytest.mark.asyncio
 async def test_resolve_cancel_does_not_run_execute():
     """Resolving with 'cancel' must NOT run the destructive action."""
-    from tools import slash_confirm as _slash_confirm_mod
+    from hermes_agent.tools import slash_confirm as _slash_confirm_mod
     runner = _make_runner()
     runner._read_user_config = lambda: {"approvals": {"destructive_slash_confirm": True}}
     session_key = build_session_key(_make_source())
@@ -222,7 +222,7 @@ async def test_resolve_cancel_does_not_run_execute():
 async def test_resolve_always_persists_opt_out_and_runs_execute(monkeypatch):
     """Resolving with 'always' must (a) flip the config gate to False,
     (b) run execute, and (c) include a one-time opt-out note in the reply."""
-    from tools import slash_confirm as _slash_confirm_mod
+    from hermes_agent.tools import slash_confirm as _slash_confirm_mod
     runner = _make_runner()
     runner._read_user_config = lambda: {"approvals": {"destructive_slash_confirm": True}}
     session_key = build_session_key(_make_source())
@@ -235,7 +235,7 @@ async def test_resolve_always_persists_opt_out_and_runs_execute(monkeypatch):
         saved[path] = value
         return True
 
-    import cli as cli_mod
+    import hermes_agent.cli as cli_mod
     monkeypatch.setattr(cli_mod, "save_config_value", _fake_save)
 
     execute = AsyncMock(return_value="✨ fresh")

@@ -24,13 +24,13 @@ import logging
 
 import pytest
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     SendResult,
 )
-from gateway.session import SessionSource, build_session_key
+from hermes_agent.gateway.session import SessionSource, build_session_key
 
 
 class _DummyAdapter(BasePlatformAdapter):
@@ -111,7 +111,7 @@ class TestExtractStripRecoveryAllPlatforms:
         _strip_everything(adapter, monkeypatch)
 
         event = _make_event(platform)
-        with caplog.at_level(logging.WARNING, logger="gateway.platforms.base"):
+        with caplog.at_level(logging.WARNING, logger="hermes_agent.gateway.platforms.base"):
             await adapter._process_message_background(
                 event, build_session_key(event.source)
             )
@@ -210,7 +210,7 @@ class TestRecoveryDoesNotLeakMediaFragments:
         )
 
         event = _make_event(Platform.DISCORD)
-        with caplog.at_level(logging.ERROR, logger="gateway.platforms.base"):
+        with caplog.at_level(logging.ERROR, logger="hermes_agent.gateway.platforms.base"):
             await adapter._process_message_background(
                 event, build_session_key(event.source)
             )
@@ -246,7 +246,7 @@ class TestUnrecoverableDropIsLoud:
         _strip_everything(adapter, monkeypatch)
 
         event = _make_event(Platform.DISCORD)
-        with caplog.at_level(logging.ERROR, logger="gateway.platforms.base"):
+        with caplog.at_level(logging.ERROR, logger="hermes_agent.gateway.platforms.base"):
             await adapter._process_message_background(
                 event, build_session_key(event.source)
             )

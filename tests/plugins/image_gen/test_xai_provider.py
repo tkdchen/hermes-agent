@@ -28,33 +28,33 @@ def _fake_api_key(monkeypatch):
 
 class TestXAIImageGenProvider:
     def test_name(self):
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         provider = XAIImageGenProvider()
         assert provider.name == "xai"
 
     def test_display_name(self):
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         provider = XAIImageGenProvider()
         assert provider.display_name == "xAI (Grok)"
 
     def test_is_available_with_key(self, monkeypatch):
         monkeypatch.setenv("XAI_API_KEY", "sk-xxx")
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         provider = XAIImageGenProvider()
         assert provider.is_available() is True
 
     def test_is_available_without_key(self, monkeypatch):
         monkeypatch.delenv("XAI_API_KEY", raising=False)
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         provider = XAIImageGenProvider()
         assert provider.is_available() is False
 
     def test_list_models(self):
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         provider = XAIImageGenProvider()
         models = provider.list_models()
@@ -62,13 +62,13 @@ class TestXAIImageGenProvider:
         assert models[0]["id"] == "grok-imagine-image"
 
     def test_default_model(self):
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         provider = XAIImageGenProvider()
         assert provider.default_model() == "grok-imagine-image"
 
     def test_get_setup_schema(self):
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         provider = XAIImageGenProvider()
         schema = provider.get_setup_schema()
@@ -88,19 +88,19 @@ class TestXAIImageGenProvider:
 
 class TestConfig:
     def test_default_model(self):
-        from plugins.image_gen.xai import _resolve_model
+        from hermes_agent.plugins.image_gen.xai import _resolve_model
 
         model_id, meta = _resolve_model()
         assert model_id == "grok-imagine-image"
 
     def test_default_resolution(self):
-        from plugins.image_gen.xai import _resolve_resolution
+        from hermes_agent.plugins.image_gen.xai import _resolve_resolution
 
         assert _resolve_resolution() == "1k"
 
     def test_custom_model(self, monkeypatch):
         monkeypatch.setenv("XAI_IMAGE_MODEL", "grok-imagine-image")
-        from plugins.image_gen.xai import _resolve_model
+        from hermes_agent.plugins.image_gen.xai import _resolve_model
 
         model_id, _ = _resolve_model()
         assert model_id == "grok-imagine-image"
@@ -114,7 +114,7 @@ class TestConfig:
 class TestGenerate:
     def test_missing_api_key(self, monkeypatch):
         monkeypatch.delenv("XAI_API_KEY", raising=False)
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         provider = XAIImageGenProvider()
         result = provider.generate(prompt="test")
@@ -122,7 +122,7 @@ class TestGenerate:
         assert "XAI_API_KEY" in result["error"]
 
     def test_successful_generation(self):
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -131,8 +131,8 @@ class TestGenerate:
             "data": [{"b64_json": "dGVzdC1pbWFnZS1kYXRh"}],  # base64 "test-image-data"
         }
 
-        with patch("plugins.image_gen.xai.requests.post", return_value=mock_resp):
-            with patch("plugins.image_gen.xai.save_b64_image", return_value="/tmp/test.png"):
+        with patch("hermes_agent.plugins.image_gen.xai.requests.post", return_value=mock_resp):
+            with patch("hermes_agent.plugins.image_gen.xai.save_b64_image", return_value="/tmp/test.png"):
                 provider = XAIImageGenProvider()
                 result = provider.generate(prompt="A cat playing piano")
 
@@ -150,7 +150,7 @@ class TestGenerate:
         bytes are downloaded at tool-completion and the result carries an
         absolute filesystem path the gateway can upload from.
         """
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -159,9 +159,9 @@ class TestGenerate:
             "data": [{"url": "https://imgen.x.ai/xai-tmp-imgen-test.jpeg"}],
         }
 
-        with patch("plugins.image_gen.xai.requests.post", return_value=mock_resp), \
+        with patch("hermes_agent.plugins.image_gen.xai.requests.post", return_value=mock_resp), \
              patch(
-                 "plugins.image_gen.xai.save_url_image",
+                 "hermes_agent.plugins.image_gen.xai.save_url_image",
                  return_value=Path("/tmp/xai_grok-imagine-image_20260524_000000_deadbeef.jpg"),
              ) as mock_save_url:
             provider = XAIImageGenProvider()
@@ -190,7 +190,7 @@ class TestGenerate:
         than an opaque "image generation failed" tool result.
         """
         import requests as req_lib
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -199,9 +199,9 @@ class TestGenerate:
             "data": [{"url": "https://imgen.x.ai/xai-tmp-imgen-already-404.jpeg"}],
         }
 
-        with patch("plugins.image_gen.xai.requests.post", return_value=mock_resp), \
+        with patch("hermes_agent.plugins.image_gen.xai.requests.post", return_value=mock_resp), \
              patch(
-                 "plugins.image_gen.xai.save_url_image",
+                 "hermes_agent.plugins.image_gen.xai.save_url_image",
                  side_effect=req_lib.HTTPError("404 from CDN"),
              ):
             provider = XAIImageGenProvider()
@@ -214,7 +214,7 @@ class TestGenerate:
 
     def test_api_error(self):
         import requests as req_lib
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         mock_resp = MagicMock()
         mock_resp.status_code = 401
@@ -222,7 +222,7 @@ class TestGenerate:
         mock_resp.json.return_value = {"error": {"message": "Invalid API key"}}
         mock_resp.raise_for_status.side_effect = req_lib.HTTPError(response=mock_resp)
 
-        with patch("plugins.image_gen.xai.requests.post", return_value=mock_resp):
+        with patch("hermes_agent.plugins.image_gen.xai.requests.post", return_value=mock_resp):
             provider = XAIImageGenProvider()
             result = provider.generate(prompt="test")
 
@@ -231,7 +231,7 @@ class TestGenerate:
 
     def test_api_error_preserves_real_response_status(self):
         import requests as req_lib
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         response = req_lib.Response()
         response.status_code = 401
@@ -242,7 +242,7 @@ class TestGenerate:
             side_effect=req_lib.HTTPError(response=response)
         )
 
-        with patch("plugins.image_gen.xai.requests.post", return_value=response):
+        with patch("hermes_agent.plugins.image_gen.xai.requests.post", return_value=response):
             provider = XAIImageGenProvider()
             result = provider.generate(prompt="test")
 
@@ -253,9 +253,9 @@ class TestGenerate:
     def test_timeout(self):
         import requests as req_lib
 
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
-        with patch("plugins.image_gen.xai.requests.post", side_effect=req_lib.Timeout()):
+        with patch("hermes_agent.plugins.image_gen.xai.requests.post", side_effect=req_lib.Timeout()):
             provider = XAIImageGenProvider()
             result = provider.generate(prompt="test")
 
@@ -263,14 +263,14 @@ class TestGenerate:
         assert result["error_type"] == "timeout"
 
     def test_empty_response(self):
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.raise_for_status = MagicMock()
         mock_resp.json.return_value = {"data": []}
 
-        with patch("plugins.image_gen.xai.requests.post", return_value=mock_resp):
+        with patch("hermes_agent.plugins.image_gen.xai.requests.post", return_value=mock_resp):
             provider = XAIImageGenProvider()
             result = provider.generate(prompt="test")
 
@@ -278,7 +278,7 @@ class TestGenerate:
         assert result["error_type"] == "empty_response"
 
     def test_auth_header(self):
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -287,7 +287,7 @@ class TestGenerate:
             "data": [{"url": "https://xai.image/test.png"}],
         }
 
-        with patch("plugins.image_gen.xai.requests.post", return_value=mock_resp) as mock_post:
+        with patch("hermes_agent.plugins.image_gen.xai.requests.post", return_value=mock_resp) as mock_post:
             provider = XAIImageGenProvider()
             provider.generate(prompt="test")
 
@@ -302,14 +302,14 @@ class TestGenerate:
         The endpoint expects the literal strings "1k" or "2k". Ensure the wire
         payload carries that literal — not a numeric mapping. See PR #18678.
         """
-        from plugins.image_gen.xai import XAIImageGenProvider
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.raise_for_status = MagicMock()
         mock_resp.json.return_value = {"data": [{"url": "https://xai.image/test.png"}]}
 
-        with patch("plugins.image_gen.xai.requests.post", return_value=mock_resp) as mock_post:
+        with patch("hermes_agent.plugins.image_gen.xai.requests.post", return_value=mock_resp) as mock_post:
             provider = XAIImageGenProvider()
             provider.generate(prompt="test")
 
@@ -326,7 +326,7 @@ class TestGenerate:
 
 class TestRegistration:
     def test_register(self):
-        from plugins.image_gen.xai import XAIImageGenProvider, register
+        from hermes_agent.plugins.image_gen.xai import XAIImageGenProvider, register
 
         mock_ctx = MagicMock()
         register(mock_ctx)

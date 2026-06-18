@@ -42,7 +42,7 @@ import sys
 import threading
 from typing import Any, Dict, List, Optional, Tuple
 
-from tools.computer_use.backend import (
+from hermes_agent.tools.computer_use.backend import (
     ActionResult,
     CaptureResult,
     ComputerUseBackend,
@@ -134,7 +134,7 @@ def _get_backend() -> ComputerUseBackend:
         if _backend is None:
             backend_name = os.environ.get("HERMES_COMPUTER_USE_BACKEND", "cua").lower()
             if backend_name in {"cua", "cua-driver", ""}:
-                from tools.computer_use.cua_backend import CuaDriverBackend
+                from hermes_agent.tools.computer_use.cua_backend import CuaDriverBackend
                 _backend = CuaDriverBackend()
             elif backend_name == "noop":  # pragma: no cover
                 _backend = _NoopBackend()
@@ -623,9 +623,9 @@ def _should_route_through_aux_vision() -> bool:
     never silently drop the screenshot for vision-capable main models.
     """
     try:
-        from agent.auxiliary_client import _read_main_model, _read_main_provider
-        from hermes_cli.config import load_config
-        from tools.computer_use.vision_routing import (
+        from hermes_agent.agent.auxiliary_client import _read_main_model, _read_main_provider
+        from hermes_agent.hermes_cli.config import load_config
+        from hermes_agent.tools.computer_use.vision_routing import (
             should_route_capture_to_aux_vision,
         )
     except Exception as exc:  # pragma: no cover - defensive
@@ -669,9 +669,9 @@ def _route_capture_through_aux_vision(
         import os as _os
         import uuid as _uuid
 
-        from hermes_constants import get_hermes_dir
-        from model_tools import _run_async
-        from tools.vision_tools import vision_analyze_tool
+        from hermes_agent.hermes_constants import get_hermes_dir
+        from hermes_agent.model_tools import _run_async
+        from hermes_agent.tools.vision_tools import vision_analyze_tool
     except Exception as exc:  # pragma: no cover - defensive
         logger.debug("computer_use: aux-vision import failed: %s", exc)
         return None
@@ -814,10 +814,10 @@ def check_computer_use_requirements() -> bool:
     """
     if sys.platform != "darwin":
         return False
-    from tools.computer_use.cua_backend import cua_driver_binary_available
+    from hermes_agent.tools.computer_use.cua_backend import cua_driver_binary_available
     return cua_driver_binary_available()
 
 
 def get_computer_use_schema() -> Dict[str, Any]:
-    from tools.computer_use.schema import COMPUTER_USE_SCHEMA
+    from hermes_agent.tools.computer_use.schema import COMPUTER_USE_SCHEMA
     return COMPUTER_USE_SCHEMA

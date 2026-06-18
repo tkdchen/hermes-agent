@@ -14,7 +14,7 @@ from unittest.mock import patch, MagicMock
 import pytest
 import yaml
 
-from hermes_cli.profiles import (
+from hermes_agent.hermes_cli.profiles import (
     normalize_profile_name,
     validate_profile_name,
     get_profile_dir,
@@ -36,7 +36,7 @@ from hermes_cli.profiles import (
     NO_BUNDLED_SKILLS_MARKER,
     backfill_profile_envs,
 )
-from hermes_cli.config import DEFAULT_CONFIG
+from hermes_agent.hermes_cli.config import DEFAULT_CONFIG
 
 
 # ---------------------------------------------------------------------------
@@ -253,7 +253,7 @@ class TestCreateProfile:
         (default_home / "memories" / "note.md").write_text("remember this")
         (default_home / "config.yaml").write_text("model: gpt-4")
         # Runtime files that should be stripped
-        (default_home / "gateway.pid").write_text("12345")
+        (default_home / "hermes_agent.gateway.pid").write_text("12345")
         (default_home / "gateway_state.json").write_text("{}")
         (default_home / "processes.json").write_text("[]")
 
@@ -263,7 +263,7 @@ class TestCreateProfile:
         assert (profile_dir / "memories" / "note.md").read_text() == "remember this"
         assert (profile_dir / "config.yaml").read_text() == "model: gpt-4"
         # Runtime files should be stripped
-        assert not (profile_dir / "gateway.pid").exists()
+        assert not (profile_dir / "hermes_agent.gateway.pid").exists()
         assert not (profile_dir / "gateway_state.json").exists()
         assert not (profile_dir / "processes.json").exists()
 
@@ -316,7 +316,7 @@ class TestCreateProfile:
         (default_home / "config.yaml").write_text("model: gpt-4")
         (default_home / ".env").write_text("KEY=val")
         (default_home / "logs").mkdir(exist_ok=True)
-        (default_home / "logs" / "gateway.log").write_text("log")
+        (default_home / "logs" / "hermes_agent.gateway.log").write_text("log")
 
         profile_dir = create_profile("cloned", clone_all=True, no_alias=True)
 
@@ -336,7 +336,7 @@ class TestCreateProfile:
         assert (profile_dir / "skills" / "my-skill" / "SKILL.md").read_text() == "skill"
         assert (profile_dir / "config.yaml").read_text() == "model: gpt-4"
         assert (profile_dir / ".env").read_text() == "KEY=val"
-        assert (profile_dir / "logs" / "gateway.log").read_text() == "log"
+        assert (profile_dir / "logs" / "hermes_agent.gateway.log").read_text() == "log"
 
     def test_clone_all_excludes_history_artifacts(self, profile_env):
         """--clone-all excludes the source's session history, backups, and
@@ -557,7 +557,7 @@ class TestDeleteProfile:
         profile_dir = create_profile("coder", no_alias=True)
         assert profile_dir.is_dir()
         # Mock gateway import to avoid real systemd/launchd interaction
-        with patch("hermes_cli.profiles._cleanup_gateway_service"):
+        with patch("hermes_agent.hermes_cli.profiles._cleanup_gateway_service"):
             delete_profile("coder", yes=True)
         assert not profile_dir.is_dir()
 
@@ -573,8 +573,8 @@ class TestDeleteProfile:
         profile_dir = create_profile("coder", no_alias=True)
         set_active_profile("coder")
 
-        with patch("hermes_cli.profiles._cleanup_gateway_service"), \
-             patch("hermes_cli.profiles.shutil.rmtree", side_effect=PermissionError("locked")):
+        with patch("hermes_agent.hermes_cli.profiles._cleanup_gateway_service"), \
+             patch("hermes_agent.hermes_cli.profiles.shutil.rmtree", side_effect=PermissionError("locked")):
             with pytest.raises(RuntimeError, match="Could not remove profile directory"):
                 delete_profile("coder", yes=True)
 
@@ -778,8 +778,8 @@ class TestWrapperScript:
 
     def test_creates_sh_on_posix(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "darwin")
-        monkeypatch.setattr("hermes_cli.profiles.shutil.which", lambda name: "/opt/hermes/bin/hermes")
-        from hermes_cli.profiles import create_wrapper_script
+        monkeypatch.setattr("hermes_agent.hermes_cli.profiles.shutil.which", lambda name: "/opt/hermes/bin/hermes")
+        from hermes_agent.hermes_cli.profiles import create_wrapper_script
         wrapper = create_wrapper_script("mybot")
         assert wrapper is not None
         assert wrapper.name == "mybot"
@@ -789,7 +789,7 @@ class TestWrapperScript:
 
     def test_creates_bat_on_windows(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "win32")
-        from hermes_cli.profiles import create_wrapper_script
+        from hermes_agent.hermes_cli.profiles import create_wrapper_script
         wrapper = create_wrapper_script("mybot")
         assert wrapper is not None
         assert wrapper.name == "mybot.bat"
@@ -800,7 +800,7 @@ class TestWrapperScript:
 
     def test_remove_finds_bat_on_windows(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "win32")
-        from hermes_cli.profiles import create_wrapper_script, remove_wrapper_script
+        from hermes_agent.hermes_cli.profiles import create_wrapper_script, remove_wrapper_script
         wrapper = create_wrapper_script("mybot")
         assert wrapper is not None
         assert wrapper.exists()
@@ -810,7 +810,7 @@ class TestWrapperScript:
 
     def test_remove_finds_sh_on_posix(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "darwin")
-        from hermes_cli.profiles import create_wrapper_script, remove_wrapper_script
+        from hermes_agent.hermes_cli.profiles import create_wrapper_script, remove_wrapper_script
         wrapper = create_wrapper_script("mybot")
         assert wrapper is not None
         assert wrapper.exists()
@@ -819,14 +819,14 @@ class TestWrapperScript:
         assert not wrapper.exists()
 
     def test_remove_returns_false_when_absent(self, profile_env):
-        from hermes_cli.profiles import remove_wrapper_script
+        from hermes_agent.hermes_cli.profiles import remove_wrapper_script
         assert remove_wrapper_script("nonexistent") is False
 
     def test_custom_alias_target_on_posix(self, profile_env, monkeypatch):
         # Custom alias name pointing at a differently-named profile: the file
         # is named after the alias, the -p content references the profile.
         monkeypatch.setattr("sys.platform", "darwin")
-        from hermes_cli.profiles import create_wrapper_script
+        from hermes_agent.hermes_cli.profiles import create_wrapper_script
         wrapper = create_wrapper_script("rq", target="redqueen")
         assert wrapper is not None
         assert wrapper.name == "rq"
@@ -838,7 +838,7 @@ class TestWrapperScript:
         # Regression: custom-name aliases must still produce an executable
         # .bat (not a clobbered #!/bin/sh) on Windows.
         monkeypatch.setattr("sys.platform", "win32")
-        from hermes_cli.profiles import create_wrapper_script
+        from hermes_agent.hermes_cli.profiles import create_wrapper_script
         wrapper = create_wrapper_script("rq", target="redqueen")
         assert wrapper is not None
         assert wrapper.name == "rq.bat"
@@ -858,7 +858,7 @@ class TestFindAliasForProfile:
 
     def test_profile_named_alias(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "darwin")
-        from hermes_cli.profiles import create_wrapper_script, find_alias_for_profile
+        from hermes_agent.hermes_cli.profiles import create_wrapper_script, find_alias_for_profile
         create_wrapper_script("steve")
         assert find_alias_for_profile("steve") == "steve"
 
@@ -866,19 +866,19 @@ class TestFindAliasForProfile:
         # qiaobusi -> steve-jobs: the custom alias name must surface, not the
         # profile name, because that's the command the user actually typed.
         monkeypatch.setattr("sys.platform", "darwin")
-        from hermes_cli.profiles import create_wrapper_script, find_alias_for_profile
+        from hermes_agent.hermes_cli.profiles import create_wrapper_script, find_alias_for_profile
         create_wrapper_script("qiaobusi", target="steve")
         assert find_alias_for_profile("steve") == "qiaobusi"
 
     def test_no_alias_returns_none(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "darwin")
-        from hermes_cli.profiles import find_alias_for_profile
+        from hermes_agent.hermes_cli.profiles import find_alias_for_profile
         assert find_alias_for_profile("steve") is None
 
     def test_ignores_unrelated_files(self, profile_env, monkeypatch):
         # ~/.local/bin commonly holds unrelated binaries; they must not match.
         monkeypatch.setattr("sys.platform", "darwin")
-        from hermes_cli.profiles import _get_wrapper_dir, find_alias_for_profile
+        from hermes_agent.hermes_cli.profiles import _get_wrapper_dir, find_alias_for_profile
         wrapper_dir = _get_wrapper_dir()
         wrapper_dir.mkdir(parents=True, exist_ok=True)
         (wrapper_dir / "pip").write_text("#!/bin/sh\nexec python -m pip \"$@\"\n")
@@ -886,14 +886,14 @@ class TestFindAliasForProfile:
 
     def test_custom_alias_on_windows(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "win32")
-        from hermes_cli.profiles import create_wrapper_script, find_alias_for_profile
+        from hermes_agent.hermes_cli.profiles import create_wrapper_script, find_alias_for_profile
         create_wrapper_script("qiaobusi", target="steve")
         # The .bat extension must be stripped from the returned alias name.
         assert find_alias_for_profile("steve") == "qiaobusi"
 
     def test_list_profiles_surfaces_custom_alias(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "darwin")
-        from hermes_cli.profiles import (
+        from hermes_agent.hermes_cli.profiles import (
             create_profile,
             create_wrapper_script,
             list_profiles,
@@ -920,7 +920,7 @@ class TestRenameProfile:
         assert old_dir.is_dir()
 
         # Mock alias collision to avoid subprocess calls
-        with patch("hermes_cli.profiles.check_alias_collision", return_value="skip"):
+        with patch("hermes_agent.hermes_cli.profiles.check_alias_collision", return_value="skip"):
             new_dir = rename_profile("oldname", "newname")
 
         assert not old_dir.is_dir()
@@ -946,7 +946,7 @@ class TestRenameProfile:
             }
         }))
 
-        with patch("hermes_cli.profiles.check_alias_collision", return_value="skip"):
+        with patch("hermes_agent.hermes_cli.profiles.check_alias_collision", return_value="skip"):
             rename_profile("ssi_health", "heimdall")
 
         cfg = json.loads(honcho_path.read_text())
@@ -964,7 +964,7 @@ class TestRenameProfile:
             }
         }))
 
-        with patch("hermes_cli.profiles.check_alias_collision", return_value="skip"):
+        with patch("hermes_agent.hermes_cli.profiles.check_alias_collision", return_value="skip"):
             rename_profile("ssi_health", "heimdall")
 
         cfg = json.loads(honcho_path.read_text())
@@ -983,7 +983,7 @@ class TestRenameProfile:
             }
         }))
 
-        with patch("hermes_cli.profiles.check_alias_collision", return_value="skip"):
+        with patch("hermes_agent.hermes_cli.profiles.check_alias_collision", return_value="skip"):
             rename_profile("ssi_health", "heimdall")
 
         cfg = json.loads(honcho_path.read_text())
@@ -1190,7 +1190,7 @@ class TestExportImport:
             sub.mkdir(exist_ok=True)
             (sub / "marker.txt").write_text("excluded")
 
-        for f in ("state.db", "gateway.pid", "gateway_state.json",
+        for f in ("state.db", "hermes_agent.gateway.pid", "gateway_state.json",
                   "processes.json", "errors.log", ".hermes_history",
                   "active_profile", ".update_check", "auth.lock"):
             (default_dir / f).write_text("excluded")
@@ -1362,7 +1362,7 @@ class TestInternalHelpers:
 
     def test_active_profile_path_docker(self, tmp_path, monkeypatch):
         """In Docker, active_profile file lives under HERMES_HOME."""
-        from hermes_cli.profiles import _get_active_profile_path
+        from hermes_agent.hermes_cli.profiles import _get_active_profile_path
         docker_home = tmp_path / "opt" / "data"
         docker_home.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -1421,27 +1421,27 @@ class TestEdgeCases:
 
     def test_gateway_running_check_with_pid_file(self, profile_env):
         """Verify _check_gateway_running uses the shared gateway PID validator."""
-        from hermes_cli.profiles import _check_gateway_running
+        from hermes_agent.hermes_cli.profiles import _check_gateway_running
         tmp_path = profile_env
         default_home = tmp_path / ".hermes"
 
-        with patch("gateway.status.get_running_pid", return_value=99999) as mock_get_running_pid:
+        with patch("hermes_agent.gateway.status.get_running_pid", return_value=99999) as mock_get_running_pid:
             assert _check_gateway_running(default_home) is True
         mock_get_running_pid.assert_called_once_with(
-            default_home / "gateway.pid",
+            default_home / "hermes_agent.gateway.pid",
             cleanup_stale=False,
         )
 
     def test_gateway_running_check_plain_pid(self, profile_env):
         """Shared PID validator returning None means the profile is not running."""
-        from hermes_cli.profiles import _check_gateway_running
+        from hermes_agent.hermes_cli.profiles import _check_gateway_running
         tmp_path = profile_env
         default_home = tmp_path / ".hermes"
 
-        with patch("gateway.status.get_running_pid", return_value=None) as mock_get_running_pid:
+        with patch("hermes_agent.gateway.status.get_running_pid", return_value=None) as mock_get_running_pid:
             assert _check_gateway_running(default_home) is False
         mock_get_running_pid.assert_called_once_with(
-            default_home / "gateway.pid",
+            default_home / "hermes_agent.gateway.pid",
             cleanup_stale=False,
         )
 
@@ -1483,7 +1483,7 @@ class TestEdgeCases:
         set_active_profile("coder")
         assert get_active_profile() == "coder"
 
-        with patch("hermes_cli.profiles._cleanup_gateway_service"):
+        with patch("hermes_agent.hermes_cli.profiles._cleanup_gateway_service"):
             delete_profile("coder", yes=True)
 
         assert get_active_profile() == "default"

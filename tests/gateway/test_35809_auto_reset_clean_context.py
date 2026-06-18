@@ -36,10 +36,10 @@ from __future__ import annotations
 import ast
 import inspect
 
-from gateway import run as gateway_run
-from gateway.config import GatewayConfig, Platform
-from gateway.session import SessionSource, SessionStore
-from hermes_state import SessionDB
+from hermes_agent.gateway import run as gateway_run
+from hermes_agent.gateway.config import GatewayConfig, Platform
+from hermes_agent.gateway.session import SessionSource, SessionStore
+from hermes_agent.hermes_state import SessionDB
 
 
 # ---------------------------------------------------------------------------

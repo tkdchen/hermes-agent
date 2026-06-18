@@ -23,7 +23,7 @@ These are content/structural assertions (no live model call) — they pin the
 mechanism that makes the stale task historical rather than active.
 """
 
-from agent.context_compressor import (
+from hermes_agent.agent.context_compressor import (
     HISTORICAL_TASK_HEADING,
     SUMMARY_PREFIX,
     LEGACY_SUMMARY_PREFIX,

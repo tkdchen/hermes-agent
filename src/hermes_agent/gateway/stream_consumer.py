@@ -24,16 +24,16 @@ import time
 from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
-from gateway.platforms.base import BasePlatformAdapter as _BasePlatformAdapter
-from gateway.platforms.base import _custom_unit_to_cp
-from gateway.platforms.base import MEDIA_TAG_CLEANUP_RE
-from gateway.config import (
+from hermes_agent.gateway.platforms.base import BasePlatformAdapter as _BasePlatformAdapter
+from hermes_agent.gateway.platforms.base import _custom_unit_to_cp
+from hermes_agent.gateway.platforms.base import MEDIA_TAG_CLEANUP_RE
+from hermes_agent.gateway.config import (
     DEFAULT_STREAMING_EDIT_INTERVAL as _DEFAULT_STREAMING_EDIT_INTERVAL,
     DEFAULT_STREAMING_BUFFER_THRESHOLD as _DEFAULT_STREAMING_BUFFER_THRESHOLD,
     DEFAULT_STREAMING_CURSOR as _DEFAULT_STREAMING_CURSOR,
 )
 
-logger = logging.getLogger("gateway.stream_consumer")
+logger = logging.getLogger("hermes_agent.gateway.stream_consumer")
 
 # Sentinel to signal the stream is complete
 _DONE = object()

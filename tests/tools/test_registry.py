@@ -5,7 +5,7 @@ import threading
 from pathlib import Path
 from unittest.mock import patch
 
-from tools.registry import ToolRegistry, _module_registers_tools, discover_builtin_tools
+from hermes_agent.tools.registry import ToolRegistry, _module_registers_tools, discover_builtin_tools
 
 
 def _dummy_handler(args, **kwargs):
@@ -292,13 +292,13 @@ class TestBuiltinDiscovery:
     def test_discovers_all_real_self_registering_builtin_tool_modules(self):
         tools_dir = Path(__file__).resolve().parents[2] / "tools"
         expected = [
-            f"tools.{path.stem}"
+            f"hermes_agent.tools.{path.stem}"
             for path in sorted(tools_dir.glob("*.py"))
             if path.name not in {"__init__.py", "registry.py", "mcp_tool.py"}
             and _module_registers_tools(path)
         ]
 
-        with patch("tools.registry.importlib.import_module"):
+        with patch("hermes_agent.tools.registry.importlib.import_module"):
             imported = discover_builtin_tools(tools_dir)
 
         assert imported == expected
@@ -314,11 +314,11 @@ class TestBuiltinDiscovery:
         )
         (tools_dir / "beta.py").write_text("VALUE = 1\n", encoding="utf-8")
 
-        with patch("tools.registry.importlib.import_module") as mock_import:
+        with patch("hermes_agent.tools.registry.importlib.import_module") as mock_import:
             imported = discover_builtin_tools(tools_dir)
 
-        assert imported == ["tools.alpha"]
-        mock_import.assert_called_once_with("tools.alpha")
+        assert imported == ["hermes_agent.tools.alpha"]
+        mock_import.assert_called_once_with("hermes_agent.tools.alpha")
 
     def test_skips_mcp_tool_even_if_it_registers(self, tmp_path):
         tools_dir = tmp_path / "tools"
@@ -333,11 +333,11 @@ class TestBuiltinDiscovery:
             encoding="utf-8",
         )
 
-        with patch("tools.registry.importlib.import_module") as mock_import:
+        with patch("hermes_agent.tools.registry.importlib.import_module") as mock_import:
             imported = discover_builtin_tools(tools_dir)
 
-        assert imported == ["tools.alpha"]
-        mock_import.assert_called_once_with("tools.alpha")
+        assert imported == ["hermes_agent.tools.alpha"]
+        mock_import.assert_called_once_with("hermes_agent.tools.alpha")
 
 
 class TestEmojiMetadata:

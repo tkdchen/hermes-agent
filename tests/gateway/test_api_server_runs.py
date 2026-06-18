@@ -16,8 +16,8 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 
-from gateway.config import PlatformConfig
-from gateway.platforms.api_server import (
+from hermes_agent.gateway.config import PlatformConfig
+from hermes_agent.gateway.platforms.api_server import (
     APIServerAdapter,
     cors_middleware,
     security_headers_middleware,
@@ -342,7 +342,7 @@ class TestRunEvents:
         adapter._run_approval_sessions[run_id] = "session-123"
 
         async with TestClient(TestServer(app)) as cli:
-            with patch("tools.approval.resolve_gateway_approval", return_value=1) as mock_resolve:
+            with patch("hermes_agent.tools.approval.resolve_gateway_approval", return_value=1) as mock_resolve:
                 approval_resp = await cli.post(
                     f"/v1/runs/{run_id}/approval",
                     json={"choice": "once", "all": "false"},

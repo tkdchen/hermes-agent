@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from agent import video_gen_registry
+from hermes_agent.agent import video_gen_registry
 
 
 @pytest.fixture(autouse=True)
@@ -64,7 +64,7 @@ class _FakeAsyncClient:
 def xai_provider(monkeypatch):
     monkeypatch.setenv("XAI_API_KEY", "test-key")
 
-    import plugins.video_gen.xai as xai_plugin
+    import hermes_agent.plugins.video_gen.xai as xai_plugin
 
     captured: Dict[str, _FakeAsyncClient] = {}
 

@@ -102,7 +102,7 @@ def detect_service_manager() -> ServiceManagerKind:
     # Imports deferred so importing this module doesn't drag in the
     # whole gateway dependency graph for callers that only need the
     # Protocol type or validate_profile_name().
-    from hermes_cli.gateway import (
+    from hermes_agent.hermes_cli.gateway import (
         is_macos,
         is_windows,
         supports_systemd_services,
@@ -211,19 +211,19 @@ class SystemdServiceManager(_RegistrationUnsupportedMixin):
     kind: ServiceManagerKind = "systemd"
 
     def start(self, name: str) -> None:
-        from hermes_cli.gateway import systemd_start
+        from hermes_agent.hermes_cli.gateway import systemd_start
         systemd_start()
 
     def stop(self, name: str) -> None:
-        from hermes_cli.gateway import systemd_stop
+        from hermes_agent.hermes_cli.gateway import systemd_stop
         systemd_stop()
 
     def restart(self, name: str) -> None:
-        from hermes_cli.gateway import systemd_restart
+        from hermes_agent.hermes_cli.gateway import systemd_restart
         systemd_restart()
 
     def is_running(self, name: str) -> bool:
-        from hermes_cli.gateway import _probe_systemd_service_running
+        from hermes_agent.hermes_cli.gateway import _probe_systemd_service_running
         _, running = _probe_systemd_service_running()
         return running
 
@@ -234,19 +234,19 @@ class LaunchdServiceManager(_RegistrationUnsupportedMixin):
     kind: ServiceManagerKind = "launchd"
 
     def start(self, name: str) -> None:
-        from hermes_cli.gateway import launchd_start
+        from hermes_agent.hermes_cli.gateway import launchd_start
         launchd_start()
 
     def stop(self, name: str) -> None:
-        from hermes_cli.gateway import launchd_stop
+        from hermes_agent.hermes_cli.gateway import launchd_stop
         launchd_stop()
 
     def restart(self, name: str) -> None:
-        from hermes_cli.gateway import launchd_restart
+        from hermes_agent.hermes_cli.gateway import launchd_restart
         launchd_restart()
 
     def is_running(self, name: str) -> bool:
-        from hermes_cli.gateway import _probe_launchd_service_running
+        from hermes_agent.hermes_cli.gateway import _probe_launchd_service_running
         return _probe_launchd_service_running()
 
 
@@ -272,7 +272,7 @@ class WindowsServiceManager(_RegistrationUnsupportedMixin):
         start_on_login: bool | None = None,
         elevated_handoff: bool = False,
     ) -> None:
-        from hermes_cli import gateway_windows
+        from hermes_agent.hermes_cli import gateway_windows
         gateway_windows.install(
             force=force,
             start_now=start_now,
@@ -281,20 +281,20 @@ class WindowsServiceManager(_RegistrationUnsupportedMixin):
         )
 
     def start(self, name: str) -> None:
-        from hermes_cli import gateway_windows
+        from hermes_agent.hermes_cli import gateway_windows
         gateway_windows.start()
 
     def stop(self, name: str) -> None:
-        from hermes_cli import gateway_windows
+        from hermes_agent.hermes_cli import gateway_windows
         gateway_windows.stop()
 
     def restart(self, name: str) -> None:
-        from hermes_cli import gateway_windows
+        from hermes_agent.hermes_cli import gateway_windows
         gateway_windows.restart()
 
     def is_running(self, name: str) -> bool:
-        from hermes_cli import gateway_windows
-        from hermes_cli.gateway import find_gateway_pids
+        from hermes_agent.hermes_cli import gateway_windows
+        from hermes_agent.hermes_cli.gateway import find_gateway_pids
         if not gateway_windows.is_installed():
             return False
         return bool(find_gateway_pids())
@@ -864,7 +864,7 @@ class S6ServiceManager:
         pid = self._supervised_pid(name)
         if pid is not None:
             try:
-                from gateway.status import write_planned_stop_marker
+                from hermes_agent.gateway.status import write_planned_stop_marker
 
                 write_planned_stop_marker(pid)
             except Exception:

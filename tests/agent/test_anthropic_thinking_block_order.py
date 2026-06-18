@@ -35,8 +35,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from agent.transports import get_transport
-from agent.anthropic_adapter import convert_messages_to_anthropic
+from hermes_agent.agent.transports import get_transport
+from hermes_agent.agent.anthropic_adapter import convert_messages_to_anthropic
 
 
 def _thinking_block(text: str, signature: str) -> SimpleNamespace:

@@ -23,8 +23,8 @@ def kimi_profile():
     if the registered class is ever swapped for a plain ``ProviderProfile`` the
     assertions below collapse.
     """
-    import model_tools  # noqa: F401
-    import providers
+    import hermes_agent.model_tools  # noqa: F401
+    import hermes_agent.providers
 
     profile = providers.get_provider_profile("kimi-coding")
     assert profile is not None, "kimi-coding provider profile must be registered"
@@ -107,7 +107,7 @@ class TestKimiFullKwargsIntegration:
     """The transport's full kwargs carry at most one reasoning knob."""
 
     def _build(self, kimi_profile, reasoning_config):
-        from agent.transports.chat_completions import ChatCompletionsTransport
+        from hermes_agent.agent.transports.chat_completions import ChatCompletionsTransport
 
         return ChatCompletionsTransport().build_kwargs(
             model="kimi-k2-turbo-preview",

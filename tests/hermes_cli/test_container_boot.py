@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_cli.container_boot import (
+from hermes_agent.hermes_cli.container_boot import (
     ReconcileAction,
     reconcile_profile_gateways,
 )
@@ -49,7 +49,7 @@ def _make_profile(
             payload["desired_state"] = desired_state
         (p / "gateway_state.json").write_text(json.dumps(payload))
     if with_pid:
-        (p / "gateway.pid").write_text(json.dumps(
+        (p / "hermes_agent.gateway.pid").write_text(json.dumps(
             {"pid": 99999, "host": "old-container"},
         ))
         (p / "processes.json").write_text("[]")
@@ -69,7 +69,7 @@ def _seed_default_root(
             "gateway_state": state, "timestamp": 1234567890,
         }))
     if with_pid:
-        (hermes_home / "gateway.pid").write_text(json.dumps(
+        (hermes_home / "hermes_agent.gateway.pid").write_text(json.dumps(
             {"pid": 99999, "host": "old-container"},
         ))
         (hermes_home / "processes.json").write_text("[]")
@@ -191,14 +191,14 @@ def test_starting_state_does_not_autostart(tmp_path: Path) -> None:
 def test_stale_runtime_files_are_removed(tmp_path: Path) -> None:
     scandir = tmp_path / "run-service"; scandir.mkdir()
     profile = _make_profile(tmp_path, "coder", state="running", with_pid=True)
-    assert (profile / "gateway.pid").exists()
+    assert (profile / "hermes_agent.gateway.pid").exists()
     assert (profile / "processes.json").exists()
 
     reconcile_profile_gateways(
         hermes_home=tmp_path, scandir=scandir, dry_run=False,
     )
 
-    assert not (profile / "gateway.pid").exists()
+    assert not (profile / "hermes_agent.gateway.pid").exists()
     assert not (profile / "processes.json").exists()
 
 
@@ -273,7 +273,7 @@ def test_reconcile_log_rotates_when_size_exceeded(
 ) -> None:
     """When container-boot.log exceeds _LOG_ROTATE_BYTES, the existing
     file is rotated to .1 before the new entries are appended."""
-    from hermes_cli import container_boot
+    from hermes_agent.hermes_cli import container_boot
 
     # Tighten the threshold so we don't have to write 256 KiB.
     monkeypatch.setattr(container_boot, "_LOG_ROTATE_BYTES", 200)
@@ -303,7 +303,7 @@ def test_reconcile_log_does_not_rotate_below_threshold(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A small existing log is appended to in place; no .1 is created."""
-    from hermes_cli import container_boot
+    from hermes_agent.hermes_cli import container_boot
     monkeypatch.setattr(container_boot, "_LOG_ROTATE_BYTES", 10_000_000)
 
     log_path = tmp_path / "logs" / "container-boot.log"
@@ -329,7 +329,7 @@ def test_reconcile_log_rotation_overwrites_existing_dot1(
 ) -> None:
     """Rotating again replaces the prior .1 — we keep at most one
     rotated file (soft cap of ~2 × threshold)."""
-    from hermes_cli import container_boot
+    from hermes_agent.hermes_cli import container_boot
     monkeypatch.setattr(container_boot, "_LOG_ROTATE_BYTES", 200)
 
     log_dir = tmp_path / "logs"; log_dir.mkdir()
@@ -362,7 +362,7 @@ def test_dry_run_makes_no_filesystem_changes(tmp_path: Path) -> None:
         profile="coder", prior_state="running", action="started",
     )]
     # ...but nothing on disk was touched.
-    assert (profile / "gateway.pid").exists()  # not removed under dry_run
+    assert (profile / "hermes_agent.gateway.pid").exists()  # not removed under dry_run
     assert not (scandir / "gateway-coder").exists()
     assert not (tmp_path / "logs" / "container-boot.log").exists()
 
@@ -649,18 +649,18 @@ def test_default_slot_does_not_autostart_when_root_state_startup_failed(
 def test_default_slot_cleans_up_stale_runtime_files_at_root(
     tmp_path: Path,
 ) -> None:
-    """gateway.pid and processes.json at the HERMES_HOME root (left
+    """hermes_agent.gateway.pid and processes.json at the HERMES_HOME root (left
     over from the previous container's default gateway) must be
     swept the same way as for named profiles."""
     scandir = tmp_path / "run-service"; scandir.mkdir()
     _seed_default_root(tmp_path, state="running", with_pid=True)
-    assert (tmp_path / "gateway.pid").exists()
+    assert (tmp_path / "hermes_agent.gateway.pid").exists()
 
     reconcile_profile_gateways(
         hermes_home=tmp_path, scandir=scandir, dry_run=False,
     )
 
-    assert not (tmp_path / "gateway.pid").exists()
+    assert not (tmp_path / "hermes_agent.gateway.pid").exists()
     assert not (tmp_path / "processes.json").exists()
 
 
@@ -739,7 +739,7 @@ def test_is_dashboard_container_true_for_dashboard_argv(
     container_argv: tuple[str, ...],
 ) -> None:
     """A dashboard command is detected across every wrapper prefix shape."""
-    from hermes_cli.container_boot import _is_dashboard_container
+    from hermes_agent.hermes_cli.container_boot import _is_dashboard_container
 
     assert _is_dashboard_container(container_argv) is True
 
@@ -762,7 +762,7 @@ def test_is_dashboard_container_false_for_non_dashboard_argv(
     container_argv: tuple[str, ...],
 ) -> None:
     """Gateway / other commands (and empty argv) are not the dashboard."""
-    from hermes_cli.container_boot import _is_dashboard_container
+    from hermes_agent.hermes_cli.container_boot import _is_dashboard_container
 
     assert _is_dashboard_container(container_argv) is False
 
@@ -778,7 +778,7 @@ def test_main_skips_reconcile_in_dashboard_container(
     the gateway-<profile> slot. Asserting the slot is absent proves the
     skip is real, not just a log line.
     """
-    from hermes_cli import container_boot
+    from hermes_agent.hermes_cli import container_boot
 
     scandir = tmp_path / "run-service"; scandir.mkdir()
     _make_profile(tmp_path, "worker", state="running")
@@ -804,7 +804,7 @@ def test_main_reconciles_in_gateway_container(
 ) -> None:
     """main() reconciles normally when PID 1 argv is the gateway command —
     the dashboard skip is scoped strictly to the dashboard role."""
-    from hermes_cli import container_boot
+    from hermes_agent.hermes_cli import container_boot
 
     scandir = tmp_path / "run-service"; scandir.mkdir()
     _make_profile(tmp_path, "worker", state="running")
@@ -831,7 +831,7 @@ def test_main_ignores_removed_skip_reconcile_env_var(
     """The legacy HERMES_SKIP_PROFILE_RECONCILE flag is gone: setting it on a
     gateway container must NOT suppress reconciliation. Role is decided by
     PID 1 argv alone, so a stale flag in someone's manifest is inert."""
-    from hermes_cli import container_boot
+    from hermes_agent.hermes_cli import container_boot
 
     scandir = tmp_path / "run-service"; scandir.mkdir()
     _make_profile(tmp_path, "worker", state="running")

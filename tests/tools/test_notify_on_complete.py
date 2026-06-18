@@ -14,7 +14,7 @@ import time
 import pytest
 from unittest.mock import MagicMock, patch
 
-from tools.process_registry import (
+from hermes_agent.tools.process_registry import (
     ProcessRegistry,
     ProcessSession,
 )
@@ -213,7 +213,7 @@ class TestCompletionQueue:
 
 class TestCheckpointNotify:
     def test_checkpoint_includes_notify(self, registry, tmp_path):
-        with patch("tools.process_registry.CHECKPOINT_PATH", tmp_path / "procs.json"):
+        with patch("hermes_agent.tools.process_registry.CHECKPOINT_PATH", tmp_path / "procs.json"):
             s = _make_session(notify_on_complete=True)
             registry._running[s.id] = s
             registry._write_checkpoint()
@@ -223,7 +223,7 @@ class TestCheckpointNotify:
             assert data[0]["notify_on_complete"] is True
 
     def test_checkpoint_without_notify(self, registry, tmp_path):
-        with patch("tools.process_registry.CHECKPOINT_PATH", tmp_path / "procs.json"):
+        with patch("hermes_agent.tools.process_registry.CHECKPOINT_PATH", tmp_path / "procs.json"):
             s = _make_session(notify_on_complete=False)
             registry._running[s.id] = s
             registry._write_checkpoint()
@@ -240,7 +240,7 @@ class TestCheckpointNotify:
             "task_id": "t1",
             "notify_on_complete": True,
         }]))
-        with patch("tools.process_registry.CHECKPOINT_PATH", checkpoint):
+        with patch("hermes_agent.tools.process_registry.CHECKPOINT_PATH", checkpoint):
             recovered = registry.recover_from_checkpoint()
             assert recovered == 1
             s = registry.get("proc_live")
@@ -262,7 +262,7 @@ class TestCheckpointNotify:
             "watcher_interval": 5,
             "notify_on_complete": True,
         }]))
-        with patch("tools.process_registry.CHECKPOINT_PATH", checkpoint):
+        with patch("hermes_agent.tools.process_registry.CHECKPOINT_PATH", checkpoint):
             recovered = registry.recover_from_checkpoint()
             assert recovered == 1
             assert len(registry.pending_watchers) == 1
@@ -279,7 +279,7 @@ class TestCheckpointNotify:
             "pid": os.getpid(),
             "task_id": "t1",
         }]))
-        with patch("tools.process_registry.CHECKPOINT_PATH", checkpoint):
+        with patch("hermes_agent.tools.process_registry.CHECKPOINT_PATH", checkpoint):
             recovered = registry.recover_from_checkpoint()
             assert recovered == 1
             s = registry.get("proc_live")
@@ -292,7 +292,7 @@ class TestCheckpointNotify:
 
 class TestTerminalSchema:
     def test_schema_has_notify_on_complete(self):
-        from tools.terminal_tool import TERMINAL_SCHEMA
+        from hermes_agent.tools.terminal_tool import TERMINAL_SCHEMA
         props = TERMINAL_SCHEMA["parameters"]["properties"]
         assert "notify_on_complete" in props
         assert props["notify_on_complete"]["type"] == "boolean"
@@ -300,8 +300,8 @@ class TestTerminalSchema:
 
     def test_handler_passes_notify(self):
         """_handle_terminal passes notify_on_complete to terminal_tool."""
-        from tools.terminal_tool import _handle_terminal
-        with patch("tools.terminal_tool.terminal_tool", return_value='{"ok":true}') as mock_tt:
+        from hermes_agent.tools.terminal_tool import _handle_terminal
+        with patch("hermes_agent.tools.terminal_tool.terminal_tool", return_value='{"ok":true}') as mock_tt:
             _handle_terminal(
                 {"command": "echo hi", "background": True, "notify_on_complete": True},
                 task_id="t1",
@@ -316,7 +316,7 @@ class TestTerminalSchema:
 
 class TestCodeExecutionBlocked:
     def test_notify_on_complete_blocked_in_sandbox(self):
-        from tools.code_execution_tool import _TERMINAL_BLOCKED_PARAMS
+        from hermes_agent.tools.code_execution_tool import _TERMINAL_BLOCKED_PARAMS
         assert "notify_on_complete" in _TERMINAL_BLOCKED_PARAMS
 
 
@@ -406,8 +406,8 @@ def _silent_bg_base_config(tmp_path):
 def _silent_bg_harness(monkeypatch, tmp_path):
     """Common test fixture: patch enough of terminal_tool to spawn a fake
     background process and capture the JSON result the agent sees."""
-    import tools.terminal_tool as terminal_tool_module
-    from tools import process_registry as process_registry_module
+    import hermes_agent.tools.terminal_tool as terminal_tool_module
+    from hermes_agent.tools import process_registry as process_registry_module
     from types import SimpleNamespace
 
     config = _silent_bg_base_config(tmp_path)

@@ -50,7 +50,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from hermes_constants import get_hermes_home
+from hermes_agent.hermes_constants import get_hermes_home
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +81,7 @@ def write_approval_enabled(subsystem: str) -> bool:
     if subsystem not in _SUBSYSTEMS:
         return False
     try:
-        from hermes_cli.config import load_config, cfg_get
+        from hermes_agent.hermes_cli.config import load_config, cfg_get
         cfg = load_config()
         raw = cfg_get(cfg, subsystem, CONFIG_KEY, default=False)
     except Exception:
@@ -213,7 +213,7 @@ def current_origin() -> str:
     the default ``foreground``.
     """
     try:
-        from tools.skill_provenance import get_current_write_origin
+        from hermes_agent.tools.skill_provenance import get_current_write_origin
         return get_current_write_origin()
     except Exception:
         return "foreground"
@@ -328,7 +328,7 @@ def _interactive_approval_available() -> bool:
     * Scripts, cron, and background threads — no user present.
     """
     try:
-        from tools.terminal_tool import _get_approval_callback
+        from hermes_agent.tools.terminal_tool import _get_approval_callback
         return _get_approval_callback() is not None
     except Exception:
         return False
@@ -348,7 +348,7 @@ def _prompt_inline_memory_approval(summary: str, detail: str) -> Optional[bool]:
     failed prompt must stage the write instead.
     """
     try:
-        from tools.terminal_tool import _get_approval_callback
+        from hermes_agent.tools.terminal_tool import _get_approval_callback
     except Exception:
         return None
 
@@ -444,7 +444,7 @@ def skill_pending_diff(record: Dict[str, Any]) -> str:
 
     # Resolve current on-disk content for diffable actions.
     try:
-        from tools.skill_manager_tool import _find_skill
+        from hermes_agent.tools.skill_manager_tool import _find_skill
     except Exception:
         _find_skill = None  # type: ignore
 

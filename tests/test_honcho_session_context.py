@@ -2,7 +2,7 @@
 
 from types import SimpleNamespace
 
-from plugins.memory.honcho.session import HonchoSession, HonchoSessionManager
+from hermes_agent.plugins.memory.honcho.session import HonchoSession, HonchoSessionManager
 
 
 class _FakeSummary:

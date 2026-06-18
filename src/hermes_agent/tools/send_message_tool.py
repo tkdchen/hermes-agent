@@ -14,7 +14,7 @@ import ssl
 import time
 from email.utils import formatdate
 
-from agent.redact import redact_sensitive_text
+from hermes_agent.agent.redact import redact_sensitive_text
 
 logger = logging.getLogger(__name__)
 
@@ -190,7 +190,7 @@ def send_message_tool(args, **kw):
 def _handle_list():
     """Return formatted list of available messaging targets."""
     try:
-        from gateway.channel_directory import format_directory_for_display
+        from hermes_agent.gateway.channel_directory import format_directory_for_display
         return json.dumps({"targets": format_directory_for_display()})
     except Exception as e:
         return json.dumps(_error(f"Failed to load channel directory: {e}"))
@@ -224,7 +224,7 @@ def _handle_react(args, remove=False):
         chat_id, _thread_id, _ = _parse_target_ref(platform_name, target_ref)
         if not chat_id:
             try:
-                from gateway.channel_directory import resolve_channel_name
+                from hermes_agent.gateway.channel_directory import resolve_channel_name
                 resolved = resolve_channel_name(platform_name, target_ref)
             except Exception:
                 resolved = None
@@ -234,7 +234,7 @@ def _handle_react(args, remove=False):
             chat_id = resolved or target_ref
 
     try:
-        from gateway.config import Platform, load_gateway_config
+        from hermes_agent.gateway.config import Platform, load_gateway_config
         platform = Platform(platform_name)
     except (ValueError, KeyError):
         return tool_error(f"Unknown platform: {platform_name}")
@@ -254,7 +254,7 @@ def _handle_react(args, remove=False):
 
     runner = None
     try:
-        from gateway.run import _gateway_runner_ref
+        from hermes_agent.gateway.run import _gateway_runner_ref
         runner = _gateway_runner_ref()
     except Exception:
         runner = None
@@ -272,7 +272,7 @@ def _handle_react(args, remove=False):
         )
 
     try:
-        from model_tools import _run_async
+        from hermes_agent.model_tools import _run_async
         if remove:
             result = _run_async(
                 react_fn(chat_id=chat_id, message_id=message_id)
@@ -309,7 +309,7 @@ def _handle_send(args):
     # Resolve human-friendly channel names to numeric IDs
     if target_ref and not is_explicit:
         try:
-            from gateway.channel_directory import resolve_channel_name
+            from hermes_agent.gateway.channel_directory import resolve_channel_name
             resolved = resolve_channel_name(platform_name, target_ref)
             if resolved:
                 chat_id, thread_id, _ = _parse_target_ref(platform_name, resolved)
@@ -324,12 +324,12 @@ def _handle_send(args):
                 f"Try using a numeric channel ID instead."
             })
 
-    from tools.interrupt import is_interrupted
+    from hermes_agent.tools.interrupt import is_interrupted
     if is_interrupted():
         return tool_error("Interrupted")
 
     try:
-        from gateway.config import load_gateway_config, Platform
+        from hermes_agent.gateway.config import load_gateway_config, Platform
         config = load_gateway_config()
     except Exception as e:
         return json.dumps(_error(f"Failed to load gateway config: {e}"))
@@ -349,7 +349,7 @@ def _handle_send(args):
             wx_token = os.getenv("WEIXIN_TOKEN", "").strip()
             wx_account = os.getenv("WEIXIN_ACCOUNT_ID", "").strip()
             if wx_token and wx_account:
-                from gateway.config import PlatformConfig
+                from hermes_agent.gateway.config import PlatformConfig
                 pconfig = PlatformConfig(
                     enabled=True,
                     token=wx_token,
@@ -364,7 +364,7 @@ def _handle_send(args):
         else:
             return tool_error(f"Platform '{platform_name}' is not configured. Set up credentials in ~/.hermes/config.yaml or environment variables.")
 
-    from gateway.platforms.base import BasePlatformAdapter
+    from hermes_agent.gateway.platforms.base import BasePlatformAdapter
 
     # Capture [[as_document]] directive before extract_media strips it.
     # Image-extension files in this batch will route through send_document
@@ -382,7 +382,7 @@ def _handle_send(args):
         if not home and platform_name == "weixin":
             wx_home = os.getenv("WEIXIN_HOME_CHANNEL", "").strip()
             if wx_home:
-                from gateway.config import HomeChannel
+                from hermes_agent.gateway.config import HomeChannel
                 home = HomeChannel(platform=platform, chat_id=wx_home, name="Weixin Home")
         if home:
             chat_id = home.chat_id
@@ -414,7 +414,7 @@ def _handle_send(args):
                         if data.get("ok"):
                             return data["channel"]["id"]
                         return None
-            from model_tools import _run_async
+            from hermes_agent.model_tools import _run_async
             dm_channel = _run_async(_open_slack_dm(pconfig.token, chat_id))
             if dm_channel:
                 chat_id = dm_channel
@@ -424,7 +424,7 @@ def _handle_send(args):
             return json.dumps({"error": f"Failed to open Slack DM: {e}"})
 
     try:
-        from model_tools import _run_async
+        from hermes_agent.model_tools import _run_async
         result = _run_async(
             _send_to_platform(
                 platform,
@@ -442,8 +442,8 @@ def _handle_send(args):
         # Mirror the sent message into the target's gateway session
         if isinstance(result, dict) and result.get("success") and mirror_text:
             try:
-                from gateway.mirror import mirror_to_session
-                from gateway.session_context import get_session_env
+                from hermes_agent.gateway.mirror import mirror_to_session
+                from hermes_agent.gateway.session_context import get_session_env
                 source_label = get_session_env("HERMES_SESSION_PLATFORM", "cli")
                 user_id = get_session_env("HERMES_SESSION_USER_ID", "") or None
                 if mirror_to_session(
@@ -561,7 +561,7 @@ def _describe_media_for_mirror(media_files):
 
 def _get_cron_auto_delivery_target():
     """Return the cron scheduler's auto-delivery target for the current run, if any."""
-    from gateway.session_context import get_session_env
+    from hermes_agent.gateway.session_context import get_session_env
     platform = get_session_env("HERMES_CRON_AUTO_DELIVER_PLATFORM", "").strip().lower()
     chat_id = get_session_env("HERMES_CRON_AUTO_DELIVER_CHAT_ID", "").strip()
     if not platform or not chat_id:
@@ -629,7 +629,7 @@ async def _send_via_adapter(
     platform_name = platform.value if hasattr(platform, "value") else str(platform)
     runner = None
     try:
-        from gateway.run import _gateway_runner_ref
+        from hermes_agent.gateway.run import _gateway_runner_ref
         runner = _gateway_runner_ref()
     except Exception:
         runner = None
@@ -659,7 +659,7 @@ async def _send_via_adapter(
 
     entry = None
     try:
-        from gateway.platform_registry import platform_registry
+        from hermes_agent.gateway.platform_registry import platform_registry
         entry = platform_registry.get(platform_name)
     except Exception:
         entry = None
@@ -707,7 +707,7 @@ async def _send_to_platform(platform, pconfig, chat_id, message, thread_id=None,
     using the same smart-splitting algorithm as the gateway adapters
     (preserves code-block boundaries, adds part indicators).
     """
-    from gateway.config import Platform
+    from hermes_agent.gateway.config import Platform
 
     media_files = media_files or []
 
@@ -718,19 +718,19 @@ async def _send_to_platform(platform, pconfig, chat_id, message, thread_id=None,
     if platform == Platform.WEIXIN:
         return await _send_weixin(pconfig, chat_id, message, media_files=media_files)
 
-    from gateway.platforms.base import BasePlatformAdapter, utf16_len
-    from gateway.platforms.slack import SlackAdapter
+    from hermes_agent.gateway.platforms.base import BasePlatformAdapter, utf16_len
+    from hermes_agent.gateway.platforms.slack import SlackAdapter
 
     # Telegram adapter import is optional (requires python-telegram-bot)
     try:
-        from gateway.platforms.telegram import TelegramAdapter
+        from hermes_agent.gateway.platforms.telegram import TelegramAdapter
         _telegram_available = True
     except ImportError:
         _telegram_available = False
 
     # Feishu adapter import is optional (requires lark-oapi)
     try:
-        from gateway.platforms.feishu import FeishuAdapter
+        from hermes_agent.gateway.platforms.feishu import FeishuAdapter
         _feishu_available = True
     except ImportError:
         _feishu_available = False
@@ -754,7 +754,7 @@ async def _send_to_platform(platform, pconfig, chat_id, message, thread_id=None,
     # Check plugin registry for max_message_length
     if platform not in _MAX_LENGTHS:
         try:
-            from gateway.platform_registry import platform_registry
+            from hermes_agent.gateway.platform_registry import platform_registry
             entry = platform_registry.get(platform.value)
             if entry and entry.max_message_length > 0:
                 _MAX_LENGTHS[platform] = entry.max_message_length
@@ -799,7 +799,7 @@ async def _send_to_platform(platform, pconfig, chat_id, message, thread_id=None,
     # historically went straight to the HTTP path; we preserve that by
     # explicitly invoking the registry hook here so behavior is unchanged.
     if platform == Platform.DISCORD:
-        from gateway.platform_registry import platform_registry
+        from hermes_agent.gateway.platform_registry import platform_registry
         entry = platform_registry.get("discord")
         if entry is None or entry.standalone_sender_fn is None:
             return {"error": "Discord plugin not registered or missing standalone_sender_fn"}
@@ -979,7 +979,7 @@ async def _send_telegram(token, chat_id, message, media_files=None, thread_id=No
         else:
             # Reuse the gateway adapter's format_message for markdown→MarkdownV2
             try:
-                from gateway.platforms.telegram import TelegramAdapter
+                from hermes_agent.gateway.platforms.telegram import TelegramAdapter
                 _adapter = TelegramAdapter.__new__(TelegramAdapter)
                 formatted = _adapter.format_message(message)
             except Exception:
@@ -993,7 +993,7 @@ async def _send_telegram(token, chat_id, message, media_files=None, thread_id=No
         # where api.telegram.org is blocked. The in-gateway adapter does the
         # same thing in gateway/platforms/telegram.py.
         try:
-            from gateway.platforms.base import resolve_proxy_url
+            from hermes_agent.gateway.platforms.base import resolve_proxy_url
             _tg_proxy = resolve_proxy_url("TELEGRAM_PROXY", target_hosts=["api.telegram.org"])
         except Exception:
             _tg_proxy = None
@@ -1024,7 +1024,7 @@ async def _send_telegram(token, chat_id, message, media_files=None, thread_id=No
             # send to a forum group's General topic always errors out
             # (see issue #22267).
             try:
-                from gateway.platforms.telegram import TelegramAdapter
+                from hermes_agent.gateway.platforms.telegram import TelegramAdapter
                 effective_thread_id = TelegramAdapter._message_thread_id_for_send(
                     str(thread_id)
                 )
@@ -1076,7 +1076,7 @@ async def _send_telegram(token, chat_id, message, media_files=None, thread_id=No
                     )
                     if not _has_html:
                         try:
-                            from gateway.platforms.telegram import _strip_mdv2
+                            from hermes_agent.gateway.platforms.telegram import _strip_mdv2
                             plain = _strip_mdv2(formatted)
                         except Exception:
                             plain = message
@@ -1188,7 +1188,7 @@ async def _send_slack(token, chat_id, message, thread_ts=None):
     except ImportError:
         return {"error": "aiohttp not installed. Run: pip install aiohttp"}
     try:
-        from gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_aiohttp
+        from hermes_agent.gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_aiohttp
         _proxy = resolve_proxy_url()
         _sess_kw, _req_kw = proxy_kwargs_for_aiohttp(_proxy)
         url = "https://slack.com/api/chat.postMessage"
@@ -1248,7 +1248,7 @@ async def _send_signal(extra, chat_id, message, media_files=None):
     except ImportError:
         return {"error": "httpx not installed"}
 
-    from gateway.platforms.signal_rate_limit import (
+    from hermes_agent.gateway.platforms.signal_rate_limit import (
         SIGNAL_BATCH_PACING_NOTICE_THRESHOLD,
         SIGNAL_MAX_ATTACHMENTS_PER_MSG,
         SIGNAL_RATE_LIMIT_MAX_ATTEMPTS,
@@ -1479,7 +1479,7 @@ async def _send_sms(auth_token, chat_id, message):
     message = message.strip()
 
     try:
-        from gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_aiohttp
+        from hermes_agent.gateway.platforms.base import resolve_proxy_url, proxy_kwargs_for_aiohttp
         _proxy = resolve_proxy_url()
         _sess_kw, _req_kw = proxy_kwargs_for_aiohttp(_proxy)
         creds = f"{account_sid}:{auth_token}"
@@ -1551,7 +1551,7 @@ async def _send_matrix(token, extra, chat_id, message):
 async def _send_matrix_via_adapter(pconfig, chat_id, message, media_files=None, thread_id=None):
     """Send via the Matrix adapter so native Matrix media uploads are preserved."""
     try:
-        from gateway.platforms.matrix import MatrixAdapter
+        from hermes_agent.gateway.platforms.matrix import MatrixAdapter
     except ImportError:
         return {"error": "Matrix dependencies not installed. Run: pip install 'mautrix[encryption]'"}
 
@@ -1642,14 +1642,14 @@ async def _send_dingtalk(extra, chat_id, message):
 async def _send_wecom(extra, chat_id, message):
     """Send via WeCom using the adapter's WebSocket send pipeline."""
     try:
-        from gateway.platforms.wecom import WeComAdapter, check_wecom_requirements
+        from hermes_agent.gateway.platforms.wecom import WeComAdapter, check_wecom_requirements
         if not check_wecom_requirements():
             return {"error": "WeCom requirements not met. Need aiohttp + WECOM_BOT_ID/SECRET."}
     except ImportError:
         return {"error": "WeCom adapter not available."}
 
     try:
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
         pconfig = PlatformConfig(extra=extra)
         adapter = WeComAdapter(pconfig)
         connected = await adapter.connect()
@@ -1669,7 +1669,7 @@ async def _send_wecom(extra, chat_id, message):
 async def _send_weixin(pconfig, chat_id, message, media_files=None):
     """Send via Weixin iLink using the native adapter helper."""
     try:
-        from gateway.platforms.weixin import check_weixin_requirements, send_weixin_direct
+        from hermes_agent.gateway.platforms.weixin import check_weixin_requirements, send_weixin_direct
         if not check_weixin_requirements():
             return {"error": "Weixin requirements not met. Need aiohttp + cryptography."}
     except ImportError:
@@ -1690,14 +1690,14 @@ async def _send_weixin(pconfig, chat_id, message, media_files=None):
 async def _send_bluebubbles(extra, chat_id, message):
     """Send via BlueBubbles iMessage server using the adapter's REST API."""
     try:
-        from gateway.platforms.bluebubbles import BlueBubblesAdapter, check_bluebubbles_requirements
+        from hermes_agent.gateway.platforms.bluebubbles import BlueBubblesAdapter, check_bluebubbles_requirements
         if not check_bluebubbles_requirements():
             return {"error": "BlueBubbles requirements not met (need aiohttp + httpx)."}
     except ImportError:
         return {"error": "BlueBubbles adapter not available."}
 
     try:
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
         pconfig = PlatformConfig(extra=extra)
         adapter = BlueBubblesAdapter(pconfig)
         connected = await adapter.connect()
@@ -1717,10 +1717,10 @@ async def _send_bluebubbles(extra, chat_id, message):
 async def _send_feishu(pconfig, chat_id, message, media_files=None, thread_id=None):
     """Send via Feishu/Lark using the adapter's send pipeline."""
     try:
-        from gateway.platforms.feishu import FeishuAdapter, FEISHU_AVAILABLE
+        from hermes_agent.gateway.platforms.feishu import FeishuAdapter, FEISHU_AVAILABLE
         if not FEISHU_AVAILABLE:
             return {"error": "Feishu dependencies not installed. Run: pip install 'hermes-agent[feishu]'"}
-        from gateway.platforms.feishu import FEISHU_DOMAIN, LARK_DOMAIN
+        from hermes_agent.gateway.platforms.feishu import FEISHU_DOMAIN, LARK_DOMAIN
     except ImportError:
         return {"error": "Feishu dependencies not installed. Run: pip install 'hermes-agent[feishu]'"}
 
@@ -1786,12 +1786,12 @@ def _check_send_message():
     """
     if os.environ.get("HERMES_KANBAN_TASK"):
         return True
-    from gateway.session_context import get_session_env
+    from hermes_agent.gateway.session_context import get_session_env
     platform = get_session_env("HERMES_SESSION_PLATFORM", "")
     if platform and platform != "local":
         return True
     try:
-        from gateway.status import is_gateway_running
+        from hermes_agent.gateway.status import is_gateway_running
         return is_gateway_running()
     except Exception:
         return False
@@ -1881,7 +1881,7 @@ async def _send_yuanbao(chat_id, message, media_files=None):
       - DM:    "direct:<account_id>" or just "<account_id>"
     """
     try:
-        from gateway.platforms.yuanbao import get_active_adapter, send_yuanbao_direct
+        from hermes_agent.gateway.platforms.yuanbao import get_active_adapter, send_yuanbao_direct
     except ImportError:
         return _error("Yuanbao adapter module not available.")
 
@@ -1899,7 +1899,7 @@ async def _send_yuanbao(chat_id, message, media_files=None):
 
 
 # --- Registry ---
-from tools.registry import registry, tool_error
+from hermes_agent.tools.registry import registry, tool_error
 
 registry.register(
     name="send_message",

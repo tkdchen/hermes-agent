@@ -9,7 +9,7 @@ finally block, so len() reflects truly-running tasks.
 import threading
 from datetime import datetime
 
-from cli import HermesCLI
+from hermes_agent.cli import HermesCLI
 
 
 def _stub_thread() -> threading.Thread:
@@ -122,7 +122,7 @@ class _FakeRunningRegistry:
 
 
 def _patch_process_registry(monkeypatch, count: int) -> None:
-    import tools.process_registry as pr_mod
+    import hermes_agent.tools.process_registry as pr_mod
     monkeypatch.setattr(pr_mod, "process_registry", _FakeRunningRegistry(count))
 
 
@@ -143,7 +143,7 @@ def test_snapshot_counts_live_background_processes(monkeypatch):
 def test_snapshot_safe_when_process_registry_raises(monkeypatch):
     """If count_running() raises the snapshot stays at 0; no propagate."""
     cli_obj = _make_cli()
-    import tools.process_registry as pr_mod
+    import hermes_agent.tools.process_registry as pr_mod
 
     class _BoomRegistry:
         def count_running(self):

@@ -16,7 +16,7 @@ The fix adds two safeguards:
 
 from unittest.mock import patch, MagicMock
 
-from agent.context_compressor import ContextCompressor, _CHARS_PER_TOKEN
+from hermes_agent.agent.context_compressor import ContextCompressor, _CHARS_PER_TOKEN
 
 
 # ---------------------------------------------------------------------------
@@ -32,7 +32,7 @@ def _make_compressor(**kwargs) -> ContextCompressor:
         quiet_mode=True,
     )
     defaults.update(kwargs)
-    with patch("agent.context_compressor.get_model_context_length", return_value=96000):
+    with patch("hermes_agent.agent.context_compressor.get_model_context_length", return_value=96000):
         return ContextCompressor(**defaults)
 
 

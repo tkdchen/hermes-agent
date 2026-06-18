@@ -47,8 +47,8 @@ except ImportError:
     AIOHTTP_AVAILABLE = False
     web = None  # type: ignore[assignment]
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
@@ -254,7 +254,7 @@ class WebhookAdapter(BasePlatformAdapter):
         _is_known_platform = deliver_type in _BUILTIN_DELIVER_PLATFORMS
         if not _is_known_platform:
             try:
-                from gateway.platform_registry import platform_registry
+                from hermes_agent.gateway.platform_registry import platform_registry
                 _is_known_platform = platform_registry.is_registered(deliver_type)
             except Exception:
                 pass
@@ -340,7 +340,7 @@ class WebhookAdapter(BasePlatformAdapter):
 
     def _reload_dynamic_routes(self) -> None:
         """Reload agent-created subscriptions from disk if the file changed."""
-        from hermes_constants import get_hermes_home
+        from hermes_agent.hermes_constants import get_hermes_home
         hermes_home = get_hermes_home()
         subs_path = hermes_home / _DYNAMIC_ROUTES_FILENAME
         if not subs_path.exists():
@@ -513,7 +513,7 @@ class WebhookAdapter(BasePlatformAdapter):
         skills = route_config.get("skills", [])
         if skills:
             try:
-                from agent.skill_commands import (
+                from hermes_agent.agent.skill_commands import (
                     build_skill_invocation_message,
                     get_skill_commands,
                 )

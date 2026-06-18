@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-import hermes_cli.gateway as gateway
-import hermes_cli.gateway_windows as gateway_windows
-import hermes_cli.setup as setup
+import hermes_agent.hermes_cli.gateway as gateway
+import hermes_agent.hermes_cli.gateway_windows as gateway_windows
+import hermes_agent.hermes_cli.setup as setup
 
 
 @pytest.mark.parametrize(
@@ -95,17 +95,17 @@ def test_build_gateway_argv_uses_base_pythonw_for_uv_venv_launcher(monkeypatch, 
         encoding="utf-8",
     )
 
-    import hermes_cli.gateway as gateway
+    import hermes_agent.hermes_cli.gateway as gateway
 
     monkeypatch.setattr(gateway_windows.sys, "platform", "win32")
     monkeypatch.setattr(gateway, "PROJECT_ROOT", project)
     monkeypatch.setattr(gateway, "get_python_path", lambda: str(venv_python))
     monkeypatch.setattr(gateway, "_profile_arg", lambda hermes_home: "")
-    monkeypatch.setattr("hermes_cli.config.get_hermes_home", lambda: str(hermes_home))
+    monkeypatch.setattr("hermes_agent.hermes_cli.config.get_hermes_home", lambda: str(hermes_home))
 
     argv, cwd, env_overlay = gateway_windows._build_gateway_argv()
 
-    assert argv[:3] == [str(base_pythonw), "-m", "hermes_cli.main"]
+    assert argv[:3] == [str(base_pythonw), "-m", "hermes_agent.hermes_cli.main"]
     assert cwd == str(hermes_home.resolve())
     assert env_overlay["VIRTUAL_ENV"] == str(project / "venv")
     assert str(project) in env_overlay["PYTHONPATH"].split(gateway_windows.os.pathsep)
@@ -116,13 +116,13 @@ class TestStableWindowsGatewayWorkingDir:
     def test_stable_gateway_working_dir_uses_hermes_home(self, tmp_path, monkeypatch):
         home = tmp_path / ".hermes"
         home.mkdir()
-        monkeypatch.setattr("hermes_cli.config.get_hermes_home", lambda: home)
+        monkeypatch.setattr("hermes_agent.hermes_cli.config.get_hermes_home", lambda: home)
         assert gateway_windows._stable_gateway_working_dir(tmp_path / "checkout") == str(home.resolve())
 
     def test_stable_gateway_working_dir_falls_back_to_project_root(self, tmp_path, monkeypatch):
         missing = tmp_path / "missing" / ".hermes"
         project = tmp_path / "checkout"
-        monkeypatch.setattr("hermes_cli.config.get_hermes_home", lambda: missing)
+        monkeypatch.setattr("hermes_agent.hermes_cli.config.get_hermes_home", lambda: missing)
         assert gateway_windows._stable_gateway_working_dir(project) == str(project)
 
 
@@ -133,13 +133,13 @@ def test_write_task_script_anchors_cmd_cd_at_hermes_home(monkeypatch, tmp_path):
     python_exe = project / "venv" / "Scripts" / "python.exe"
     python_exe.parent.mkdir(parents=True)
     python_exe.write_text("", encoding="utf-8")
-    script_path = tmp_path / "gateway.cmd"
+    script_path = tmp_path / "hermes_agent.gateway.cmd"
 
     monkeypatch.setattr(gateway_windows, "_assert_windows", lambda: None)
     monkeypatch.setattr(gateway, "PROJECT_ROOT", project)
     monkeypatch.setattr(gateway, "get_python_path", lambda: str(python_exe))
     monkeypatch.setattr(gateway, "_profile_arg", lambda hermes_home: "")
-    monkeypatch.setattr("hermes_cli.config.get_hermes_home", lambda: str(hermes_home))
+    monkeypatch.setattr("hermes_agent.hermes_cli.config.get_hermes_home", lambda: str(hermes_home))
     monkeypatch.setattr(gateway_windows, "get_task_script_path", lambda: script_path)
 
     written = gateway_windows._write_task_script()
@@ -592,7 +592,7 @@ def test_stop_writes_planned_stop_marker_before_killing(monkeypatch):
     monkeypatch.setattr(gateway_windows, "is_task_registered", lambda: False)
 
     # Stub the marker write so we can record the order of operations.
-    from gateway import status as status_mod
+    from hermes_agent.gateway import status as status_mod
 
     def fake_write_marker(target_pid):
         events.append(("write_marker", target_pid))
@@ -610,8 +610,8 @@ def test_stop_writes_planned_stop_marker_before_killing(monkeypatch):
         events.append(("kill", kwargs.get("force", False)))
         return 0
 
-    monkeypatch.setattr("hermes_cli.gateway.kill_gateway_processes", fake_kill)
-    monkeypatch.setattr("hermes_cli.gateway._get_restart_drain_timeout", lambda: 5.0)
+    monkeypatch.setattr("hermes_agent.hermes_cli.gateway.kill_gateway_processes", fake_kill)
+    monkeypatch.setattr("hermes_agent.hermes_cli.gateway._get_restart_drain_timeout", lambda: 5.0)
 
     gateway_windows.stop()
 
@@ -638,7 +638,7 @@ def test_stop_waits_for_graceful_drain_before_force_kill(monkeypatch):
     monkeypatch.setattr(gateway_windows, "_assert_windows", lambda: None)
     monkeypatch.setattr(gateway_windows, "is_task_registered", lambda: False)
 
-    from gateway import status as status_mod
+    from hermes_agent.gateway import status as status_mod
     monkeypatch.setattr(status_mod, "write_planned_stop_marker", lambda p: True)
 
     # Simulate the gateway exiting cleanly after one poll tick.
@@ -652,8 +652,8 @@ def test_stop_waits_for_graceful_drain_before_force_kill(monkeypatch):
     def fake_kill(**kwargs):
         events.append(("kill", kwargs.get("force", False)))
         return 0
-    monkeypatch.setattr("hermes_cli.gateway.kill_gateway_processes", fake_kill)
-    monkeypatch.setattr("hermes_cli.gateway._get_restart_drain_timeout", lambda: 5.0)
+    monkeypatch.setattr("hermes_agent.hermes_cli.gateway.kill_gateway_processes", fake_kill)
+    monkeypatch.setattr("hermes_agent.hermes_cli.gateway._get_restart_drain_timeout", lambda: 5.0)
 
     gateway_windows.stop()
 
@@ -677,7 +677,7 @@ def test_stop_escalates_to_force_kill_when_drain_times_out(monkeypatch):
     monkeypatch.setattr(gateway_windows, "_assert_windows", lambda: None)
     monkeypatch.setattr(gateway_windows, "is_task_registered", lambda: False)
 
-    from gateway import status as status_mod
+    from hermes_agent.gateway import status as status_mod
     monkeypatch.setattr(status_mod, "write_planned_stop_marker", lambda p: True)
     # PID never exits — drain times out.
     monkeypatch.setattr(status_mod, "_pid_exists", lambda check_pid: True)
@@ -686,9 +686,9 @@ def test_stop_escalates_to_force_kill_when_drain_times_out(monkeypatch):
     def fake_kill(**kwargs):
         events.append(("kill", kwargs.get("force", False)))
         return 1
-    monkeypatch.setattr("hermes_cli.gateway.kill_gateway_processes", fake_kill)
+    monkeypatch.setattr("hermes_agent.hermes_cli.gateway.kill_gateway_processes", fake_kill)
     # Tiny drain timeout to keep the test fast.
-    monkeypatch.setattr("hermes_cli.gateway._get_restart_drain_timeout", lambda: 1.0)
+    monkeypatch.setattr("hermes_agent.hermes_cli.gateway._get_restart_drain_timeout", lambda: 1.0)
 
     gateway_windows.stop()
 
@@ -706,7 +706,7 @@ def test_stop_no_running_gateway_skips_drain(monkeypatch):
     monkeypatch.setattr(gateway_windows, "_assert_windows", lambda: None)
     monkeypatch.setattr(gateway_windows, "is_task_registered", lambda: False)
 
-    from gateway import status as status_mod
+    from hermes_agent.gateway import status as status_mod
     monkeypatch.setattr(status_mod, "get_running_pid", lambda: None)
 
     def fake_write_marker(target_pid):
@@ -718,8 +718,8 @@ def test_stop_no_running_gateway_skips_drain(monkeypatch):
     def fake_kill(**kwargs):
         events.append(("kill", kwargs.get("force", False)))
         return 0
-    monkeypatch.setattr("hermes_cli.gateway.kill_gateway_processes", fake_kill)
-    monkeypatch.setattr("hermes_cli.gateway._get_restart_drain_timeout", lambda: 5.0)
+    monkeypatch.setattr("hermes_agent.hermes_cli.gateway.kill_gateway_processes", fake_kill)
+    monkeypatch.setattr("hermes_agent.hermes_cli.gateway._get_restart_drain_timeout", lambda: 5.0)
 
     gateway_windows.stop()
 
@@ -748,7 +748,7 @@ def test_drain_helper_returns_true_when_pid_exits_quickly(monkeypatch):
         poll_count[0] += 1
         return poll_count[0] < 3  # alive twice, then gone
 
-    from gateway import status as status_mod
+    from hermes_agent.gateway import status as status_mod
     monkeypatch.setattr(status_mod, "write_planned_stop_marker", lambda p: True)
     monkeypatch.setattr(status_mod, "_pid_exists", fake_pid_exists)
 
@@ -757,7 +757,7 @@ def test_drain_helper_returns_true_when_pid_exits_quickly(monkeypatch):
 
 def test_drain_helper_returns_false_on_timeout(monkeypatch):
     """_drain_gateway_pid returns False when the PID never exits."""
-    from gateway import status as status_mod
+    from hermes_agent.gateway import status as status_mod
     monkeypatch.setattr(status_mod, "write_planned_stop_marker", lambda p: True)
     monkeypatch.setattr(status_mod, "_pid_exists", lambda check_pid: True)
 
@@ -776,7 +776,7 @@ def test_drain_helper_still_waits_if_marker_write_fails(monkeypatch):
     def fake_write(target_pid):
         raise OSError("disk full")
 
-    from gateway import status as status_mod
+    from hermes_agent.gateway import status as status_mod
     monkeypatch.setattr(status_mod, "write_planned_stop_marker", fake_write)
     monkeypatch.setattr(status_mod, "_pid_exists", lambda check_pid: False)
 

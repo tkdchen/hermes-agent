@@ -22,7 +22,7 @@ import pytest
 @pytest.fixture()
 def fake_home(tmp_path, monkeypatch):
     """Point ``_hermes_home_path()`` at a tmp dir for isolated checks."""
-    import agent.file_safety as fs
+    import hermes_agent.agent.file_safety as fs
 
     home = tmp_path / "hermes_home"
     home.mkdir()
@@ -39,7 +39,7 @@ def _create(home: Path, rel: str | Path) -> Path:
 
 
 def test_auth_json_blocked(fake_home):
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     auth = _create(fake_home, "auth.json")
     err = get_read_block_error(str(auth))
@@ -49,7 +49,7 @@ def test_auth_json_blocked(fake_home):
 
 
 def test_auth_lock_blocked(fake_home):
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     lock = _create(fake_home, "auth.lock")
     err = get_read_block_error(str(lock))
@@ -58,7 +58,7 @@ def test_auth_lock_blocked(fake_home):
 
 
 def test_anthropic_oauth_json_blocked(fake_home):
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     oauth = _create(fake_home, ".anthropic_oauth.json")
     err = get_read_block_error(str(oauth))
@@ -68,7 +68,7 @@ def test_anthropic_oauth_json_blocked(fake_home):
 
 def test_google_oauth_json_blocked(fake_home):
     """Gemini OAuth tokens live under auth/google_oauth.json — blocked."""
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     oauth = _create(fake_home, Path("auth") / "google_oauth.json")
     err = get_read_block_error(str(oauth))
@@ -78,7 +78,7 @@ def test_google_oauth_json_blocked(fake_home):
 
 def test_arbitrary_hermes_home_file_not_blocked(fake_home):
     """Non-credential files inside HERMES_HOME stay readable."""
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     safe = _create(fake_home, "session_log.txt")
     assert get_read_block_error(str(safe)) is None
@@ -87,7 +87,7 @@ def test_arbitrary_hermes_home_file_not_blocked(fake_home):
 def test_subdirectory_named_auth_json_not_blocked(fake_home):
     """Only the top-level auth.json is the credential store; a file with the
     same name in a subdirectory (e.g., a skill mock) must remain readable."""
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     nested = _create(fake_home, Path("skills") / "my-skill" / "auth.json")
     assert get_read_block_error(str(nested)) is None
@@ -95,7 +95,7 @@ def test_subdirectory_named_auth_json_not_blocked(fake_home):
 
 def test_skills_hub_block_still_applies(fake_home):
     """Regression guard: the original skills/.hub deny must keep working."""
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     hub_file = _create(fake_home, "skills/.hub/manifest.json")
     err = get_read_block_error(str(hub_file))
@@ -106,7 +106,7 @@ def test_skills_hub_block_still_applies(fake_home):
 def test_path_traversal_resolves_to_blocked(fake_home, tmp_path):
     """A path that traverses through a sibling dir back into HERMES_HOME's
     auth.json must still be caught — the check resolves through realpath."""
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     _create(fake_home, "auth.json")
     sibling = tmp_path / "elsewhere"
@@ -120,7 +120,7 @@ def test_path_traversal_resolves_to_blocked(fake_home, tmp_path):
 def test_symlink_to_auth_json_blocked(fake_home, tmp_path):
     """A symlink pointing at HERMES_HOME/auth.json from outside the home
     must be blocked — readlink-resolution catches the indirection."""
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     target = _create(fake_home, "auth.json")
     link = tmp_path / "shim.json"
@@ -143,7 +143,7 @@ def test_read_file_tool_blocks_relative_path_under_terminal_cwd(
     """
     import json
 
-    import tools.file_tools as ft
+    import hermes_agent.tools.file_tools as ft
 
     _create(fake_home, "auth.json")
     # Force the file_tools resolver to anchor relative paths at HERMES_HOME
@@ -165,7 +165,7 @@ def test_read_file_tool_blocks_nested_google_oauth_path(
     """The real read_file tool must not return Gemini OAuth token material."""
     import json
 
-    import tools.file_tools as ft
+    import hermes_agent.tools.file_tools as ft
 
     oauth = _create(fake_home, Path("auth") / "google_oauth.json")
     oauth.write_text(
@@ -197,7 +197,7 @@ def test_read_file_tool_blocks_nested_google_oauth_path(
 
 def test_dotenv_blocked(fake_home):
     """.env in HERMES_HOME holds API keys — blocked."""
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     env = _create(fake_home, ".env")
     err = get_read_block_error(str(env))
@@ -207,7 +207,7 @@ def test_dotenv_blocked(fake_home):
 
 def test_webhook_subscriptions_blocked(fake_home):
     """webhook_subscriptions.json holds per-route HMAC secrets — blocked."""
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     subs = _create(fake_home, "webhook_subscriptions.json")
     err = get_read_block_error(str(subs))
@@ -217,7 +217,7 @@ def test_webhook_subscriptions_blocked(fake_home):
 
 def test_mcp_tokens_file_blocked(fake_home):
     """Files under mcp-tokens/ hold OAuth tokens — blocked."""
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     tok = _create(fake_home, Path("mcp-tokens") / "github.json")
     err = get_read_block_error(str(tok))
@@ -227,7 +227,7 @@ def test_mcp_tokens_file_blocked(fake_home):
 
 def test_mcp_tokens_nested_blocked(fake_home):
     """Nested files inside mcp-tokens/ are also blocked."""
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     tok = _create(fake_home, Path("mcp-tokens") / "providers" / "azure.json")
     err = get_read_block_error(str(tok))
@@ -237,7 +237,7 @@ def test_mcp_tokens_nested_blocked(fake_home):
 
 def test_mcp_tokens_dir_itself_blocked(fake_home):
     """The mcp-tokens directory itself is blocked (listing is exfiltrating)."""
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     tokens_dir = fake_home / "mcp-tokens"
     tokens_dir.mkdir(parents=True, exist_ok=True)
@@ -254,7 +254,7 @@ def test_identically_named_hermes_files_outside_home_not_blocked(
     those, not per-filename. ``.env`` is the exception: it's blocked anywhere
     on disk (see test_project_local_env_blocked) because the basename always
     means \"secret-bearing environment file\" regardless of directory."""
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     project = tmp_path / "myproject"
     project.mkdir()
@@ -279,7 +279,7 @@ def test_identically_named_hermes_files_outside_home_not_blocked(
 
 def test_non_secret_auth_subtree_file_not_blocked(fake_home):
     """Only the known Google OAuth token path is blocked, not all auth/*."""
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     note = _create(fake_home, Path("auth") / "notes.json")
     assert get_read_block_error(str(note)) is None
@@ -289,7 +289,7 @@ def test_config_yaml_not_blocked(fake_home):
     """config.yaml is NOT a credential file — agent should still be
     able to read it for debugging.  (Writes are denied separately by
     is_write_denied; reads stay allowed.)"""
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     cfg = _create(fake_home, "config.yaml")
     assert get_read_block_error(str(cfg)) is None
@@ -299,7 +299,7 @@ def test_profile_mode_blocks_root_credentials(tmp_path, monkeypatch):
     """Under a profile, HERMES_HOME = <root>/profiles/<name>, but
     <root>/auth.json must ALSO be blocked — credentials at root are
     inherited by every profile."""
-    import agent.file_safety as fs
+    import hermes_agent.agent.file_safety as fs
 
     root = tmp_path / "hermes"
     profile = root / "profiles" / "coder"
@@ -307,7 +307,7 @@ def test_profile_mode_blocks_root_credentials(tmp_path, monkeypatch):
     monkeypatch.setattr(fs, "_hermes_home_path", lambda: profile)
     monkeypatch.setattr(fs, "_hermes_root_path", lambda: root)
 
-    from agent.file_safety import get_read_block_error
+    from hermes_agent.agent.file_safety import get_read_block_error
 
     # Profile-local credential store: blocked
     profile_auth = profile / "auth.json"

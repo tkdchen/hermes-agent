@@ -12,7 +12,7 @@ import subprocess
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from hermes_cli.main import cmd_update
+from hermes_agent.hermes_cli.main import cmd_update
 
 
 def _make_run_side_effect(
@@ -50,10 +50,10 @@ def _make_run_side_effect(
 class TestUpdateYesConfigMigration:
     """--yes auto-answers the config-migration prompt and skips API-key prompts."""
 
-    @patch("hermes_cli.config.migrate_config")
-    @patch("hermes_cli.config.check_config_version", return_value=(1, 2))
-    @patch("hermes_cli.config.get_missing_config_fields", return_value=[])
-    @patch("hermes_cli.config.get_missing_env_vars", return_value=["NEW_KEY"])
+    @patch("hermes_agent.hermes_cli.config.migrate_config")
+    @patch("hermes_agent.hermes_cli.config.check_config_version", return_value=(1, 2))
+    @patch("hermes_agent.hermes_cli.config.get_missing_config_fields", return_value=[])
+    @patch("hermes_agent.hermes_cli.config.get_missing_env_vars", return_value=["NEW_KEY"])
     @patch("shutil.which", return_value=None)
     @patch("subprocess.run")
     def test_yes_auto_migrates_without_input(
@@ -89,10 +89,10 @@ class TestUpdateYesConfigMigration:
         # The "Would you like to configure them now?" prompt text never appears.
         assert "Would you like to configure them now?" not in out
 
-    @patch("hermes_cli.config.migrate_config")
-    @patch("hermes_cli.config.check_config_version", return_value=(1, 2))
-    @patch("hermes_cli.config.get_missing_config_fields", return_value=[])
-    @patch("hermes_cli.config.get_missing_env_vars", return_value=["NEW_KEY"])
+    @patch("hermes_agent.hermes_cli.config.migrate_config")
+    @patch("hermes_agent.hermes_cli.config.check_config_version", return_value=(1, 2))
+    @patch("hermes_agent.hermes_cli.config.get_missing_config_fields", return_value=[])
+    @patch("hermes_agent.hermes_cli.config.get_missing_env_vars", return_value=["NEW_KEY"])
     @patch("shutil.which", return_value=None)
     @patch("subprocess.run")
     def test_no_yes_flag_still_prompts_in_tty(

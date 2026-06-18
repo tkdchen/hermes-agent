@@ -18,9 +18,9 @@ import pytest
 
 
 def test_status_uses_last_activity_not_only_last_used(monkeypatch, capsys):
-    import agent.curator as curator_state
-    import hermes_cli.curator as curator_cli
-    import tools.skill_usage as skill_usage
+    import hermes_agent.agent.curator as curator_state
+    import hermes_agent.hermes_cli.curator as curator_cli
+    import hermes_agent.tools.skill_usage as skill_usage
 
     monkeypatch.setattr(curator_state, "load_state", lambda: {
         "paused": False,
@@ -68,13 +68,13 @@ def curator_status_env(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
     import importlib
-    import hermes_constants
+    import hermes_agent.hermes_constants as hermes_constants
     importlib.reload(hermes_constants)
-    from tools import skill_usage
+    from hermes_agent.tools import skill_usage
     importlib.reload(skill_usage)
-    from agent import curator
+    from hermes_agent.agent import curator
     importlib.reload(curator)
-    from hermes_cli import curator as curator_cli
+    from hermes_agent.hermes_cli import curator as curator_cli
     importlib.reload(curator_cli)
 
     def _write_skill(name: str) -> None:
@@ -178,9 +178,9 @@ def test_status_no_skills_produces_clean_empty_output(curator_status_env):
 
 
 def test_status_marks_missing_last_report_path(monkeypatch, capsys, tmp_path):
-    import agent.curator as curator_state
-    import hermes_cli.curator as curator_cli
-    import tools.skill_usage as skill_usage
+    import hermes_agent.agent.curator as curator_state
+    import hermes_agent.hermes_cli.curator as curator_cli
+    import hermes_agent.tools.skill_usage as skill_usage
 
     missing_report = tmp_path / "stale-report"
     monkeypatch.setattr(curator_state, "load_state", lambda: {

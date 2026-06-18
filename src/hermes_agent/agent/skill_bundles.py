@@ -50,7 +50,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 
-from hermes_constants import get_hermes_home
+from hermes_agent.hermes_constants import get_hermes_home
 
 logger = logging.getLogger(__name__)
 
@@ -272,7 +272,7 @@ def build_bundle_invocation_message(
 
     # Late import to avoid pulling tools/* at module import time and to
     # keep skill_bundles cheap to import in test environments.
-    from agent.skill_commands import _load_skill_payload, _build_skill_message
+    from hermes_agent.agent.skill_commands import _load_skill_payload, _build_skill_message
 
     loaded_names: List[str] = []
     missing: List[str] = []
@@ -296,7 +296,7 @@ def build_bundle_invocation_message(
         loaded_skill, skill_dir, skill_name = loaded
 
         try:
-            from tools.skill_usage import bump_use
+            from hermes_agent.tools.skill_usage import bump_use
             bump_use(skill_name)
         except Exception:
             pass

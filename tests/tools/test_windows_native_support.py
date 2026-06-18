@@ -41,30 +41,30 @@ class TestConfigureWindowsStdio:
     def _reset_configured(self, monkeypatch):
         """Reload the module before each test so the _CONFIGURED flag resets."""
         # Remove from sys.modules so import triggers a fresh load
-        sys.modules.pop("hermes_cli.stdio", None)
+        sys.modules.pop("hermes_agent.hermes_cli.stdio", None)
         # Fresh import now; tests import from hermes_cli.stdio themselves,
         # but this guarantees the module they get is a brand-new copy.
-        import hermes_cli.stdio as _s
+        import hermes_agent.hermes_cli.stdio as _s
         _s._CONFIGURED = False
         yield
-        sys.modules.pop("hermes_cli.stdio", None)
+        sys.modules.pop("hermes_agent.hermes_cli.stdio", None)
 
     def test_no_op_on_posix(self):
-        from hermes_cli import stdio
+        from hermes_agent.hermes_cli import stdio
 
         assert stdio.is_windows() is False
         result = stdio.configure_windows_stdio()
         assert result is False
 
     def test_idempotent(self):
-        from hermes_cli import stdio
+        from hermes_agent.hermes_cli import stdio
 
         stdio.configure_windows_stdio()
         # Second call returns False because _CONFIGURED is set
         assert stdio.configure_windows_stdio() is False
 
     def test_windows_path_sets_env_and_reconfigures_streams(self, monkeypatch):
-        from hermes_cli import stdio
+        from hermes_agent.hermes_cli import stdio
 
         monkeypatch.setattr(stdio, "is_windows", lambda: True)
         # Pretend the user has no prior setting
@@ -103,7 +103,7 @@ class TestConfigureWindowsStdio:
 
     def test_respects_existing_editor_var(self, monkeypatch):
         """User's explicit EDITOR wins over our default."""
-        from hermes_cli import stdio
+        from hermes_agent.hermes_cli import stdio
 
         monkeypatch.setattr(stdio, "is_windows", lambda: True)
         monkeypatch.setenv("EDITOR", "code --wait")
@@ -116,7 +116,7 @@ class TestConfigureWindowsStdio:
 
     def test_respects_existing_visual_var(self, monkeypatch):
         """VISUAL takes precedence over our EDITOR default too."""
-        from hermes_cli import stdio
+        from hermes_agent.hermes_cli import stdio
 
         monkeypatch.setattr(stdio, "is_windows", lambda: True)
         monkeypatch.delenv("EDITOR", raising=False)
@@ -133,7 +133,7 @@ class TestConfigureWindowsStdio:
 
     def test_respects_existing_env_var(self, monkeypatch):
         """User's explicit PYTHONIOENCODING wins over our default."""
-        from hermes_cli import stdio
+        from hermes_agent.hermes_cli import stdio
 
         monkeypatch.setattr(stdio, "is_windows", lambda: True)
         monkeypatch.setenv("PYTHONIOENCODING", "latin-1")
@@ -145,7 +145,7 @@ class TestConfigureWindowsStdio:
 
     @pytest.mark.parametrize("optout", ["1", "true", "True", "yes"])
     def test_disable_flag_short_circuits(self, monkeypatch, optout):
-        from hermes_cli import stdio
+        from hermes_agent.hermes_cli import stdio
 
         monkeypatch.setattr(stdio, "is_windows", lambda: True)
         monkeypatch.setenv("HERMES_DISABLE_WINDOWS_UTF8", optout)
@@ -163,7 +163,7 @@ class TestConfigureWindowsStdio:
 
     def test_reconfigure_stream_handles_missing_method(self, monkeypatch):
         """StringIO-like objects without .reconfigure() must not blow up."""
-        from hermes_cli import stdio
+        from hermes_agent.hermes_cli import stdio
         import io
 
         buf = io.StringIO()
@@ -186,7 +186,7 @@ class TestTerminatePidRoutingOnWindows:
     """
 
     def test_force_uses_taskkill_on_windows(self, monkeypatch):
-        from gateway import status
+        from hermes_agent.gateway import status
 
         captured = {}
 
@@ -209,7 +209,7 @@ class TestTerminatePidRoutingOnWindows:
         assert "/F" in captured["args"]
 
     def test_force_taskkill_failure_raises_oserror(self, monkeypatch):
-        from gateway import status
+        from hermes_agent.gateway import status
 
         def fake_run(args, **kwargs):
             result = MagicMock()
@@ -230,7 +230,7 @@ class TestTerminatePidRoutingOnWindows:
         and uses ``os.kill`` directly — so platform doesn't actually matter
         for the signal choice.  Verifies the getattr fallback works.
         """
-        from gateway import status
+        from hermes_agent.gateway import status
 
         captured = {}
 
@@ -246,7 +246,7 @@ class TestTerminatePidRoutingOnWindows:
 
     def test_taskkill_not_found_falls_back_to_os_kill(self, monkeypatch):
         """On Windows without taskkill (WinPE, containers), fall back gracefully."""
-        from gateway import status
+        from hermes_agent.gateway import status
 
         captured = {}
 
@@ -292,7 +292,7 @@ class TestSigkillFallback:
     @pytest.mark.parametrize(
         "module_path, line_pattern",
         [
-            ("hermes_cli.kanban_db", 'getattr(signal, "SIGKILL", signal.SIGTERM)'),
+            ("hermes_agent.hermes_cli.kanban_db", 'getattr(signal, "SIGKILL", signal.SIGTERM)'),
         ],
     )
     def test_module_uses_getattr_fallback(self, module_path, line_pattern):
@@ -322,9 +322,9 @@ class TestProcessRegistryOSErrorWidening:
 
     def test_oserror_treated_as_not_alive(self, monkeypatch):
         """_pid_exists → False propagates as _is_host_pid_alive → False."""
-        from tools.process_registry import ProcessRegistry
+        from hermes_agent.tools.process_registry import ProcessRegistry
 
-        monkeypatch.setattr("gateway.status._pid_exists", lambda pid: False)
+        monkeypatch.setattr("hermes_agent.gateway.status._pid_exists", lambda pid: False)
         assert ProcessRegistry._is_host_pid_alive(12345) is False
 
     def test_permission_error_treated_as_alive(self, monkeypatch):
@@ -338,18 +338,18 @@ class TestProcessRegistryOSErrorWidening:
         ``OpenProcess + ERROR_ACCESS_DENIED`` on Windows / ``except
         PermissionError`` on POSIX, so alive=True is correct.
         """
-        from tools.process_registry import ProcessRegistry
+        from hermes_agent.tools.process_registry import ProcessRegistry
 
-        monkeypatch.setattr("gateway.status._pid_exists", lambda pid: True)
+        monkeypatch.setattr("hermes_agent.gateway.status._pid_exists", lambda pid: True)
         assert ProcessRegistry._is_host_pid_alive(12345) is True
 
     def test_zero_or_none_pid_returns_false_without_probing(self, monkeypatch):
         """No wasted syscall on falsy pids."""
-        from tools.process_registry import ProcessRegistry
+        from hermes_agent.tools.process_registry import ProcessRegistry
 
         probes = []
         monkeypatch.setattr(
-            "gateway.status._pid_exists",
+            "hermes_agent.gateway.status._pid_exists",
             lambda pid: probes.append(pid) or True,
         )
         assert ProcessRegistry._is_host_pid_alive(None) is False
@@ -357,14 +357,14 @@ class TestProcessRegistryOSErrorWidening:
         assert probes == []
 
     def test_alive_pid_returns_true(self, monkeypatch):
-        from tools.process_registry import ProcessRegistry
+        from hermes_agent.tools.process_registry import ProcessRegistry
 
-        monkeypatch.setattr("gateway.status._pid_exists", lambda pid: True)
+        monkeypatch.setattr("hermes_agent.gateway.status._pid_exists", lambda pid: True)
         assert ProcessRegistry._is_host_pid_alive(os.getpid()) is True
 
 
 class TestPidExistsOSErrorWidening:
-    """gateway.status._pid_exists itself must widen Windows errors correctly.
+    """hermes_agent.gateway.status._pid_exists itself must widen Windows errors correctly.
 
     The POSIX fallback branch (reached when psutil isn't importable) is the
     only path where Python raises ``OSError(WinError 87)`` on Windows for a
@@ -374,7 +374,7 @@ class TestPidExistsOSErrorWidening:
 
     def test_oserror_gone_pid_returns_false(self, monkeypatch):
         """Simulate Windows' OSError(WinError 87) for a gone PID via the POSIX fallback."""
-        from gateway import status
+        from hermes_agent.gateway import status
 
         # Force the psutil-first branch to miss so we exercise the fallback.
         monkeypatch.setitem(
@@ -391,7 +391,7 @@ class TestPidExistsOSErrorWidening:
 
     def test_permission_error_returns_true(self, monkeypatch):
         """POSIX fallback: PermissionError means alive (owned by another user)."""
-        from gateway import status
+        from hermes_agent.gateway import status
 
         monkeypatch.setitem(
             __import__("sys").modules, "psutil",
@@ -491,11 +491,11 @@ class TestWebServerPtyBridgeGuard:
 
 
 class TestEntryPointsConfigureStdio:
-    """cli.py, hermes_cli/main.py, gateway/run.py must call configure_windows_stdio."""
+    """hermes_agent.cli.py, hermes_cli/main.py, gateway/run.py must call configure_windows_stdio."""
 
     @pytest.mark.parametrize(
         "relpath",
-        ["cli.py", "hermes_cli/main.py", "gateway/run.py"],
+        ["hermes_agent.cli.py", "hermes_cli/main.py", "gateway/run.py"],
     )
     def test_entry_point_calls_configure_stdio(self, relpath):
         root = Path(__file__).resolve().parents[2]
@@ -515,12 +515,12 @@ class TestSubprocessCompatHelpers:
     """hermes_cli/_subprocess_compat.py POSIX + Windows behaviour."""
 
     def test_is_windows_matches_sys_platform(self):
-        from hermes_cli import _subprocess_compat as sc
+        from hermes_agent.hermes_cli import _subprocess_compat as sc
         assert sc.IS_WINDOWS == (sys.platform == "win32")
 
     def test_resolve_node_command_returns_absolute_on_posix(self):
         """On Linux, resolve_node_command('sh', ['-c','echo hi']) picks up /bin/sh."""
-        from hermes_cli._subprocess_compat import resolve_node_command
+        from hermes_agent.hermes_cli._subprocess_compat import resolve_node_command
         # We can't assert "npm is on PATH" portably; use `sh` which is
         # guaranteed on POSIX.  On Windows the test only confirms the
         # no-crash fallback path.
@@ -530,7 +530,7 @@ class TestSubprocessCompatHelpers:
         # name (fallback) — both are acceptable behaviours.
 
     def test_resolve_node_command_fallback_when_absent(self):
-        from hermes_cli._subprocess_compat import resolve_node_command
+        from hermes_agent.hermes_cli._subprocess_compat import resolve_node_command
         argv = resolve_node_command(
             "zzz-definitely-not-on-path-xyzzy", ["--help"]
         )
@@ -539,7 +539,7 @@ class TestSubprocessCompatHelpers:
         assert argv[1:] == ["--help"]
 
     def test_windows_flags_zero_on_posix(self):
-        from hermes_cli._subprocess_compat import (
+        from hermes_agent.hermes_cli._subprocess_compat import (
             windows_detach_flags,
             windows_detach_flags_without_breakaway,
             windows_hide_flags,
@@ -550,7 +550,7 @@ class TestSubprocessCompatHelpers:
             assert windows_hide_flags() == 0
 
     def test_windows_detach_popen_kwargs_is_posix_equivalent_on_posix(self):
-        from hermes_cli._subprocess_compat import windows_detach_popen_kwargs
+        from hermes_agent.hermes_cli._subprocess_compat import windows_detach_popen_kwargs
         kwargs = windows_detach_popen_kwargs()
         if sys.platform != "win32":
             # POSIX path MUST produce start_new_session=True, which maps to
@@ -568,7 +568,7 @@ class TestSubprocessCompatHelpers:
 
     def test_windows_detach_flags_has_expected_win32_bits(self, monkeypatch):
         """Simulate Windows to verify flag bundle."""
-        from hermes_cli import _subprocess_compat as sc
+        from hermes_agent.hermes_cli import _subprocess_compat as sc
         monkeypatch.setattr(sc, "IS_WINDOWS", True)
         flags = sc.windows_detach_flags()
         # CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS | CREATE_NO_WINDOW |
@@ -592,7 +592,7 @@ class TestSubprocessCompatHelpers:
         ``fix/windows-gateway-reliability`` (PR #40909) and the bit must
         stay in the default bundle going forward.
         """
-        from hermes_cli import _subprocess_compat as sc
+        from hermes_agent.hermes_cli import _subprocess_compat as sc
         monkeypatch.setattr(sc, "IS_WINDOWS", True)
         assert sc.windows_detach_flags() & 0x01000000, (
             "CREATE_BREAKAWAY_FROM_JOB (0x01000000) must remain in the "
@@ -612,7 +612,7 @@ class TestSubprocessCompatHelpers:
         It must drop ONLY the breakaway bit — DETACHED_PROCESS et al.
         are still required for the child to survive the parent's exit.
         """
-        from hermes_cli import _subprocess_compat as sc
+        from hermes_agent.hermes_cli import _subprocess_compat as sc
         monkeypatch.setattr(sc, "IS_WINDOWS", True)
         full = sc.windows_detach_flags()
         fallback = sc.windows_detach_flags_without_breakaway()
@@ -656,7 +656,7 @@ class TestTuiGatewayEntrySignalGuards:
         for mod in list(sys.modules):
             if mod.startswith("tui_gateway"):
                 del sys.modules[mod]
-        import tui_gateway.entry  # noqa: F401  # must not raise
+        import hermes_agent.tui_gateway.entry  # noqa: F401  # must not raise
 
 
 # ---------------------------------------------------------------------------
@@ -729,7 +729,7 @@ class TestCodeExecutionTransportTcpFallback:
 
 
 class TestCronSchedulerBashResolution:
-    """cron.scheduler must NOT hardcode /bin/bash — .sh scripts need a
+    """hermes_agent.cron.scheduler must NOT hardcode /bin/bash — .sh scripts need a
     dynamically-resolved bash so Windows (Git Bash) works."""
 
     def test_source_uses_shutil_which_for_bash(self):
@@ -739,7 +739,7 @@ class TestCronSchedulerBashResolution:
         # It may still appear as a POSIX fallback after shutil.which(), so
         # we check for the shutil.which call near the .sh/.bash branch.
         assert 'shutil.which("bash")' in source, (
-            "cron.scheduler must resolve bash dynamically via shutil.which"
+            "hermes_agent.cron.scheduler must resolve bash dynamically via shutil.which"
         )
 
     def test_error_message_when_bash_missing(self):
@@ -823,7 +823,7 @@ class TestLocalEnvironmentWindowsTempDir:
         """Linux/macOS behaviour MUST be unchanged — return / tmp or
         tempfile.gettempdir()-derived POSIX path.  This is the 'do no harm'
         test — regressions here break every Unix user's terminal tool."""
-        from tools.environments.local import LocalEnvironment
+        from hermes_agent.tools.environments.local import LocalEnvironment
 
         env = LocalEnvironment(cwd="/tmp", timeout=10, env={})
         tmp_dir = env.get_temp_dir()
@@ -844,8 +844,8 @@ class TestLocalEnvironmentPathInjectionGated:
     """Sane PATH completion must stay POSIX-only."""
 
     def test_windows_path_is_left_unchanged(self, monkeypatch):
-        from tools.environments import local as local_mod
-        from tools.environments.local import _append_missing_sane_path_entries
+        from hermes_agent.tools.environments import local as local_mod
+        from hermes_agent.tools.environments.local import _append_missing_sane_path_entries
 
         monkeypatch.setattr(local_mod, "_IS_WINDOWS", True)
         path = r"C:\Windows\System32;C:\Program Files\Git\bin"
@@ -863,7 +863,7 @@ class TestGitBashPathNormalization:
 
     def test_posix_noop(self):
         """Must NOT mutate paths on Linux/macOS."""
-        from cli import _normalize_git_bash_path
+        from hermes_agent.cli import _normalize_git_bash_path
         if sys.platform != "win32":
             assert _normalize_git_bash_path("/home/teknium/foo") == "/home/teknium/foo"
             assert _normalize_git_bash_path("/c/Users/foo") == "/c/Users/foo"
@@ -871,12 +871,12 @@ class TestGitBashPathNormalization:
             assert _normalize_git_bash_path(None) is None
 
     def test_empty_string_preserved(self):
-        from cli import _normalize_git_bash_path
+        from hermes_agent.cli import _normalize_git_bash_path
         assert _normalize_git_bash_path("") == ""
 
     def test_windows_translation(self, monkeypatch):
         """Simulate Windows and verify /c/Users/... becomes C:\\Users\\..."""
-        import cli as cli_mod
+        import hermes_agent.cli as cli_mod
         monkeypatch.setattr(cli_mod.sys, "platform", "win32")
         assert cli_mod._normalize_git_bash_path("/c/Users/foo") == r"C:\Users\foo"
         assert cli_mod._normalize_git_bash_path("/C/Users/foo") == r"C:\Users\foo"
@@ -896,7 +896,7 @@ class TestWorktreeSymlinkFallback:
 
     def test_source_has_symlink_fallback(self):
         root = Path(__file__).resolve().parents[2]
-        source = (root / "cli.py").read_text(encoding="utf-8")
+        source = (root / "hermes_agent.cli.py").read_text(encoding="utf-8")
         # Look for the try/except that handles OSError around os.symlink
         # with a shutil.copytree fallback.
         assert "os.symlink(str(src_resolved), str(dst))" in source
@@ -917,7 +917,7 @@ class TestGatewayDetachedWatcherWindowsFlags:
 
     def test_hermes_cli_gateway_uses_compat_kwargs(self):
         root = Path(__file__).resolve().parents[2]
-        source = (root / "hermes_cli" / "gateway.py").read_text(encoding="utf-8")
+        source = (root / "hermes_cli" / "hermes_agent.gateway.py").read_text(encoding="utf-8")
         assert "windows_detach_popen_kwargs" in source, (
             "hermes_cli/gateway.py must use the platform-aware detach helper"
         )
@@ -948,7 +948,7 @@ class TestGatewayDetachedWatcherWindowsFlags:
         ensures a future refactor of the dedent block doesn't silently drop it.
         """
         root = Path(__file__).resolve().parents[2]
-        text = (root / "hermes_cli" / "gateway.py").read_text(encoding="utf-8")
+        text = (root / "hermes_cli" / "hermes_agent.gateway.py").read_text(encoding="utf-8")
         marker = "watcher = textwrap.dedent("
         idx = text.find(marker)
         assert idx != -1, "watcher block not found in gateway.py"
@@ -987,7 +987,7 @@ class TestGatewayDetachedWatcherWindowsFlags:
         is the regression guard.
         """
         root = Path(__file__).resolve().parents[2]
-        text = (root / "hermes_cli" / "gateway.py").read_text(encoding="utf-8")
+        text = (root / "hermes_cli" / "hermes_agent.gateway.py").read_text(encoding="utf-8")
         assert "windows_detach_flags_without_breakaway" in text, (
             "launch_detached_profile_gateway_restart must import "
             "windows_detach_flags_without_breakaway so it can retry a "

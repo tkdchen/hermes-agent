@@ -5,9 +5,9 @@ import types
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
-import gateway.run as gateway_run
-from gateway.config import Platform
-from gateway.session import SessionSource
+import hermes_agent.gateway.run as gateway_run
+from hermes_agent.gateway.config import Platform
+from hermes_agent.gateway.session import SessionSource
 
 
 SESSION_KEY = "agent:main:telegram:dm:12345"
@@ -120,15 +120,15 @@ def _runner(session_store):
 
 
 def test_failed_turn_still_syncs_compression_session_split(monkeypatch):
-    fake_run_agent = types.ModuleType("run_agent")
+    fake_run_agent = types.ModuleType("hermes_agent.run_agent")
     fake_run_agent.AIAgent = _CompressionThenFailureAgent
-    monkeypatch.setitem(sys.modules, "run_agent", fake_run_agent)
+    monkeypatch.setitem(sys.modules, "hermes_agent.run_agent", fake_run_agent)
     monkeypatch.setenv("HERMES_TOOL_PROGRESS_MODE", "off")
     monkeypatch.setenv("HERMES_AGENT_TIMEOUT", "0")
     monkeypatch.setattr(gateway_run, "_load_gateway_config", lambda: {})
-    monkeypatch.setattr("gateway.stream_consumer.GatewayStreamConsumer", _StreamConsumer)
+    monkeypatch.setattr("hermes_agent.gateway.stream_consumer.GatewayStreamConsumer", _StreamConsumer)
 
-    import hermes_cli.tools_config as tools_config
+    import hermes_agent.hermes_cli.tools_config as tools_config
 
     monkeypatch.setattr(tools_config, "_get_platform_tools", lambda *_args, **_kwargs: {"core"})
 

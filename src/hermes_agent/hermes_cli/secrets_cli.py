@@ -22,14 +22,14 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from agent.secret_sources import bitwarden as bw
-from hermes_cli.config import (
+from hermes_agent.agent.secret_sources import bitwarden as bw
+from hermes_agent.hermes_cli.config import (
     get_env_path,
     load_config,
     save_config,
     save_env_value,
 )
-from hermes_cli.secret_prompt import masked_secret_prompt
+from hermes_agent.hermes_cli.secret_prompt import masked_secret_prompt
 
 
 # ---------------------------------------------------------------------------

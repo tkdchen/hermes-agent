@@ -11,7 +11,7 @@ import time
 from typing import Optional
 import pytest
 
-from agent.credits_tracker import CreditsState, parse_credits_headers
+from hermes_agent.agent.credits_tracker import CreditsState, parse_credits_headers
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
@@ -396,7 +396,7 @@ class TestVersionValidation:
 
     def test_version_greater_than_1_warns_once(self, caplog):
         """Version > 1 must log a warning, and ONLY ONCE across multiple calls."""
-        import agent.credits_tracker as ct
+        import hermes_agent.agent.credits_tracker as ct
 
         original = ct._version_warning_emitted
         try:
@@ -404,7 +404,7 @@ class TestVersionValidation:
             ct._version_warning_emitted = False
 
             headers = _base_headers(**{"x-nous-credits-version": "3"})
-            with caplog.at_level(logging.WARNING, logger="agent.credits_tracker"):
+            with caplog.at_level(logging.WARNING, logger="hermes_agent.agent.credits_tracker"):
                 parse_credits_headers(headers)
                 parse_credits_headers(headers)
                 parse_credits_headers(headers)

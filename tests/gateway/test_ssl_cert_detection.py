@@ -8,7 +8,7 @@ def test_ensure_ssl_certs_ignores_stale_ssl_cert_file(monkeypatch, tmp_path):
     import ssl
     import sys
 
-    from gateway.run import _ensure_ssl_certs
+    from hermes_agent.gateway.run import _ensure_ssl_certs
 
     cert_file = tmp_path / "cacert.pem"
     cert_file.write_text("dummy cert bundle", encoding="utf-8")
@@ -34,7 +34,7 @@ def test_ensure_ssl_certs_ignores_stale_ssl_cert_file(monkeypatch, tmp_path):
 
 def test_ensure_ssl_certs_keeps_existing_ssl_cert_file(monkeypatch, tmp_path):
     """A valid user-provided SSL_CERT_FILE must not be overwritten."""
-    from gateway.run import _ensure_ssl_certs
+    from hermes_agent.gateway.run import _ensure_ssl_certs
 
     cert_file = tmp_path / "existing.pem"
     cert_file.write_text("dummy cert bundle", encoding="utf-8")

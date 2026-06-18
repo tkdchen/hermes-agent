@@ -23,7 +23,7 @@ from unittest.mock import MagicMock
 
 def _make_runner():
     """Bare GatewayRunner wired with just the state the helper touches."""
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = GatewayRunner.__new__(GatewayRunner)
     runner._running_agents = {}
@@ -166,7 +166,7 @@ class TestSessionDbCloseOnShutdown:
     def test_stop_impl_closes_both_session_dbs(self):
         """Run the exact shutdown block that closes SessionDBs and verify
         .close() was called on both holders."""
-        from gateway.run import GatewayRunner
+        from hermes_agent.gateway.run import GatewayRunner
 
         runner = GatewayRunner.__new__(GatewayRunner)
 
@@ -189,7 +189,7 @@ class TestSessionDbCloseOnShutdown:
 
     def test_shutdown_tolerates_missing_session_store(self):
         """Gateway without a session_store attribute must not crash on shutdown."""
-        from gateway.run import GatewayRunner
+        from hermes_agent.gateway.run import GatewayRunner
 
         runner = GatewayRunner.__new__(GatewayRunner)
         runner._db = MagicMock()
@@ -205,7 +205,7 @@ class TestSessionDbCloseOnShutdown:
 
     def test_shutdown_tolerates_close_raising(self):
         """A close() that raises must not prevent subsequent cleanup."""
-        from gateway.run import GatewayRunner
+        from hermes_agent.gateway.run import GatewayRunner
 
         runner = GatewayRunner.__new__(GatewayRunner)
         flaky_db = MagicMock()

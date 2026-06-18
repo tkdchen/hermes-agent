@@ -29,20 +29,20 @@ def test_make_agent_passes_resolved_provider():
     }
 
     with (
-        patch("tui_gateway.server._load_cfg", return_value=fake_cfg),
-        patch("tui_gateway.server._get_db", return_value=MagicMock()),
-        patch("tui_gateway.server._load_tool_progress_mode", return_value="compact"),
-        patch("tui_gateway.server._load_reasoning_config", return_value=None),
-        patch("tui_gateway.server._load_service_tier", return_value=None),
-        patch("tui_gateway.server._load_enabled_toolsets", return_value=None),
+        patch("hermes_agent.tui_gateway.server._load_cfg", return_value=fake_cfg),
+        patch("hermes_agent.tui_gateway.server._get_db", return_value=MagicMock()),
+        patch("hermes_agent.tui_gateway.server._load_tool_progress_mode", return_value="compact"),
+        patch("hermes_agent.tui_gateway.server._load_reasoning_config", return_value=None),
+        patch("hermes_agent.tui_gateway.server._load_service_tier", return_value=None),
+        patch("hermes_agent.tui_gateway.server._load_enabled_toolsets", return_value=None),
         patch(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "hermes_agent.hermes_cli.runtime_provider.resolve_runtime_provider",
             return_value=fake_runtime,
         ) as mock_resolve,
-        patch("run_agent.AIAgent") as mock_agent,
+        patch("hermes_agent.run_agent.AIAgent") as mock_agent,
     ):
 
-        from tui_gateway.server import _make_agent
+        from hermes_agent.tui_gateway.server import _make_agent
 
         _make_agent("sid-1", "key-1")
 
@@ -93,18 +93,18 @@ def test_make_agent_forwards_provider_routing():
     }
 
     with (
-        patch("tui_gateway.server._load_cfg", return_value=fake_cfg),
-        patch("tui_gateway.server._get_db", return_value=MagicMock()),
-        patch("tui_gateway.server._load_reasoning_config", return_value=None),
-        patch("tui_gateway.server._load_service_tier", return_value=None),
-        patch("tui_gateway.server._load_enabled_toolsets", return_value=None),
+        patch("hermes_agent.tui_gateway.server._load_cfg", return_value=fake_cfg),
+        patch("hermes_agent.tui_gateway.server._get_db", return_value=MagicMock()),
+        patch("hermes_agent.tui_gateway.server._load_reasoning_config", return_value=None),
+        patch("hermes_agent.tui_gateway.server._load_service_tier", return_value=None),
+        patch("hermes_agent.tui_gateway.server._load_enabled_toolsets", return_value=None),
         patch(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "hermes_agent.hermes_cli.runtime_provider.resolve_runtime_provider",
             return_value=fake_runtime,
         ),
-        patch("run_agent.AIAgent") as mock_agent,
+        patch("hermes_agent.run_agent.AIAgent") as mock_agent,
     ):
-        from tui_gateway.server import _make_agent
+        from hermes_agent.tui_gateway.server import _make_agent
 
         _make_agent("sid-pr", "key-pr")
 
@@ -133,18 +133,18 @@ def test_make_agent_provider_routing_defaults_when_unset():
     fake_cfg = {"agent": {"system_prompt": ""}, "model": {"default": "glm-5"}}
 
     with (
-        patch("tui_gateway.server._load_cfg", return_value=fake_cfg),
-        patch("tui_gateway.server._get_db", return_value=MagicMock()),
-        patch("tui_gateway.server._load_reasoning_config", return_value=None),
-        patch("tui_gateway.server._load_service_tier", return_value=None),
-        patch("tui_gateway.server._load_enabled_toolsets", return_value=None),
+        patch("hermes_agent.tui_gateway.server._load_cfg", return_value=fake_cfg),
+        patch("hermes_agent.tui_gateway.server._get_db", return_value=MagicMock()),
+        patch("hermes_agent.tui_gateway.server._load_reasoning_config", return_value=None),
+        patch("hermes_agent.tui_gateway.server._load_service_tier", return_value=None),
+        patch("hermes_agent.tui_gateway.server._load_enabled_toolsets", return_value=None),
         patch(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "hermes_agent.hermes_cli.runtime_provider.resolve_runtime_provider",
             return_value=fake_runtime,
         ),
-        patch("run_agent.AIAgent") as mock_agent,
+        patch("hermes_agent.run_agent.AIAgent") as mock_agent,
     ):
-        from tui_gateway.server import _make_agent
+        from hermes_agent.tui_gateway.server import _make_agent
 
         _make_agent("sid-pr-default", "key-pr-default")
 
@@ -180,15 +180,15 @@ def test_make_agent_ignores_display_personality_without_system_prompt():
     }
 
     with (
-        patch("tui_gateway.server._load_cfg", return_value=fake_cfg),
-        patch("tui_gateway.server._get_db", return_value=MagicMock()),
+        patch("hermes_agent.tui_gateway.server._load_cfg", return_value=fake_cfg),
+        patch("hermes_agent.tui_gateway.server._get_db", return_value=MagicMock()),
         patch(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "hermes_agent.hermes_cli.runtime_provider.resolve_runtime_provider",
             return_value=fake_runtime,
         ),
-        patch("run_agent.AIAgent") as mock_agent,
+        patch("hermes_agent.run_agent.AIAgent") as mock_agent,
     ):
-        from tui_gateway.server import _make_agent
+        from hermes_agent.tui_gateway.server import _make_agent
 
         _make_agent("sid-default-personality", "key-default-personality")
 
@@ -217,15 +217,15 @@ def test_make_agent_honors_tui_launch_env_flags():
                 "HERMES_IGNORE_RULES": "1",
             },
         ),
-        patch("tui_gateway.server._load_cfg", return_value=fake_cfg),
-        patch("tui_gateway.server._get_db", return_value=MagicMock()),
+        patch("hermes_agent.tui_gateway.server._load_cfg", return_value=fake_cfg),
+        patch("hermes_agent.tui_gateway.server._get_db", return_value=MagicMock()),
         patch(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "hermes_agent.hermes_cli.runtime_provider.resolve_runtime_provider",
             return_value=fake_runtime,
         ),
-        patch("run_agent.AIAgent") as mock_agent,
+        patch("hermes_agent.run_agent.AIAgent") as mock_agent,
     ):
-        from tui_gateway.server import _make_agent
+        from hermes_agent.tui_gateway.server import _make_agent
 
         _make_agent("sid-env", "key-env")
 
@@ -240,7 +240,7 @@ def test_make_agent_honors_tui_launch_env_flags():
 def test_probe_config_health_flags_null_sections():
     """Bare YAML keys (`agent:` with no value) parse as None and silently
     drop nested settings; probe must surface them so users can fix."""
-    from tui_gateway.server import _probe_config_health
+    from hermes_agent.tui_gateway.server import _probe_config_health
 
     assert _probe_config_health({"agent": {"x": 1}}) == ""
     assert _probe_config_health({}) == ""
@@ -251,7 +251,7 @@ def test_probe_config_health_flags_null_sections():
 
 
 def test_probe_config_health_flags_null_personalities_with_active_personality():
-    from tui_gateway.server import _probe_config_health
+    from hermes_agent.tui_gateway.server import _probe_config_health
 
     msg = _probe_config_health(
         {
@@ -261,7 +261,7 @@ def test_probe_config_health_flags_null_personalities_with_active_personality():
         }
     )
     assert "display.personality" in msg
-    assert "agent.personalities" in msg
+    assert "hermes_agent.agent.personalities" in msg
 
 
 def test_make_agent_tolerates_null_config_sections():
@@ -282,16 +282,16 @@ def test_make_agent_tolerates_null_config_sections():
     null_cfg = {"agent": None, "display": None, "model": {"default": "glm-5"}}
 
     with (
-        patch("tui_gateway.server._load_cfg", return_value=null_cfg),
-        patch("tui_gateway.server._get_db", return_value=MagicMock()),
+        patch("hermes_agent.tui_gateway.server._load_cfg", return_value=null_cfg),
+        patch("hermes_agent.tui_gateway.server._get_db", return_value=MagicMock()),
         patch(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "hermes_agent.hermes_cli.runtime_provider.resolve_runtime_provider",
             return_value=fake_runtime,
         ),
-        patch("run_agent.AIAgent") as mock_agent,
+        patch("hermes_agent.run_agent.AIAgent") as mock_agent,
     ):
 
-        from tui_gateway.server import _make_agent
+        from hermes_agent.tui_gateway.server import _make_agent
 
         _make_agent("sid-null", "key-null")
 
@@ -315,16 +315,16 @@ def test_make_agent_tolerates_null_personalities_with_active_personality():
     }
 
     with (
-        patch("tui_gateway.server._load_cfg", return_value=cfg),
-        patch("tui_gateway.server._get_db", return_value=MagicMock()),
-        patch("cli.load_cli_config", return_value={"agent": {"personalities": None}}),
+        patch("hermes_agent.tui_gateway.server._load_cfg", return_value=cfg),
+        patch("hermes_agent.tui_gateway.server._get_db", return_value=MagicMock()),
+        patch("hermes_agent.cli.load_cli_config", return_value={"agent": {"personalities": None}}),
         patch(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "hermes_agent.hermes_cli.runtime_provider.resolve_runtime_provider",
             return_value=fake_runtime,
         ),
-        patch("run_agent.AIAgent") as mock_agent,
+        patch("hermes_agent.run_agent.AIAgent") as mock_agent,
     ):
-        from tui_gateway.server import _make_agent
+        from hermes_agent.tui_gateway.server import _make_agent
 
         _make_agent("sid-null-personality", "key-null-personality")
 
@@ -369,16 +369,16 @@ def test_make_agent_honors_per_session_model_override():
         # Ensure no leaked env biases _resolve_startup_runtime (it must not even
         # be consulted when an override is present).
         patch.dict(os.environ, {}, clear=False),
-        patch("tui_gateway.server._load_cfg", return_value=fake_cfg),
-        patch("tui_gateway.server._get_db", return_value=MagicMock()),
-        patch("tui_gateway.server._load_reasoning_config", return_value=None),
-        patch("tui_gateway.server._load_service_tier", return_value=None),
-        patch("tui_gateway.server._load_enabled_toolsets", return_value=None),
+        patch("hermes_agent.tui_gateway.server._load_cfg", return_value=fake_cfg),
+        patch("hermes_agent.tui_gateway.server._get_db", return_value=MagicMock()),
+        patch("hermes_agent.tui_gateway.server._load_reasoning_config", return_value=None),
+        patch("hermes_agent.tui_gateway.server._load_service_tier", return_value=None),
+        patch("hermes_agent.tui_gateway.server._load_enabled_toolsets", return_value=None),
         patch(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "hermes_agent.hermes_cli.runtime_provider.resolve_runtime_provider",
             side_effect=echo_runtime,
         ),
-        patch("run_agent.AIAgent") as mock_agent,
+        patch("hermes_agent.run_agent.AIAgent") as mock_agent,
     ):
         for var in (
             "HERMES_MODEL",
@@ -388,7 +388,7 @@ def test_make_agent_honors_per_session_model_override():
         ):
             os.environ.pop(var, None)
 
-        from tui_gateway.server import _make_agent
+        from hermes_agent.tui_gateway.server import _make_agent
 
         _make_agent(
             "sid-override", "key-override", model_override=override
@@ -408,7 +408,7 @@ def test_apply_model_switch_does_not_leak_process_env():
     that session's agent in place) and must NOT write process-global env vars,
     which the single-process desktop backend shares across every live session.
     """
-    from tui_gateway import server
+    from hermes_agent.tui_gateway import server
 
     class _FakeResult:
         success = True
@@ -442,13 +442,13 @@ def test_apply_model_switch_does_not_leak_process_env():
     sess_a = {"agent": _FakeAgent(), "session_key": "k-A", "model_override": None}
 
     with (
-        patch("hermes_cli.model_switch.parse_model_flags",
+        patch("hermes_agent.hermes_cli.model_switch.parse_model_flags",
               return_value=("glm-5.1", None, False, False)),
-        patch("hermes_cli.model_switch.switch_model", return_value=_FakeResult()),
-        patch("tui_gateway.server._emit"),
-        patch("tui_gateway.server._restart_slash_worker"),
-        patch("tui_gateway.server._session_info", return_value={}),
-        patch("tui_gateway.server._persist_model_switch") as mock_persist,
+        patch("hermes_agent.hermes_cli.model_switch.switch_model", return_value=_FakeResult()),
+        patch("hermes_agent.tui_gateway.server._emit"),
+        patch("hermes_agent.tui_gateway.server._restart_slash_worker"),
+        patch("hermes_agent.tui_gateway.server._session_info", return_value={}),
+        patch("hermes_agent.tui_gateway.server._persist_model_switch") as mock_persist,
     ):
         before = {k: os.environ.get(k) for k in env_keys}
         result = server._apply_model_switch("sidB", sess_b, "glm-5.1")

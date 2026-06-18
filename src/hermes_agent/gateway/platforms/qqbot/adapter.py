@@ -60,8 +60,8 @@ except ImportError:
     HTTPX_AVAILABLE = False
     httpx = None  # type: ignore[assignment]
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
@@ -70,7 +70,7 @@ from gateway.platforms.base import (
     cache_document_from_bytes,
     cache_image_from_bytes,
 )
-from gateway.platforms.helpers import strip_markdown
+from hermes_agent.gateway.platforms.helpers import strip_markdown
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +91,7 @@ class QQCloseError(Exception):
 # Constants — imported from the shared constants module.
 # ---------------------------------------------------------------------------
 
-from gateway.platforms.qqbot.constants import (
+from hermes_agent.gateway.platforms.qqbot.constants import (
     API_BASE,
     TOKEN_URL,
     GATEWAY_URL_PATH,
@@ -115,16 +115,16 @@ from gateway.platforms.qqbot.constants import (
     MEDIA_TYPE_VOICE,
     MEDIA_TYPE_FILE,
 )
-from gateway.platforms.qqbot.utils import (
+from hermes_agent.gateway.platforms.qqbot.utils import (
     coerce_list as _coerce_list_impl,
     build_user_agent,
 )
-from gateway.platforms.qqbot.chunked_upload import (
+from hermes_agent.gateway.platforms.qqbot.chunked_upload import (
     ChunkedUploader,
     UploadDailyLimitExceededError,
     UploadFileTooLargeError,
 )
-from gateway.platforms.qqbot.keyboards import (
+from hermes_agent.gateway.platforms.qqbot.keyboards import (
     ApprovalRequest,
     InlineKeyboard,
     InteractionEvent,
@@ -303,7 +303,7 @@ class QQAdapter(BasePlatformAdapter):
         try:
             # Tighter keepalive pool so idle CLOSE_WAIT sockets drain
             # faster behind proxies like Cloudflare Warp (#18451).
-            from gateway.platforms._http_client_limits import platform_httpx_limits
+            from hermes_agent.gateway.platforms._http_client_limits import platform_httpx_limits
             self._http_client = httpx.AsyncClient(
                 timeout=30.0,
                 follow_redirects=True,
@@ -1147,7 +1147,7 @@ class QQAdapter(BasePlatformAdapter):
             try:
                 # Import lazily to keep the adapter importable in tests that
                 # don't exercise the approval subsystem.
-                from tools.approval import resolve_gateway_approval
+                from hermes_agent.tools.approval import resolve_gateway_approval
                 count = resolve_gateway_approval(session_key, choice)
                 logger.info(
                     "[%s] Button resolved %d approval(s) for session %s "
@@ -1189,7 +1189,7 @@ class QQAdapter(BasePlatformAdapter):
         Writes via ``tmp + rename`` so a partial write can't fool the reader.
         """
         try:
-            from hermes_constants import get_hermes_home
+            from hermes_agent.hermes_constants import get_hermes_home
             home = get_hermes_home()
             response_path = home / ".update_response"
             tmp = response_path.with_suffix(".tmp")
@@ -1759,7 +1759,7 @@ class QQAdapter(BasePlatformAdapter):
         :param original_name: Preferred filename from attachment metadata.
             Falls back to the URL path basename if empty.
         """
-        from tools.url_safety import is_safe_url
+        from hermes_agent.tools.url_safety import is_safe_url
 
         if not is_safe_url(url):
             raise ValueError(f"Blocked unsafe URL: {url[:80]}")
@@ -1864,7 +1864,7 @@ class QQAdapter(BasePlatformAdapter):
             is_pre_wav = True
             logger.debug("[%s] STT: using voice_wav_url (pre-converted WAV)", self._log_tag)
 
-        from tools.url_safety import is_safe_url
+        from hermes_agent.tools.url_safety import is_safe_url
         if not is_safe_url(download_url):
             logger.warning("[QQ] STT blocked unsafe URL: %s", download_url[:80])
             return None
@@ -2636,7 +2636,7 @@ class QQAdapter(BasePlatformAdapter):
         registered :meth:`set_interaction_callback` handler decodes
         ``button_data`` via :func:`parse_approval_button_data`.
         """
-        from gateway.platforms.qqbot.keyboards import build_approval_text
+        from hermes_agent.gateway.platforms.qqbot.keyboards import build_approval_text
         return await self.send_with_keyboard(
             chat_id,
             build_approval_text(req),

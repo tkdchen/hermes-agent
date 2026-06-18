@@ -10,9 +10,9 @@ See: agent.skill_commands.extract_user_instruction_from_skill_message and
 MemoryManager._strip_skill_scaffolding.
 """
 
-from agent.memory_manager import MemoryManager
-from agent.memory_provider import MemoryProvider
-from agent.skill_commands import extract_user_instruction_from_skill_message
+from hermes_agent.agent.memory_manager import MemoryManager
+from hermes_agent.agent.memory_provider import MemoryProvider
+from hermes_agent.agent.skill_commands import extract_user_instruction_from_skill_message
 
 
 _SINGLE_SKILL_TURN = (

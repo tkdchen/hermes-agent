@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-import agent.runtime_cwd as rt
-from agent.runtime_cwd import (
+import hermes_agent.agent.runtime_cwd as rt
+from hermes_agent.agent.runtime_cwd import (
     clear_session_cwd,
     resolve_agent_cwd,
     resolve_context_cwd,

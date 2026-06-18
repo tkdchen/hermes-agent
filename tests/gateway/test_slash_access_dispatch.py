@@ -24,9 +24,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from gateway.config import GatewayConfig, Platform, PlatformConfig
-from gateway.platforms.base import MessageEvent
-from gateway.session import SessionEntry, SessionSource, build_session_key
+from hermes_agent.gateway.config import GatewayConfig, Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import MessageEvent
+from hermes_agent.gateway.session import SessionEntry, SessionSource, build_session_key
 
 
 def _make_source(
@@ -51,7 +51,7 @@ def _make_event(text: str, source: SessionSource) -> MessageEvent:
 
 def _make_runner(*, platform_extra: dict | None = None,
                  platform: Platform = Platform.DISCORD):
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = object.__new__(GatewayRunner)
     runner.config = GatewayConfig(
@@ -288,7 +288,7 @@ async def test_plugin_registered_command_is_gated(monkeypatch):
         }
     )
 
-    from hermes_cli import commands as cmd_mod
+    from hermes_agent.hermes_cli import commands as cmd_mod
 
     real_resolve = cmd_mod.resolve_command
     real_is_known = cmd_mod.is_gateway_known_command
@@ -409,7 +409,7 @@ async def test_gate_uses_canonical_name_not_alias():
         }
     )
     # Find a real alias in the registry to use.
-    from hermes_cli.commands import COMMAND_REGISTRY
+    from hermes_agent.hermes_cli.commands import COMMAND_REGISTRY
     history_def = next(c for c in COMMAND_REGISTRY if c.name == "history")
     # If /history has aliases, use one. Otherwise just use /history.
     alias = history_def.aliases[0] if history_def.aliases else "history"
@@ -484,8 +484,8 @@ async def test_dm_admin_blocked_in_group_with_separate_admin_list():
 async def test_gating_isolated_per_platform():
     """When Discord is gated and Telegram isn't, the same user_id on
     Telegram must be unrestricted."""
-    from gateway.run import GatewayRunner
-    from gateway.config import GatewayConfig, Platform, PlatformConfig
+    from hermes_agent.gateway.run import GatewayRunner
+    from hermes_agent.gateway.config import GatewayConfig, Platform, PlatformConfig
 
     runner = object.__new__(GatewayRunner)
     runner.config = GatewayConfig(

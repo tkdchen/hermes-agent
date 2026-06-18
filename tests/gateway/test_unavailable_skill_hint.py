@@ -57,21 +57,21 @@ def test_frontmatter_slug_matched_even_when_dir_name_differs(
     agent actually registers). The old dir-name-based check would have
     compared ``stable-diffusion`` to the typed command and missed.
     """
-    from gateway import run as gateway_run
+    from hermes_agent.gateway import run as gateway_run
 
     _write_skill(tmp_skills, "mlops/stable-diffusion", "Stable Diffusion Image Generation")
 
     # Config disables by declared name (matches what `hermes skills config` writes).
     monkeypatch.setattr(
-        "gateway.run._get_disabled_skill_names",
+        "hermes_agent.gateway.run._get_disabled_skill_names",
         lambda: {"Stable Diffusion Image Generation"},
         raising=False,
     )
     with patch(
-        "tools.skills_tool._get_disabled_skill_names",
+        "hermes_agent.tools.skills_tool._get_disabled_skill_names",
         return_value={"Stable Diffusion Image Generation"},
     ), patch(
-        "agent.skill_utils.get_all_skills_dirs",
+        "hermes_agent.agent.skill_utils.get_all_skills_dirs",
         return_value=[tmp_skills],
     ):
         msg = gateway_run._check_unavailable_skill("stable-diffusion-image-generation")
@@ -88,14 +88,14 @@ def test_unknown_command_still_returns_none(
     tmp_skills: Path,
 ) -> None:
     """A command that matches no on-disk skill still returns None."""
-    from gateway import run as gateway_run
+    from hermes_agent.gateway import run as gateway_run
 
     _write_skill(tmp_skills, "creative/ascii-art", "ascii-art")
 
     with patch(
-        "tools.skills_tool._get_disabled_skill_names", return_value=set()
+        "hermes_agent.tools.skills_tool._get_disabled_skill_names", return_value=set()
     ), patch(
-        "agent.skill_utils.get_all_skills_dirs", return_value=[tmp_skills]
+        "hermes_agent.agent.skill_utils.get_all_skills_dirs", return_value=[tmp_skills]
     ):
         assert gateway_run._check_unavailable_skill("no-such-skill") is None
 
@@ -104,14 +104,14 @@ def test_matched_but_not_disabled_returns_none(
     tmp_skills: Path,
 ) -> None:
     """A skill that exists and isn't disabled shouldn't produce a hint."""
-    from gateway import run as gateway_run
+    from hermes_agent.gateway import run as gateway_run
 
     _write_skill(tmp_skills, "creative/ascii-art", "ascii-art")
 
     with patch(
-        "tools.skills_tool._get_disabled_skill_names", return_value=set()
+        "hermes_agent.tools.skills_tool._get_disabled_skill_names", return_value=set()
     ), patch(
-        "agent.skill_utils.get_all_skills_dirs", return_value=[tmp_skills]
+        "hermes_agent.agent.skill_utils.get_all_skills_dirs", return_value=[tmp_skills]
     ):
         assert gateway_run._check_unavailable_skill("ascii-art") is None
 
@@ -120,15 +120,15 @@ def test_slug_normalization_strips_non_alnum(
     tmp_skills: Path,
 ) -> None:
     """Frontmatter ``C++ Code Review`` → slug ``c-code-review`` (``+`` stripped)."""
-    from gateway import run as gateway_run
+    from hermes_agent.gateway import run as gateway_run
 
     _write_skill(tmp_skills, "software-development/cpp-review", "C++ Code Review")
 
     with patch(
-        "tools.skills_tool._get_disabled_skill_names",
+        "hermes_agent.tools.skills_tool._get_disabled_skill_names",
         return_value={"C++ Code Review"},
     ), patch(
-        "agent.skill_utils.get_all_skills_dirs", return_value=[tmp_skills]
+        "hermes_agent.agent.skill_utils.get_all_skills_dirs", return_value=[tmp_skills]
     ):
         msg = gateway_run._check_unavailable_skill("c-code-review")
 
@@ -146,7 +146,7 @@ def test_optional_skill_uses_frontmatter_slug(
     with frontmatter ``Stable Diffusion Image Generation`` returned None
     when the user typed the real slug.
     """
-    from gateway import run as gateway_run
+    from hermes_agent.gateway import run as gateway_run
 
     # Build an isolated optional-skills dir
     optional = tmp_path / "optional-skills"
@@ -161,7 +161,7 @@ def test_optional_skill_uses_frontmatter_slug(
     # ``get_optional_skills_dir(repo_root / "optional-skills")`` — we
     # can't easily retarget ``repo_root``, so patch the resolver.
     monkeypatch.setattr(
-        "hermes_constants.get_optional_skills_dir",
+        "hermes_agent.hermes_constants.get_optional_skills_dir",
         lambda _default: optional,
         raising=False,
     )
@@ -171,9 +171,9 @@ def test_optional_skill_uses_frontmatter_slug(
     empty_skills = tmp_path / "empty-skills"
     empty_skills.mkdir()
     with patch(
-        "tools.skills_tool._get_disabled_skill_names", return_value=set()
+        "hermes_agent.tools.skills_tool._get_disabled_skill_names", return_value=set()
     ), patch(
-        "agent.skill_utils.get_all_skills_dirs", return_value=[empty_skills]
+        "hermes_agent.agent.skill_utils.get_all_skills_dirs", return_value=[empty_skills]
     ):
         msg = gateway_run._check_unavailable_skill("stable-diffusion-image-generation")
 

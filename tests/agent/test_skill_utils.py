@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from agent.skill_utils import (
+from hermes_agent.agent.skill_utils import (
     extract_skill_conditions,
     get_disabled_skill_names,
     get_external_skills_dirs,
@@ -109,7 +109,7 @@ def test_iter_skill_index_files_prunes_dependency_dirs(tmp_path):
 
 def test_skill_config_helpers_share_raw_config_parse_cache(tmp_path, monkeypatch):
     """Repeated skill config helpers should parse config.yaml only once."""
-    from agent import skill_utils
+    from hermes_agent.agent import skill_utils
 
     hermes_home = tmp_path / ".hermes"
     hermes_home.mkdir()
@@ -152,7 +152,7 @@ skills:
 
 def test_skill_config_raw_cache_invalidates_on_config_edit(tmp_path, monkeypatch):
     """Editing config.yaml should invalidate the shared raw config cache."""
-    from agent import skill_utils
+    from hermes_agent.agent import skill_utils
 
     hermes_home = tmp_path / ".hermes"
     hermes_home.mkdir()
@@ -230,8 +230,8 @@ class TestSkillMatchesPlatformTermux:
     def test_no_platforms_field_matches_everywhere(self):
         # Backward-compat default — skills without a platforms tag load
         # on any OS, Termux included.
-        with patch("agent.skill_utils.sys.platform", "android"), patch(
-            "agent.skill_utils.is_termux", return_value=True
+        with patch("hermes_agent.agent.skill_utils.sys.platform", "android"), patch(
+            "hermes_agent.agent.skill_utils.is_termux", return_value=True
         ):
             assert skill_matches_platform({}) is True
             assert skill_matches_platform({"name": "foo"}) is True
@@ -239,8 +239,8 @@ class TestSkillMatchesPlatformTermux:
     def test_linux_skill_loads_on_termux_android_platform(self):
         # Python 3.13+ on Termux reports sys.platform == "android".
         fm = {"platforms": ["linux"]}
-        with patch("agent.skill_utils.sys.platform", "android"), patch(
-            "agent.skill_utils.is_termux", return_value=True
+        with patch("hermes_agent.agent.skill_utils.sys.platform", "android"), patch(
+            "hermes_agent.agent.skill_utils.is_termux", return_value=True
         ):
             assert skill_matches_platform(fm) is True
 
@@ -248,8 +248,8 @@ class TestSkillMatchesPlatformTermux:
         # The common "[linux, macos, windows]" tag used by github-*,
         # productivity, mlops, etc.
         fm = {"platforms": ["linux", "macos", "windows"]}
-        with patch("agent.skill_utils.sys.platform", "android"), patch(
-            "agent.skill_utils.is_termux", return_value=True
+        with patch("hermes_agent.agent.skill_utils.sys.platform", "android"), patch(
+            "hermes_agent.agent.skill_utils.is_termux", return_value=True
         ):
             assert skill_matches_platform(fm) is True
 
@@ -257,8 +257,8 @@ class TestSkillMatchesPlatformTermux:
         # Pre-3.13 Termux reports sys.platform == "linux" already — this
         # works without the Termux escape hatch but must still pass.
         fm = {"platforms": ["linux"]}
-        with patch("agent.skill_utils.sys.platform", "linux"), patch(
-            "agent.skill_utils.is_termux", return_value=True
+        with patch("hermes_agent.agent.skill_utils.sys.platform", "linux"), patch(
+            "hermes_agent.agent.skill_utils.is_termux", return_value=True
         ):
             assert skill_matches_platform(fm) is True
 
@@ -266,23 +266,23 @@ class TestSkillMatchesPlatformTermux:
         # macOS-only skills (apple-notes, imessage, ...) should NOT load
         # on Termux. The Termux fallback only widens platforms:[linux,...].
         fm = {"platforms": ["macos"]}
-        with patch("agent.skill_utils.sys.platform", "android"), patch(
-            "agent.skill_utils.is_termux", return_value=True
+        with patch("hermes_agent.agent.skill_utils.sys.platform", "android"), patch(
+            "hermes_agent.agent.skill_utils.is_termux", return_value=True
         ):
             assert skill_matches_platform(fm) is False
 
     def test_windows_only_skill_still_excluded_on_termux(self):
         fm = {"platforms": ["windows"]}
-        with patch("agent.skill_utils.sys.platform", "android"), patch(
-            "agent.skill_utils.is_termux", return_value=True
+        with patch("hermes_agent.agent.skill_utils.sys.platform", "android"), patch(
+            "hermes_agent.agent.skill_utils.is_termux", return_value=True
         ):
             assert skill_matches_platform(fm) is False
 
     def test_explicit_termux_or_android_tag_matches(self):
         # Skills can also opt in explicitly via platforms:[termux] or
         # platforms:[android] — both should match a Termux session.
-        with patch("agent.skill_utils.sys.platform", "android"), patch(
-            "agent.skill_utils.is_termux", return_value=True
+        with patch("hermes_agent.agent.skill_utils.sys.platform", "android"), patch(
+            "hermes_agent.agent.skill_utils.is_termux", return_value=True
         ):
             assert skill_matches_platform({"platforms": ["termux"]}) is True
             assert skill_matches_platform({"platforms": ["android"]}) is True
@@ -291,22 +291,22 @@ class TestSkillMatchesPlatformTermux:
         # If we're somehow on a plain Android Python (not Termux), don't
         # silently load Linux skills — Termux is the supported environment.
         fm = {"platforms": ["linux"]}
-        with patch("agent.skill_utils.sys.platform", "android"), patch(
-            "agent.skill_utils.is_termux", return_value=False
+        with patch("hermes_agent.agent.skill_utils.sys.platform", "android"), patch(
+            "hermes_agent.agent.skill_utils.is_termux", return_value=False
         ):
             assert skill_matches_platform(fm) is False
 
     def test_linux_skill_on_real_linux_unaffected(self):
         # The non-Termux Linux path must not change.
         fm = {"platforms": ["linux"]}
-        with patch("agent.skill_utils.sys.platform", "linux"), patch(
-            "agent.skill_utils.is_termux", return_value=False
+        with patch("hermes_agent.agent.skill_utils.sys.platform", "linux"), patch(
+            "hermes_agent.agent.skill_utils.is_termux", return_value=False
         ):
             assert skill_matches_platform(fm) is True
 
     def test_macos_skill_on_real_macos_unaffected(self):
         fm = {"platforms": ["macos"]}
-        with patch("agent.skill_utils.sys.platform", "darwin"), patch(
-            "agent.skill_utils.is_termux", return_value=False
+        with patch("hermes_agent.agent.skill_utils.sys.platform", "darwin"), patch(
+            "hermes_agent.agent.skill_utils.is_termux", return_value=False
         ):
             assert skill_matches_platform(fm) is True

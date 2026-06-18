@@ -12,7 +12,7 @@ import json
 
 import pytest
 
-from hermes_cli import send_cmd
+from hermes_agent.hermes_cli import send_cmd
 
 
 # ---------------------------------------------------------------------------
@@ -50,12 +50,12 @@ def fake_tool(monkeypatch):
 
     fake = _FakeTool({"success": True, "message_id": "m123"})
 
-    mod = types.ModuleType("tools.send_message_tool")
+    mod = types.ModuleType("hermes_agent.tools.send_message_tool")
     mod.send_message_tool = fake
     # Register the stub so ``from tools.send_message_tool import ...`` inside
     # cmd_send resolves to our fake. Also patch the parent ``tools`` package
     # entry so attribute lookup works.
-    monkeypatch.setitem(sys.modules, "tools.send_message_tool", mod)
+    monkeypatch.setitem(sys.modules, "hermes_agent.tools.send_message_tool", mod)
     return fake
 
 
@@ -191,13 +191,13 @@ def test_tool_error_returns_failure_exit(monkeypatch, capsys):
     import sys as _sys
     import types as _types
 
-    fake_mod = _types.ModuleType("tools.send_message_tool")
+    fake_mod = _types.ModuleType("hermes_agent.tools.send_message_tool")
 
     def _bad_tool(args, **_kw):
         return json.dumps({"error": "platform blew up"})
 
     fake_mod.send_message_tool = _bad_tool
-    monkeypatch.setitem(_sys.modules, "tools.send_message_tool", fake_mod)
+    monkeypatch.setitem(_sys.modules, "hermes_agent.tools.send_message_tool", fake_mod)
 
     args = _parse(["--to", "telegram", "nope"])
     with pytest.raises(SystemExit) as exc:
@@ -211,11 +211,11 @@ def test_skipped_result_is_success(monkeypatch):
     import sys as _sys
     import types as _types
 
-    fake_mod = _types.ModuleType("tools.send_message_tool")
+    fake_mod = _types.ModuleType("hermes_agent.tools.send_message_tool")
     fake_mod.send_message_tool = lambda args, **_kw: json.dumps(
         {"success": True, "skipped": True, "reason": "duplicate"}
     )
-    monkeypatch.setitem(_sys.modules, "tools.send_message_tool", fake_mod)
+    monkeypatch.setitem(_sys.modules, "hermes_agent.tools.send_message_tool", fake_mod)
 
     args = _parse(["--to", "telegram", "dup"])
     with pytest.raises(SystemExit) as exc:
@@ -232,12 +232,12 @@ def test_list_human_output(monkeypatch, capsys):
     import sys as _sys
     import types as _types
 
-    fake_dir = _types.ModuleType("gateway.channel_directory")
+    fake_dir = _types.ModuleType("hermes_agent.gateway.channel_directory")
     fake_dir.format_directory_for_display = lambda: "Available messaging targets:\n\nTelegram:\n  telegram:-100123\n"
     fake_dir.load_directory = lambda: {
         "platforms": {"telegram": [{"id": "-100123", "name": "Test Group"}]}
     }
-    monkeypatch.setitem(_sys.modules, "gateway.channel_directory", fake_dir)
+    monkeypatch.setitem(_sys.modules, "hermes_agent.gateway.channel_directory", fake_dir)
 
     args = _parse(["--list"])
     with pytest.raises(SystemExit) as exc:
@@ -251,12 +251,12 @@ def test_list_json(monkeypatch, capsys):
     import sys as _sys
     import types as _types
 
-    fake_dir = _types.ModuleType("gateway.channel_directory")
+    fake_dir = _types.ModuleType("hermes_agent.gateway.channel_directory")
     fake_dir.format_directory_for_display = lambda: "(ignored in json mode)"
     fake_dir.load_directory = lambda: {
         "platforms": {"telegram": [{"id": "-100123", "name": "Test Group"}]}
     }
-    monkeypatch.setitem(_sys.modules, "gateway.channel_directory", fake_dir)
+    monkeypatch.setitem(_sys.modules, "hermes_agent.gateway.channel_directory", fake_dir)
 
     args = _parse(["--list", "--json"])
     with pytest.raises(SystemExit) as exc:
@@ -271,7 +271,7 @@ def test_list_filter_platform(monkeypatch, capsys):
     import sys as _sys
     import types as _types
 
-    fake_dir = _types.ModuleType("gateway.channel_directory")
+    fake_dir = _types.ModuleType("hermes_agent.gateway.channel_directory")
     fake_dir.format_directory_for_display = lambda: "(should not be called when filter set)"
     fake_dir.load_directory = lambda: {
         "platforms": {
@@ -279,7 +279,7 @@ def test_list_filter_platform(monkeypatch, capsys):
             "discord": [{"id": "555", "name": "bot-home"}],
         }
     }
-    monkeypatch.setitem(_sys.modules, "gateway.channel_directory", fake_dir)
+    monkeypatch.setitem(_sys.modules, "hermes_agent.gateway.channel_directory", fake_dir)
 
     # When --list is set, argparse puts the optional bareword in the
     # `message` positional slot (where the send-mode body would go).
@@ -296,10 +296,10 @@ def test_list_unknown_platform_fails(monkeypatch, capsys):
     import sys as _sys
     import types as _types
 
-    fake_dir = _types.ModuleType("gateway.channel_directory")
+    fake_dir = _types.ModuleType("hermes_agent.gateway.channel_directory")
     fake_dir.format_directory_for_display = lambda: ""
     fake_dir.load_directory = lambda: {"platforms": {"telegram": []}}
-    monkeypatch.setitem(_sys.modules, "gateway.channel_directory", fake_dir)
+    monkeypatch.setitem(_sys.modules, "hermes_agent.gateway.channel_directory", fake_dir)
 
     args = _parse(["--list", "pigeon-post"])
     with pytest.raises(SystemExit) as exc:
@@ -358,7 +358,7 @@ def test_load_hermes_env_bridges_config_yaml_scalars(tmp_path, monkeypatch):
     # Force get_hermes_home() to re-resolve under the patched env.
     from importlib import reload
 
-    import hermes_cli.config as _hc_config
+    import hermes_agent.hermes_cli.config as _hc_config
     reload(_hc_config)
 
     send_cmd._load_hermes_env()
@@ -379,7 +379,7 @@ def test_load_hermes_env_does_not_override_existing(tmp_path, monkeypatch):
     monkeypatch.setenv("TELEGRAM_HOME_CHANNEL", "env_value")
 
     from importlib import reload
-    import hermes_cli.config as _hc_config
+    import hermes_agent.hermes_cli.config as _hc_config
     reload(_hc_config)
 
     send_cmd._load_hermes_env()
@@ -394,7 +394,7 @@ def test_load_hermes_env_handles_missing_files(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(hermes_home))
 
     from importlib import reload
-    import hermes_cli.config as _hc_config
+    import hermes_agent.hermes_cli.config as _hc_config
     reload(_hc_config)
 
     # Should not raise.

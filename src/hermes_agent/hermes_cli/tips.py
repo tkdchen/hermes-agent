@@ -242,7 +242,7 @@ TIPS = [
     "Checkpoints use shadow repos in ~/.hermes/checkpoints/ — your project's .git is never touched.",
 
     # --- Batch & Data ---
-    "batch_runner.py processes hundreds of prompts in parallel for training data generation.",
+    "hermes_agent.batch_runner.py processes hundreds of prompts in parallel for training data generation.",
     "hermes chat -Q enables quiet mode for programmatic use — suppresses banner and spinner.",
     "Trajectory saving (--save-trajectories) captures full tool-use traces for model training.",
 
@@ -291,9 +291,9 @@ TIPS = [
     "delegate_task with acp_command: 'claude' spawns Claude Code as a child agent from any platform.",
     "Delegation has a heartbeat thread — child activity propagates to the parent, preventing gateway timeouts.",
     "When a provider returns HTTP 402 (payment required), the auxiliary client auto-falls back to the next one.",
-    "agent.tool_use_enforcement steers models that describe actions instead of calling tools — auto for GPT/Codex.",
-    "agent.restart_drain_timeout (default 60s) lets running agents finish before a gateway restart takes effect.",
-    "agent.api_max_retries (default 3) controls how many times the agent retries a failed API call before surfacing the error — lower it for fast fallback.",
+    "hermes_agent.agent.tool_use_enforcement steers models that describe actions instead of calling tools — auto for GPT/Codex.",
+    "hermes_agent.agent.restart_drain_timeout (default 60s) lets running agents finish before a gateway restart takes effect.",
+    "hermes_agent.agent.api_max_retries (default 3) controls how many times the agent retries a failed API call before surfacing the error — lower it for fast fallback.",
     "The gateway caches AIAgent instances per session — destroying this cache breaks Anthropic prompt caching.",
     "Any website can expose skills via /.well-known/skills/index.json — the skills hub discovers them automatically.",
     "The skills audit log at ~/.hermes/skills/.hub/audit.log tracks every install and removal operation.",
@@ -408,7 +408,7 @@ TIPS = [
     'TELEGRAM_WEBHOOK_SECRET is required whenever TELEGRAM_WEBHOOK_URL is set — generate with openssl rand -hex 32.',
 
     # --- Batch ---
-    "batch_runner.py --resume content-matches completed prompts by text so dataset reorders don't re-run finished work.",
+    "hermes_agent.batch_runner.py --resume content-matches completed prompts by text so dataset reorders don't re-run finished work.",
 
     # --- Less-Known Slash Commands ---
     '/new starts a fresh session in place (alias /reset) — fresh session ID, clean history, CLI stays open.',

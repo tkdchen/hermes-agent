@@ -14,8 +14,8 @@ import time
 
 import psutil
 
-import cli as cli_mod
-from cli import HermesCLI
+import hermes_agent.cli as cli_mod
+from hermes_agent.cli import HermesCLI
 from rich.console import Console
 
 # Env-overridable so the integration test can drive sub-second timing.

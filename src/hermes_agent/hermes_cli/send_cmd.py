@@ -148,7 +148,7 @@ def _list_targets(platform_filter: Optional[str], *, json_mode: bool) -> int:
     identical.
     """
     try:
-        from gateway.channel_directory import (
+        from hermes_agent.gateway.channel_directory import (
             format_directory_for_display,
             load_directory,
         )
@@ -234,7 +234,7 @@ def _load_hermes_env() -> None:
         load_dotenv = None  # type: ignore[assignment]
 
     try:
-        from hermes_cli.config import get_hermes_home
+        from hermes_agent.hermes_cli.config import get_hermes_home
         home = get_hermes_home()
     except Exception:
         return
@@ -271,7 +271,7 @@ def _load_hermes_env() -> None:
         return
 
     try:
-        from hermes_cli.config import _expand_env_vars
+        from hermes_agent.hermes_cli.config import _expand_env_vars
         raw = _expand_env_vars(raw)
     except Exception:
         pass
@@ -335,7 +335,7 @@ def cmd_send(args: argparse.Namespace) -> None:
 
     # Import lazily so `hermes send --help` stays fast and does not pull in
     # the full tool registry / gateway config stack.
-    from tools.send_message_tool import send_message_tool
+    from hermes_agent.tools.send_message_tool import send_message_tool
 
     # send_message_tool auto-loads gateway config + env and routes to the
     # appropriate platform adapter (bot-token path for Telegram/Discord/Slack/

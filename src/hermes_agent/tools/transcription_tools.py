@@ -20,7 +20,7 @@ Supported input formats: mp3, mp4, mpeg, mpga, m4a, wav, webm, ogg, aac
 
 Usage::
 
-    from tools.transcription_tools import transcribe_audio
+    from hermes_agent.tools.transcription_tools import transcribe_audio
 
     result = transcribe_audio("/path/to/audio.ogg")
     if result["success"]:
@@ -37,9 +37,9 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 from urllib.parse import urljoin
 
-from utils import is_truthy_value
-from tools.managed_tool_gateway import resolve_managed_tool_gateway
-from tools.tool_backend_helpers import (
+from hermes_agent.utils import is_truthy_value
+from hermes_agent.tools.managed_tool_gateway import resolve_managed_tool_gateway
+from hermes_agent.tools.tool_backend_helpers import (
     managed_nous_tools_enabled,
     nous_tool_gateway_unavailable_message,
     resolve_openai_audio_api_key,
@@ -55,7 +55,7 @@ def get_env_value(name, default=None):
     not keep a stale imported function for the rest of the test process.
     """
     try:
-        from hermes_cli.config import get_env_value as _get_env_value
+        from hermes_agent.hermes_cli.config import get_env_value as _get_env_value
     except ImportError:
         return os.getenv(name, default)
     value = _get_env_value(name)
@@ -120,7 +120,7 @@ _local_model_name: Optional[str] = None
 def _load_stt_config() -> dict:
     """Load the ``stt`` section from user config, falling back to defaults."""
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         return load_config().get("stt", {})
     except Exception:
         return {}
@@ -213,7 +213,7 @@ def _try_lazy_install_stt() -> bool:
     the provider can use it immediately without a process restart.
     """
     try:
-        from tools.lazy_deps import ensure
+        from hermes_agent.tools.lazy_deps import ensure
         # prompt=False: never raise a blocking input() prompt mid-session.
         # Under the interactive CLI prompt_toolkit owns stdin, so a bare
         # input() deadlocks the terminal (#40490). The install is already
@@ -809,7 +809,7 @@ def _get_provider(stt_config: dict) -> str:
             return "none"
 
         if provider == "xai":
-            from tools.xai_http import resolve_xai_http_credentials
+            from hermes_agent.tools.xai_http import resolve_xai_http_credentials
 
             if resolve_xai_http_credentials().get("api_key"):
                 return "xai"
@@ -852,7 +852,7 @@ def _get_provider(stt_config: dict) -> str:
         logger.info("No local STT available, using Mistral Voxtral Transcribe API")
         return "mistral"
     try:
-        from tools.xai_http import resolve_xai_http_credentials
+        from hermes_agent.tools.xai_http import resolve_xai_http_credentials
 
         if resolve_xai_http_credentials().get("api_key"):
             logger.info("No local STT available, using xAI Grok STT API")
@@ -927,8 +927,8 @@ def _dispatch_to_plugin_provider(
     ):
         return None
     try:
-        from agent.transcription_registry import get_provider
-        from hermes_cli.plugins import _ensure_plugins_discovered
+        from hermes_agent.agent.transcription_registry import get_provider
+        from hermes_agent.hermes_cli.plugins import _ensure_plugins_discovered
 
         _ensure_plugins_discovered()
         plugin_provider = get_provider(key)
@@ -1395,7 +1395,7 @@ def _transcribe_mistral(file_path: str, model_name: str) -> Dict[str, Any]:
 
     try:
         try:
-            from tools.lazy_deps import ensure as _lazy_ensure
+            from hermes_agent.tools.lazy_deps import ensure as _lazy_ensure
             _lazy_ensure("stt.mistral", prompt=False)
         except ImportError:
             pass
@@ -1434,7 +1434,7 @@ def _transcribe_xai(file_path: str, model_name: str) -> Dict[str, Any]:
     Supports Inverse Text Normalization, diarization, and word-level timestamps.
     Requires ``XAI_API_KEY`` environment variable.
     """
-    from tools.xai_http import resolve_xai_http_credentials
+    from hermes_agent.tools.xai_http import resolve_xai_http_credentials
 
     creds = resolve_xai_http_credentials()
     api_key = str(creds.get("api_key") or "").strip()
@@ -1465,7 +1465,7 @@ def _transcribe_xai(file_path: str, model_name: str) -> Dict[str, Any]:
 
     try:
         import requests
-        from tools.xai_http import hermes_xai_user_agent
+        from hermes_agent.tools.xai_http import hermes_xai_user_agent
 
         data: Dict[str, str] = {}
         if language:

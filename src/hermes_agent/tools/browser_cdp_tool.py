@@ -22,7 +22,7 @@ import json
 import logging
 from typing import Any, Dict, Optional
 
-from tools.registry import registry, tool_error
+from hermes_agent.tools.registry import registry, tool_error
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ def _resolve_cdp_endpoint() -> str:
     2. ``browser.cdp_url`` in ``config.yaml``
     """
     try:
-        from tools.browser_tool import _get_cdp_override  # type: ignore[import-not-found]
+        from hermes_agent.tools.browser_tool import _get_cdp_override  # type: ignore[import-not-found]
 
         return (_get_cdp_override() or "").strip()
     except Exception as exc:  # pragma: no cover — defensive
@@ -202,7 +202,7 @@ def _browser_cdp_via_supervisor(
     ``asyncio.run_coroutine_threadsafe`` onto the supervisor loop).
     """
     try:
-        from tools.browser_supervisor import SUPERVISOR_REGISTRY  # type: ignore[import-not-found]
+        from hermes_agent.tools.browser_supervisor import SUPERVISOR_REGISTRY  # type: ignore[import-not-found]
     except Exception as exc:  # pragma: no cover — defensive
         return tool_error(
             f"CDP supervisor is not available: {exc}. frame_id routing requires "
@@ -273,7 +273,7 @@ def _browser_cdp_via_supervisor(
         )
 
     try:
-        from agent.async_utils import safe_schedule_threadsafe
+        from hermes_agent.agent.async_utils import safe_schedule_threadsafe
         fut = safe_schedule_threadsafe(_do_cdp(), loop)
         if fut is None:
             return tool_error(
@@ -540,7 +540,7 @@ def _browser_cdp_check() -> bool:
     ``registry.register(...)`` calls).
     """
     try:
-        from tools.browser_tool import (  # type: ignore[import-not-found]
+        from hermes_agent.tools.browser_tool import (  # type: ignore[import-not-found]
             _get_cdp_override,
             check_browser_requirements,
         )

@@ -36,9 +36,9 @@ from pathlib import Path as _Path
 
 sys.path.insert(0, str(_Path(__file__).resolve().parents[2]))
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.helpers import MessageDeduplicator
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.helpers import MessageDeduplicator
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
@@ -101,7 +101,7 @@ def check_slack_requirements() -> bool:
             "SLACK_AVAILABLE": True,
         }
 
-    from tools.lazy_deps import ensure_and_bind
+    from hermes_agent.tools.lazy_deps import ensure_and_bind
 
     return ensure_and_bind("platform.slack", _import, globals(), prompt=False)
 
@@ -762,7 +762,7 @@ class SlackAdapter(BasePlatformAdapter):
         bot_tokens = [t.strip() for t in raw_token.split(",") if t.strip()]
 
         # Also load tokens from OAuth token file
-        from hermes_constants import get_hermes_home
+        from hermes_agent.hermes_constants import get_hermes_home
 
         tokens_file = get_hermes_home() / "slack_tokens.json"
         if tokens_file.exists():
@@ -925,7 +925,7 @@ class SlackAdapter(BasePlatformAdapter):
             # routes the command event through the socket regardless of the
             # manifest's request URL, but it will not deliver an event for
             # a slash command the manifest doesn't declare.
-            from hermes_cli.commands import slack_native_slashes
+            from hermes_agent.hermes_cli.commands import slack_native_slashes
             import re as _re
 
             _slash_names = [name for name, _d, _h in slack_native_slashes()]
@@ -974,7 +974,7 @@ class SlackAdapter(BasePlatformAdapter):
             # down the gateway: any exception inside the plugin handler is
             # caught and logged, and slack_bolt still sees a clean ack.
             try:
-                from hermes_cli.plugins import get_plugin_manager
+                from hermes_agent.hermes_cli.plugins import get_plugin_manager
                 _plugin_handlers = get_plugin_manager().get_slack_action_handlers()
             except Exception as e:  # pragma: no cover - defensive
                 logger.warning(
@@ -1435,7 +1435,7 @@ class SlackAdapter(BasePlatformAdapter):
         try:
             import httpx as _httpx
             from urllib.parse import unquote as _unquote
-            from tools.url_safety import is_safe_url as _is_safe_url
+            from hermes_agent.tools.url_safety import is_safe_url as _is_safe_url
         except Exception:
             await super().send_multiple_images(chat_id, images, metadata, human_delay)
             return
@@ -1821,7 +1821,7 @@ class SlackAdapter(BasePlatformAdapter):
         if not self._app:
             return SendResult(success=False, error="Not connected")
 
-        from tools.url_safety import is_safe_url
+        from hermes_agent.tools.url_safety import is_safe_url
 
         if not is_safe_url(image_url):
             logger.warning("[Slack] Blocked unsafe image URL (SSRF protection)")
@@ -2297,7 +2297,7 @@ class SlackAdapter(BasePlatformAdapter):
         # so casual messages like "!nice work" pass through unchanged.
         if original_text.startswith("!"):
             try:
-                from hermes_cli.commands import is_gateway_known_command
+                from hermes_agent.hermes_cli.commands import is_gateway_known_command
 
                 first_token = original_text[1:].split(maxsplit=1)[0]
                 # Strip "@suffix" the same way get_command() does, so
@@ -2797,7 +2797,7 @@ class SlackAdapter(BasePlatformAdapter):
         )
 
         # Per-channel ephemeral prompt
-        from gateway.platforms.base import (
+        from hermes_agent.gateway.platforms.base import (
             resolve_channel_prompt,
             resolve_channel_skills,
         )
@@ -3039,7 +3039,7 @@ class SlackAdapter(BasePlatformAdapter):
         auth_fn = getattr(runner, "_is_user_authorized", None)
         if callable(auth_fn):
             try:
-                from gateway.session import SessionSource
+                from hermes_agent.gateway.session import SessionSource
 
                 source = SessionSource(
                     platform=Platform.SLACK,
@@ -3162,7 +3162,7 @@ class SlackAdapter(BasePlatformAdapter):
 
         # Resolve via the module-level primitive and post any follow-up.
         try:
-            from tools import slash_confirm as _slash_confirm_mod
+            from hermes_agent.tools import slash_confirm as _slash_confirm_mod
 
             result_text = await _slash_confirm_mod.resolve(
                 session_key, confirm_id, choice
@@ -3284,7 +3284,7 @@ class SlackAdapter(BasePlatformAdapter):
 
         # Resolve the approval — this unblocks the agent thread
         try:
-            from tools.approval import resolve_gateway_approval
+            from hermes_agent.tools.approval import resolve_gateway_approval
 
             count = resolve_gateway_approval(session_key, choice)
             logger.info(
@@ -3515,7 +3515,7 @@ class SlackAdapter(BasePlatformAdapter):
             # Legacy /hermes <subcommand> [args] routing + free-form questions.
             # Empty slash_name falls into this branch for backward compat
             # with any caller that didn't populate command["command"].
-            from hermes_cli.commands import slack_subcommand_map
+            from hermes_agent.hermes_cli.commands import slack_subcommand_map
 
             subcommand_map = slack_subcommand_map()
             subcommand_map["compact"] = "/compress"
@@ -3601,7 +3601,7 @@ class SlackAdapter(BasePlatformAdapter):
             return False
 
         try:
-            from gateway.session import SessionSource, build_session_key
+            from hermes_agent.gateway.session import SessionSource, build_session_key
 
             source = SessionSource(
                 platform=Platform.SLACK,
@@ -3669,11 +3669,11 @@ class SlackAdapter(BasePlatformAdapter):
                         )
 
                     if audio:
-                        from gateway.platforms.base import cache_audio_from_bytes
+                        from hermes_agent.gateway.platforms.base import cache_audio_from_bytes
 
                         return cache_audio_from_bytes(response.content, ext)
                     else:
-                        from gateway.platforms.base import cache_image_from_bytes
+                        from hermes_agent.gateway.platforms.base import cache_image_from_bytes
 
                         return cache_image_from_bytes(response.content, ext)
                 except (httpx.TimeoutException, httpx.HTTPStatusError) as exc:

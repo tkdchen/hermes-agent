@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-from utils import atomic_replace
+from hermes_agent.utils import atomic_replace
 
 
 # Env var name suffixes that indicate credential values.  These are the
@@ -175,7 +175,7 @@ def _sanitize_env_file_if_needed(path: Path) -> None:
     if not path.exists():
         return
     try:
-        from hermes_cli.config import _sanitize_env_lines
+        from hermes_agent.hermes_cli.config import _sanitize_env_lines
     except ImportError:
         return  # early bootstrap — config module not available yet
 
@@ -279,7 +279,7 @@ def _apply_external_secret_sources(home_path: Path) -> None:
         return
 
     try:
-        from agent.secret_sources.bitwarden import apply_bitwarden_secrets
+        from hermes_agent.agent.secret_sources.bitwarden import apply_bitwarden_secrets
     except ImportError:
         return
 

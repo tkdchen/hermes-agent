@@ -26,7 +26,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Optional
 
-from agent.prompt_builder import (
+from hermes_agent.agent.prompt_builder import (
     DEFAULT_AGENT_IDENTITY,
     GOOGLE_MODEL_OPERATIONAL_GUIDANCE,
     HERMES_AGENT_HELP_GUIDANCE,
@@ -42,7 +42,7 @@ from agent.prompt_builder import (
     TOOL_USE_ENFORCEMENT_MODELS,
     drain_truncation_warnings,
 )
-from agent.runtime_cwd import resolve_context_cwd
+from hermes_agent.agent.runtime_cwd import resolve_context_cwd
 
 
 def _ra():
@@ -52,11 +52,11 @@ def _ra():
     ``build_context_files_prompt``, ``build_nous_subscription_prompt``,
     ``build_skills_system_prompt`` and ``get_toolset_for_tool`` are
     imported into ``run_agent``'s namespace.  Many tests
-    ``patch("run_agent.load_soul_md", ...)``; if we imported them
+    ``patch("hermes_agent.run_agent.load_soul_md", ...)``; if we imported them
     directly here those patches would not reach us.  Looking them up
     through ``run_agent`` on every call preserves the patch contract.
     """
-    import run_agent
+    import hermes_agent.run_agent as run_agent
     return run_agent
 
 
@@ -152,7 +152,7 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
     # Computer-use (macOS) — goes in as its own block rather than being
     # merged into tool_guidance because the content is multi-paragraph.
     if "computer_use" in agent.valid_tool_names:
-        from agent.prompt_builder import COMPUTER_USE_GUIDANCE
+        from hermes_agent.agent.prompt_builder import COMPUTER_USE_GUIDANCE
         stable_parts.append(COMPUTER_USE_GUIDANCE)
 
     nous_subscription_prompt = _r.build_nous_subscription_prompt(agent.valid_tool_names)
@@ -209,7 +209,7 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
         # default coding posture leaves the index untouched.
         _compact_cats = frozenset()
         try:
-            from agent.coding_context import coding_compact_skill_categories
+            from hermes_agent.agent.coding_context import coding_compact_skill_categories
 
             _compact_cats = coding_compact_skill_categories(
                 platform=agent.platform, cwd=resolve_context_cwd()
@@ -254,7 +254,7 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
     # cache), so the brief tells the model to re-check git before relying on it.
     if agent.valid_tool_names:
         try:
-            from agent.coding_context import coding_system_blocks
+            from hermes_agent.agent.coding_context import coding_system_blocks
 
             stable_parts.extend(
                 coding_system_blocks(
@@ -276,7 +276,7 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
     # config.yaml ``agent.environment_probe`` (default True).
     if getattr(agent, "_environment_probe", True):
         try:
-            from tools.env_probe import get_environment_probe_line
+            from hermes_agent.tools.env_probe import get_environment_probe_line
             _probe_line = get_environment_probe_line()
             if _probe_line:
                 stable_parts.append(_probe_line)
@@ -292,7 +292,7 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
     # See file_safety._resolve_active_profile_name + classify_cross_profile_target
     # for the matching tool-side guard.
     try:
-        from agent.file_safety import _resolve_active_profile_name
+        from hermes_agent.agent.file_safety import _resolve_active_profile_name
         active_profile = _resolve_active_profile_name()
     except Exception:
         active_profile = "default"
@@ -324,7 +324,7 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
     elif platform_key:
         # Check plugin registry for platform-specific LLM guidance
         try:
-            from gateway.platform_registry import platform_registry
+            from hermes_agent.gateway.platform_registry import platform_registry
             _entry = platform_registry.get(platform_key)
             if _entry and _entry.platform_hint:
                 stable_parts.append(_entry.platform_hint)
@@ -373,7 +373,7 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
         except Exception:
             pass
 
-    from hermes_time import now as _hermes_now
+    from hermes_agent.hermes_time import now as _hermes_now
     now = _hermes_now()
     # Date-only (not minute-precision) so the system prompt is byte-stable
     # for the full day.  Minute-precision changes invalidate prefix-cache KV

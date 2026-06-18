@@ -57,7 +57,7 @@ def _toplevel_chown_loop(text: str) -> str:
 def test_toplevel_chown_loop_present(stage2_text: str) -> None:
     block = _toplevel_chown_loop(stage2_text)
     # The reported-broken files must be covered.
-    for required in ("auth.json", "state.db", "gateway.lock", "gateway_state.json"):
+    for required in ("auth.json", "state.db", "hermes_agent.gateway.lock", "gateway_state.json"):
         assert required in block, (
             f"top-level chown allowlist must include {required!r} (#35098)"
         )
@@ -116,10 +116,10 @@ def _run_loop(text: str, present_files: list[str]) -> list[str]:
 
 
 def test_loop_chowns_present_allowlisted_files(stage2_text: str) -> None:
-    touched = _run_loop(stage2_text, ["auth.json", "state.db", "gateway.lock"])
+    touched = _run_loop(stage2_text, ["auth.json", "state.db", "hermes_agent.gateway.lock"])
     assert "auth.json" in touched
     assert "state.db" in touched
-    assert "gateway.lock" in touched
+    assert "hermes_agent.gateway.lock" in touched
 
 
 def test_loop_skips_nonallowlisted_host_file(stage2_text: str) -> None:

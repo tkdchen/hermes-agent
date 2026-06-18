@@ -28,7 +28,7 @@ from tests.docker.conftest import docker_exec
 _REGISTER_SCRIPT = """
 import sys
 sys.path.insert(0, "/opt/hermes")
-from hermes_cli.service_manager import S6ServiceManager
+from hermes_agent.hermes_cli.service_manager import S6ServiceManager
 S6ServiceManager().register_profile_gateway("phase3test")
 # Don't worry about whether the gateway actually starts — we only care
 # that the supervision slot was created. The gateway run script will
@@ -39,7 +39,7 @@ print("REGISTERED")
 _UNREGISTER_SCRIPT = """
 import sys
 sys.path.insert(0, "/opt/hermes")
-from hermes_cli.service_manager import S6ServiceManager
+from hermes_agent.hermes_cli.service_manager import S6ServiceManager
 S6ServiceManager().unregister_profile_gateway("phase3test")
 print("UNREGISTERED")
 """

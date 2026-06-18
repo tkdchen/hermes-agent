@@ -7,8 +7,8 @@ from pathlib import Path
 import httpx
 import pytest
 
-from tools.microsoft_graph_auth import GraphCredentials, MicrosoftGraphTokenProvider
-from tools.microsoft_graph_client import (
+from hermes_agent.tools.microsoft_graph_auth import GraphCredentials, MicrosoftGraphTokenProvider
+from hermes_agent.tools.microsoft_graph_client import (
     MicrosoftGraphAPIError,
     MicrosoftGraphClient,
     MicrosoftGraphClientError,

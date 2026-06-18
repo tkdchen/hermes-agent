@@ -12,7 +12,7 @@ import os
 import threading
 from unittest.mock import MagicMock, patch
 
-from tools.environments.local import (
+from hermes_agent.tools.environments.local import (
     LocalEnvironment,
     _HERMES_PROVIDER_ENV_BLOCKLIST,
     _HERMES_PROVIDER_ENV_FORCE_PREFIX,
@@ -47,9 +47,9 @@ def _run_with_env(extra_os_env=None, self_env=None):
 
     env = LocalEnvironment(cwd="/tmp", timeout=10, env=self_env)
 
-    with patch("tools.environments.local._find_bash", return_value="/bin/bash"), \
+    with patch("hermes_agent.tools.environments.local._find_bash", return_value="/bin/bash"), \
          patch("subprocess.Popen", side_effect=_make_fake_popen(captured)), \
-         patch("tools.terminal_tool._interrupt_event", fake_interrupt), \
+         patch("hermes_agent.tools.terminal_tool._interrupt_event", fake_interrupt), \
          patch.dict(os.environ, test_environ, clear=True):
         env.execute("echo hello")
 
@@ -254,7 +254,7 @@ class TestBlocklistCoverage:
     def test_registry_vars_are_in_blocklist(self):
         """Every api_key_env_var and base_url_env_var from PROVIDER_REGISTRY
         must appear in the blocklist — ensures no drift."""
-        from hermes_cli.auth import PROVIDER_REGISTRY
+        from hermes_agent.hermes_cli.auth import PROVIDER_REGISTRY
 
         for pconfig in PROVIDER_REGISTRY.values():
             for var in pconfig.api_key_env_vars:
@@ -320,7 +320,7 @@ class TestBlocklistCoverage:
 
     def test_optional_tool_and_messaging_vars_are_in_blocklist(self):
         """Tool/messaging vars from OPTIONAL_ENV_VARS should stay covered."""
-        from hermes_cli.config import OPTIONAL_ENV_VARS
+        from hermes_agent.hermes_cli.config import OPTIONAL_ENV_VARS
 
         for name, metadata in OPTIONAL_ENV_VARS.items():
             category = metadata.get("category")
@@ -380,16 +380,16 @@ class TestSanePathIncludesHomebrew:
     """Verify _SANE_PATH includes macOS Homebrew directories."""
 
     def test_sane_path_includes_homebrew_bin(self):
-        from tools.environments.local import _SANE_PATH
+        from hermes_agent.tools.environments.local import _SANE_PATH
         assert "/opt/homebrew/bin" in _SANE_PATH
 
     def test_sane_path_includes_homebrew_sbin(self):
-        from tools.environments.local import _SANE_PATH
+        from hermes_agent.tools.environments.local import _SANE_PATH
         assert "/opt/homebrew/sbin" in _SANE_PATH
 
     def test_make_run_env_appends_homebrew_on_minimal_path(self):
         """When PATH is minimal, _make_run_env appends missing sane entries."""
-        from tools.environments.local import _SANE_PATH, _make_run_env
+        from hermes_agent.tools.environments.local import _SANE_PATH, _make_run_env
         minimal_env = {"PATH": "/some/custom/bin"}
         with patch.dict(os.environ, minimal_env, clear=True):
             result = _make_run_env({})
@@ -400,7 +400,7 @@ class TestSanePathIncludesHomebrew:
 
     def test_make_run_env_fills_missing_homebrew_when_usr_bin_present(self):
         """macOS launchd PATH can include /usr/bin while missing Homebrew."""
-        from tools.environments.local import _make_run_env
+        from hermes_agent.tools.environments.local import _make_run_env
         launchd_env = {"PATH": "/usr/local/bin:/usr/bin:/bin"}
         with patch.dict(os.environ, launchd_env, clear=True):
             result = _make_run_env({})
@@ -409,7 +409,7 @@ class TestSanePathIncludesHomebrew:
         assert "/opt/homebrew/sbin" in path_entries
 
     def test_make_run_env_does_not_duplicate_existing_sane_entries(self):
-        from tools.environments.local import _make_run_env
+        from hermes_agent.tools.environments.local import _make_run_env
         existing_env = {"PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"}
         with patch.dict(os.environ, existing_env, clear=True):
             result = _make_run_env({})
@@ -420,7 +420,7 @@ class TestSanePathIncludesHomebrew:
 
     def test_make_run_env_real_launchd_path_gains_homebrew(self):
         """The literal macOS launchd PATH is the production trigger for #35613."""
-        from tools.environments.local import _make_run_env
+        from hermes_agent.tools.environments.local import _make_run_env
         launchd_env = {"PATH": "/usr/bin:/bin:/usr/sbin:/sbin"}
         with patch.dict(os.environ, launchd_env, clear=True):
             result = _make_run_env({})
@@ -432,7 +432,7 @@ class TestSanePathIncludesHomebrew:
 
     def test_make_run_env_collapses_duplicate_caller_entries(self):
         """Duplicates already present in the caller PATH are de-duplicated."""
-        from tools.environments.local import _make_run_env
+        from hermes_agent.tools.environments.local import _make_run_env
         dup_env = {"PATH": "/usr/bin:/usr/bin:/custom/bin:/custom/bin:/bin"}
         with patch.dict(os.environ, dup_env, clear=True):
             result = _make_run_env({})
@@ -444,7 +444,7 @@ class TestSanePathIncludesHomebrew:
 
     def test_make_run_env_strips_empty_path_entries(self):
         """Leading/trailing/double colons (== CWD on POSIX) are dropped."""
-        from tools.environments.local import _make_run_env
+        from hermes_agent.tools.environments.local import _make_run_env
         empty_env = {"PATH": "/usr/bin::/bin:"}
         with patch.dict(os.environ, empty_env, clear=True):
             result = _make_run_env({})
@@ -454,8 +454,8 @@ class TestSanePathIncludesHomebrew:
         assert "/opt/homebrew/bin" in path_entries
 
     def test_make_run_env_leaves_windows_path_unchanged(self, monkeypatch):
-        from tools.environments import local as local_mod
-        from tools.environments.local import _make_run_env
+        from hermes_agent.tools.environments import local as local_mod
+        from hermes_agent.tools.environments.local import _make_run_env
         windows_env = {"PATH": r"C:\Windows\System32;C:\Program Files\Git\bin"}
         monkeypatch.setattr(local_mod, "_IS_WINDOWS", True)
         with patch.dict(os.environ, windows_env, clear=True):
@@ -463,8 +463,8 @@ class TestSanePathIncludesHomebrew:
         assert result["PATH"] == windows_env["PATH"]
 
     def test_make_run_env_preserves_windows_mixed_case_path_key(self, monkeypatch):
-        from tools.environments import local as local_mod
-        from tools.environments.local import _make_run_env
+        from hermes_agent.tools.environments import local as local_mod
+        from hermes_agent.tools.environments.local import _make_run_env
         windows_env = {"Path": r"C:\Windows\System32;C:\Program Files\Git\bin"}
         monkeypatch.setattr(local_mod, "_IS_WINDOWS", True)
         with patch.object(local_mod.os, "environ", windows_env):

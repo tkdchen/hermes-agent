@@ -15,7 +15,7 @@ import types
 
 import pytest
 
-from agent.auxiliary_client import extract_content_or_reasoning
+from hermes_agent.agent.auxiliary_client import extract_content_or_reasoning
 
 
 # ── helpers ────────────────────────────────────────────────────────────────

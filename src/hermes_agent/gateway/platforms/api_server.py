@@ -52,8 +52,8 @@ except ImportError:
     AIOHTTP_AVAILABLE = False
     web = None  # type: ignore[assignment]
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     SendResult,
     is_network_accessible,
@@ -77,7 +77,7 @@ def _hermes_version() -> str:
     except Exception:
         pass
     try:
-        from hermes_cli import __version__
+        from hermes_agent.hermes_cli import __version__
 
         return __version__
     except Exception:
@@ -384,7 +384,7 @@ class ResponseStore:
         self._max_size = max_size
         if db_path is None:
             try:
-                from hermes_cli.config import get_hermes_home
+                from hermes_agent.hermes_cli.config import get_hermes_home
                 db_path = str(get_hermes_home() / "response_store.db")
             except Exception:
                 db_path = ":memory:"
@@ -398,7 +398,7 @@ class ResponseStore:
         # gracefully on NFS/SMB/FUSE-mounted HERMES_HOME (same filesystem
         # issue addressed for state.db/kanban.db — see
         # hermes_state._WAL_INCOMPAT_MARKERS).
-        from hermes_state import apply_wal_with_fallback
+        from hermes_agent.hermes_state import apply_wal_with_fallback
         apply_wal_with_fallback(self._conn, db_label="response_store.db")
         self._conn.execute(
             """CREATE TABLE IF NOT EXISTS responses (
@@ -696,7 +696,7 @@ def _derive_chat_session_id(
 
 _CRON_AVAILABLE = False
 try:
-    from cron.jobs import (
+    from hermes_agent.cron.jobs import (
         list_jobs as _cron_list,
         get_job as _cron_get,
         create_job as _cron_create,
@@ -726,7 +726,7 @@ except ImportError:
 # which surface created the job.  Imported defensively: a missing scanner
 # must not disable the cron REST API.
 try:
-    from tools.cronjob_tools import _scan_cron_prompt as _scan_cron_prompt
+    from hermes_agent.tools.cronjob_tools import _scan_cron_prompt as _scan_cron_prompt
 except Exception:  # pragma: no cover - scanner is optional hardening
     _scan_cron_prompt = None
 
@@ -800,7 +800,7 @@ class APIServerAdapter(BasePlatformAdapter):
         if explicit and explicit.strip():
             return explicit.strip()
         try:
-            from hermes_cli.profiles import get_active_profile_name
+            from hermes_agent.hermes_cli.profiles import get_active_profile_name
             profile = get_active_profile_name()
             if profile and profile not in {"default", "custom"}:
                 return profile
@@ -997,7 +997,7 @@ class APIServerAdapter(BasePlatformAdapter):
         """
         if self._session_db is None:
             try:
-                from hermes_state import SessionDB
+                from hermes_agent.hermes_state import SessionDB
                 self._session_db = SessionDB()
             except Exception as e:
                 logger.debug("SessionDB unavailable for API server: %s", e)
@@ -1032,9 +1032,9 @@ class APIServerAdapter(BasePlatformAdapter):
         providers (e.g. Honcho) can scope their per-chat state correctly
         — matching the semantics of the native gateway's ``session_key``.
         """
-        from run_agent import AIAgent
-        from gateway.run import _resolve_runtime_agent_kwargs, _resolve_gateway_model, _load_gateway_config, GatewayRunner
-        from hermes_cli.tools_config import _get_platform_tools
+        from hermes_agent.run_agent import AIAgent
+        from hermes_agent.gateway.run import _resolve_runtime_agent_kwargs, _resolve_gateway_model, _load_gateway_config, GatewayRunner
+        from hermes_agent.hermes_cli.tools_config import _get_platform_tools
 
         runtime_kwargs = _resolve_runtime_agent_kwargs()
         reasoning_config = GatewayRunner._load_reasoning_config()
@@ -1087,7 +1087,7 @@ class APIServerAdapter(BasePlatformAdapter):
         dashboard can display full status without needing a shared PID file or
         /proc access.  No authentication required.
         """
-        from gateway.status import read_runtime_status
+        from hermes_agent.gateway.status import read_runtime_status
 
         runtime = read_runtime_status() or {}
         return web.json_response({
@@ -1220,7 +1220,7 @@ class APIServerAdapter(BasePlatformAdapter):
             return auth_err
 
         try:
-            from tools.skills_tool import _find_all_skills, _sort_skills
+            from hermes_agent.tools.skills_tool import _find_all_skills, _sort_skills
             skills = _sort_skills(_find_all_skills(skip_disabled=False))
         except Exception:
             logger.exception("GET /v1/skills failed")
@@ -1248,13 +1248,13 @@ class APIServerAdapter(BasePlatformAdapter):
             return auth_err
 
         try:
-            from hermes_cli.config import load_config
-            from hermes_cli.tools_config import (
+            from hermes_agent.hermes_cli.config import load_config
+            from hermes_agent.hermes_cli.tools_config import (
                 _get_effective_configurable_toolsets,
                 _get_platform_tools,
                 _toolset_has_keys,
             )
-            from toolsets import resolve_toolset
+            from hermes_agent.toolsets import resolve_toolset
 
             config = load_config()
             enabled_toolsets = _get_platform_tools(
@@ -1881,7 +1881,7 @@ class APIServerAdapter(BasePlatformAdapter):
                 if not tool_call_id or function_name.startswith("_"):
                     return
                 _started_tool_call_ids.add(tool_call_id)
-                from agent.display import build_tool_preview, get_tool_emoji
+                from hermes_agent.agent.display import build_tool_preview, get_tool_emoji
                 label = build_tool_preview(function_name, function_args) or function_name
                 _stream_q.put(("__tool_progress__", {
                     "tool": function_name,
@@ -3516,7 +3516,7 @@ class APIServerAdapter(BasePlatformAdapter):
         loop = asyncio.get_running_loop()
 
         def _run():
-            from gateway.session_context import clear_session_vars, set_session_vars
+            from hermes_agent.gateway.session_context import clear_session_vars, set_session_vars
 
             tokens = set_session_vars(
                 platform="api_server",
@@ -3772,8 +3772,8 @@ class APIServerAdapter(BasePlatformAdapter):
                         pass
 
                 def _run_sync():
-                    from gateway.session_context import clear_session_vars, set_session_vars
-                    from tools.approval import (
+                    from hermes_agent.gateway.session_context import clear_session_vars, set_session_vars
+                    from hermes_agent.tools.approval import (
                         register_gateway_notify,
                         reset_current_session_key,
                         set_current_session_key,
@@ -3892,7 +3892,7 @@ class APIServerAdapter(BasePlatformAdapter):
                 # waits immediately; the in-thread unregister is harmlessly
                 # idempotent on normal completion.
                 try:
-                    from tools.approval import unregister_gateway_notify
+                    from hermes_agent.tools.approval import unregister_gateway_notify
 
                     unregister_gateway_notify(approval_session_key)
                 except Exception:
@@ -4036,7 +4036,7 @@ class APIServerAdapter(BasePlatformAdapter):
             or _coerce_request_bool(body.get("resolve_all"), default=False)
         )
         try:
-            from tools.approval import resolve_gateway_approval
+            from hermes_agent.tools.approval import resolve_gateway_approval
 
             resolved = resolve_gateway_approval(
                 approval_session_key,
@@ -4130,7 +4130,7 @@ class APIServerAdapter(BasePlatformAdapter):
             for run_id in stale:
                 logger.debug("[api_server] sweeping orphaned run %s", run_id)
                 try:
-                    from tools.approval import unregister_gateway_notify
+                    from hermes_agent.tools.approval import unregister_gateway_notify
 
                     approval_session_key = self._run_approval_sessions.get(run_id)
                     if approval_session_key:
@@ -4232,7 +4232,7 @@ class APIServerAdapter(BasePlatformAdapter):
             # Ported from openclaw/openclaw#64586.
             if is_network_accessible(self._host) and self._api_key:
                 try:
-                    from hermes_cli.auth import has_usable_secret
+                    from hermes_agent.hermes_cli.auth import has_usable_secret
                     if not has_usable_secret(self._api_key, min_length=8):
                         logger.error(
                             "[%s] Refusing to start: API_SERVER_KEY is set to a "

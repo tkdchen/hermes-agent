@@ -14,7 +14,7 @@ from unittest.mock import Mock
 
 import pytest
 
-import tools.browser_tool as browser_tool
+import hermes_agent.tools.browser_tool as browser_tool
 
 
 @pytest.fixture(autouse=True)

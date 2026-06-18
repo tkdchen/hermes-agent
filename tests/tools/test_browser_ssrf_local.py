@@ -13,7 +13,7 @@ import json
 
 import pytest
 
-from tools import browser_tool
+from hermes_agent.tools import browser_tool
 
 
 def _make_browser_result(url="https://example.com"):
@@ -330,7 +330,7 @@ class TestAllowPrivateUrlsConfig:
 
     def test_browser_config_string_false_stays_disabled(self, monkeypatch):
         monkeypatch.setattr(
-            "hermes_cli.config.read_raw_config",
+            "hermes_agent.hermes_cli.config.read_raw_config",
             lambda: {"browser": {"allow_private_urls": "false"}},
         )
 

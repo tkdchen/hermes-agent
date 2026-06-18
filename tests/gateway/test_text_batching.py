@@ -13,8 +13,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import MessageEvent, MessageType, SessionSource
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import MessageEvent, MessageType, SessionSource
 
 
 # =====================================================================
@@ -40,7 +40,7 @@ def _make_event(
 
 def _make_discord_adapter():
     """Create a minimal DiscordAdapter for testing text batching."""
-    from plugins.platforms.discord.adapter import DiscordAdapter
+    from hermes_agent.plugins.platforms.discord.adapter import DiscordAdapter
 
     config = PlatformConfig(enabled=True, token="test-token")
     adapter = object.__new__(DiscordAdapter)
@@ -218,7 +218,7 @@ class TestDiscordTextBatching:
 
 def _make_matrix_adapter():
     """Create a minimal MatrixAdapter for testing text batching."""
-    from gateway.platforms.matrix import MatrixAdapter
+    from hermes_agent.gateway.platforms.matrix import MatrixAdapter
 
     config = PlatformConfig(enabled=True, token="test-token")
     adapter = object.__new__(MatrixAdapter)
@@ -303,7 +303,7 @@ class TestMatrixTextBatching:
 
 def _make_wecom_adapter():
     """Create a minimal WeComAdapter for testing text batching."""
-    from gateway.platforms.wecom import WeComAdapter
+    from hermes_agent.gateway.platforms.wecom import WeComAdapter
 
     config = PlatformConfig(enabled=True, token="test-token")
     adapter = object.__new__(WeComAdapter)
@@ -388,7 +388,7 @@ class TestWeComTextBatching:
 
 def _make_telegram_adapter():
     """Create a minimal TelegramAdapter for testing adaptive delay."""
-    from gateway.platforms.telegram import TelegramAdapter
+    from hermes_agent.gateway.platforms.telegram import TelegramAdapter
 
     config = PlatformConfig(enabled=True, token="test-token")
     adapter = object.__new__(TelegramAdapter)
@@ -452,7 +452,7 @@ class TestTelegramAdaptiveDelay:
 
 def _make_feishu_adapter():
     """Create a minimal FeishuAdapter for testing adaptive delay."""
-    from gateway.platforms.feishu import FeishuAdapter, FeishuBatchState
+    from hermes_agent.gateway.platforms.feishu import FeishuAdapter, FeishuBatchState
 
     config = PlatformConfig(enabled=True, token="test-token")
     adapter = object.__new__(FeishuAdapter)

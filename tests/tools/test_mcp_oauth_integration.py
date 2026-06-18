@@ -23,7 +23,7 @@ def _set_interactive_stdin(monkeypatch, *, is_tty: bool = True) -> None:
 
     mock_stdin = MagicMock()
     mock_stdin.isatty.return_value = is_tty
-    monkeypatch.setattr("tools.mcp_oauth.sys.stdin", mock_stdin)
+    monkeypatch.setattr("hermes_agent.tools.mcp_oauth.sys.stdin", mock_stdin)
 
 
 @pytest.mark.asyncio
@@ -39,7 +39,7 @@ async def test_external_refresh_picked_up_without_restart(tmp_path, monkeypatch)
     """
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
 
-    from tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
+    from hermes_agent.tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
     reset_manager_for_tests()
 
     token_dir = tmp_path / "mcp-tokens"
@@ -112,7 +112,7 @@ async def test_handle_401_deduplicates_concurrent_callers(tmp_path, monkeypatch)
     """
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
 
-    from tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
+    from hermes_agent.tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
     reset_manager_for_tests()
 
     token_dir = tmp_path / "mcp-tokens"
@@ -156,7 +156,7 @@ async def test_handle_401_deduplicates_concurrent_callers(tmp_path, monkeypatch)
 async def test_handle_401_returns_false_when_no_provider(tmp_path, monkeypatch):
     """handle_401 for an unknown server returns False cleanly."""
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    from tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
+    from hermes_agent.tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
     reset_manager_for_tests()
 
     mgr = MCPOAuthManager()
@@ -169,7 +169,7 @@ async def test_invalidate_if_disk_changed_handles_missing_file(tmp_path, monkeyp
     """invalidate_if_disk_changed returns False when tokens file doesn't exist."""
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     _set_interactive_stdin(monkeypatch)
-    from tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
+    from hermes_agent.tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
     reset_manager_for_tests()
 
     mgr = MCPOAuthManager()
@@ -191,7 +191,7 @@ async def test_provider_is_reused_across_reconnects(tmp_path, monkeypatch):
     """
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     _set_interactive_stdin(monkeypatch)
-    from tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
+    from hermes_agent.tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
     reset_manager_for_tests()
 
     mgr = MCPOAuthManager()

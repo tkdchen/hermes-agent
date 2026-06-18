@@ -104,7 +104,7 @@ def test_run_tool_worker_sees_parent_approval_session_key():
     If the PR's ``copy_context().run`` wrapper is reverted, this test
     fails with ``Expected 'session-A' but worker saw 'default'``.
     """
-    from tools.approval import (
+    from hermes_agent.tools.approval import (
         _approval_session_key,
         get_current_session_key,
     )
@@ -151,8 +151,8 @@ def test_run_agent_concurrent_executor_wraps_submit_with_copy_context():
     import ast
     import inspect
 
-    import run_agent
-    from agent import tool_executor as tool_executor_module
+    import hermes_agent.run_agent as run_agent
+    from hermes_agent.agent import tool_executor as tool_executor_module
 
     # Source for both modules — the concurrent-executor body lives in
     # ``agent/tool_executor.py`` after the run_agent.py refactor (PR
@@ -213,12 +213,12 @@ def test_run_agent_concurrent_executor_wraps_submit_with_copy_context():
 
     assert tool_submits, (
         "Could not locate `executor.submit(... _run_tool ...)` in "
-        "run_agent.py. The call site may have been renamed — update this "
+        "hermes_agent.run_agent.py. The call site may have been renamed — update this "
         "guard along with the refactor."
     )
     unfixed = [c for kind, c in tool_submits if kind == "unfixed"]
     assert not unfixed, (
-        "run_agent.py contains `executor.submit(_run_tool, ...)` without a "
+        "hermes_agent.run_agent.py contains `executor.submit(_run_tool, ...)` without a "
         "`ctx.run` wrapper. This is the pre-#16660 shape: worker threads "
         "will read a fresh ContextVar and approval-session routing "
         "collapses to the os.environ fallback. Wrap with "
@@ -236,7 +236,7 @@ def test_two_concurrent_tool_batches_keep_session_keys_isolated():
     snapshot across callers (which would collapse isolation the same way
     the unfixed ``submit`` does).
     """
-    from tools.approval import (
+    from hermes_agent.tools.approval import (
         _approval_session_key,
         get_current_session_key,
     )

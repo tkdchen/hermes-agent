@@ -119,8 +119,8 @@ except ImportError:
 
     TrustState = _TrustStateStub  # type: ignore[misc,assignment]
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
@@ -129,7 +129,7 @@ from gateway.platforms.base import (
     resolve_proxy_url,
     proxy_kwargs_for_aiohttp,
 )
-from gateway.platforms.helpers import ThreadParticipationTracker
+from hermes_agent.gateway.platforms.helpers import ThreadParticipationTracker
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +165,7 @@ def _resolve_matrix_bang_command(name: str) -> str | None:
         candidates.append(hyphenated)
 
     try:
-        from hermes_cli.commands import is_gateway_known_command
+        from hermes_agent.hermes_cli.commands import is_gateway_known_command
 
         for candidate in candidates:
             if is_gateway_known_command(candidate):
@@ -176,7 +176,7 @@ def _resolve_matrix_bang_command(name: str) -> str | None:
         )
 
     try:
-        from agent.skill_commands import get_skill_commands
+        from hermes_agent.agent.skill_commands import get_skill_commands
 
         skill_commands = get_skill_commands() or {}
         # Skill command keys are stored slash-prefixed (e.g. "/arxiv"), so
@@ -342,7 +342,7 @@ MAX_MESSAGE_LENGTH = 4000
 
 # Store directory for E2EE keys and sync state.
 # Uses get_hermes_home() so each profile gets its own Matrix store.
-from hermes_constants import get_hermes_dir as _get_hermes_dir
+from hermes_agent.hermes_constants import get_hermes_dir as _get_hermes_dir
 
 _STORE_DIR = _get_hermes_dir("platforms/matrix/store", "matrix/store")
 _CRYPTO_DB_PATH = _STORE_DIR / "crypto.db"
@@ -688,7 +688,7 @@ def check_matrix_requirements() -> bool:
     # lookups) and correctly handles ``mautrix[encryption]`` by stripping
     # the extras marker before checking the bare package.
     try:
-        from tools.lazy_deps import feature_missing, ensure_and_bind
+        from hermes_agent.tools.lazy_deps import feature_missing, ensure_and_bind
         missing = feature_missing("platform.matrix")
     except Exception as exc:  # pragma: no cover — defensive
         logger.debug("Matrix: lazy_deps lookup failed: %s", exc)
@@ -1683,7 +1683,7 @@ class MatrixAdapter(BasePlatformAdapter):
         metadata: Optional[Dict[str, Any]] = None,
     ) -> SendResult:
         """Download an image URL and upload it to Matrix."""
-        from tools.url_safety import is_safe_url
+        from hermes_agent.tools.url_safety import is_safe_url
 
         if not is_safe_url(image_url):
             logger.warning("Matrix: blocked unsafe image URL (SSRF protection)")
@@ -1717,7 +1717,7 @@ class MatrixAdapter(BasePlatformAdapter):
 
     async def _download_external_media_with_cap(self, url: str) -> tuple[bytes, str, str]:
         """Download external media while enforcing redirect safety and size caps."""
-        from tools.url_safety import is_safe_url
+        from hermes_agent.tools.url_safety import is_safe_url
 
         if not is_safe_url(url):
             raise ValueError("blocked unsafe media URL")
@@ -1993,7 +1993,7 @@ class MatrixAdapter(BasePlatformAdapter):
             )
 
         try:
-            from hermes_cli.providers import get_label
+            from hermes_agent.hermes_cli.providers import get_label
             provider_label = get_label(current_provider)
         except Exception:
             provider_label = current_provider
@@ -2797,7 +2797,7 @@ class MatrixAdapter(BasePlatformAdapter):
                             file_bytes = None
 
                     if file_bytes is not None:
-                        from gateway.platforms.base import (
+                        from hermes_agent.gateway.platforms.base import (
                             cache_audio_from_bytes,
                             cache_document_from_bytes,
                             cache_image_from_bytes,
@@ -3078,7 +3078,7 @@ class MatrixAdapter(BasePlatformAdapter):
                     )
                     return
                 try:
-                    from tools.approval import resolve_gateway_approval
+                    from hermes_agent.tools.approval import resolve_gateway_approval
 
                     count = resolve_gateway_approval(prompt.session_key, choice)
                     if count:
@@ -3251,7 +3251,7 @@ class MatrixAdapter(BasePlatformAdapter):
 
     def _text_batch_key(self, event: MessageEvent) -> str:
         """Session-scoped key for text message batching."""
-        from gateway.session import build_session_key
+        from hermes_agent.gateway.session import build_session_key
 
         return build_session_key(
             event.source,

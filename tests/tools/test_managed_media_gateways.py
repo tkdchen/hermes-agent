@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_cli.nous_account import NousPortalAccountInfo
+from hermes_agent.hermes_cli.nous_account import NousPortalAccountInfo
 
 
 TOOLS_DIR = Path(__file__).resolve().parents[2] / "tools"
@@ -26,9 +26,9 @@ def _restore_tool_and_agent_modules():
         name: module
         for name, module in sys.modules.items()
         if name == "tools"
-        or name.startswith("tools.")
+        or name.startswith("hermes_agent.tools.")
         or name == "agent"
-        or name.startswith("agent.")
+        or name.startswith("hermes_agent.agent.")
         or name in {"fal_client", "openai"}
     }
     try:
@@ -37,9 +37,9 @@ def _restore_tool_and_agent_modules():
         for name in list(sys.modules):
             if (
                 name == "tools"
-                or name.startswith("tools.")
+                or name.startswith("hermes_agent.tools.")
                 or name == "agent"
-                or name.startswith("agent.")
+                or name.startswith("hermes_agent.agent.")
                 or name in {"fal_client", "openai"}
             ):
                 sys.modules.pop(name, None)
@@ -51,7 +51,7 @@ def _enable_managed_nous_tools(monkeypatch):
     """Patch the source modules so managed_nous_tools_enabled() returns True
     even after tool modules are dynamically reloaded."""
     monkeypatch.setattr(
-        "hermes_cli.nous_account.get_nous_portal_account_info",
+        "hermes_agent.hermes_cli.nous_account.get_nous_portal_account_info",
         lambda: NousPortalAccountInfo(
             logged_in=True,
             source="jwt",
@@ -62,10 +62,10 @@ def _enable_managed_nous_tools(monkeypatch):
 
 
 def _install_fake_tools_package():
-    tools_package = types.ModuleType("tools")
+    tools_package = types.ModuleType("hermes_agent.tools")
     tools_package.__path__ = [str(TOOLS_DIR)]  # type: ignore[attr-defined]
-    sys.modules["tools"] = tools_package
-    sys.modules["tools.debug_helpers"] = types.SimpleNamespace(
+    sys.modules["hermes_agent.tools"] = tools_package
+    sys.modules["hermes_agent.tools.debug_helpers"] = types.SimpleNamespace(
         DebugSession=lambda *args, **kwargs: types.SimpleNamespace(
             active=False,
             session_id="debug-session",
@@ -74,8 +74,8 @@ def _install_fake_tools_package():
             get_session_info=lambda: {},
         )
     )
-    sys.modules["tools.managed_tool_gateway"] = _load_tool_module(
-        "tools.managed_tool_gateway",
+    sys.modules["hermes_agent.tools.managed_tool_gateway"] = _load_tool_module(
+        "hermes_agent.tools.managed_tool_gateway",
         "managed_tool_gateway.py",
     )
 
@@ -182,7 +182,7 @@ def test_managed_fal_submit_uses_gateway_origin_and_nous_token(monkeypatch):
     monkeypatch.setenv("TOOL_GATEWAY_USER_TOKEN", "nous-token")
 
     image_generation_tool = _load_tool_module(
-        "tools.image_generation_tool",
+        "hermes_agent.tools.image_generation_tool",
         "image_generation_tool.py",
     )
     monkeypatch.setattr(image_generation_tool.uuid, "uuid4", lambda: "fal-submit-123")
@@ -210,7 +210,7 @@ def test_managed_fal_submit_reuses_cached_sync_client(monkeypatch):
     monkeypatch.setenv("TOOL_GATEWAY_USER_TOKEN", "nous-token")
 
     image_generation_tool = _load_tool_module(
-        "tools.image_generation_tool",
+        "hermes_agent.tools.image_generation_tool",
         "image_generation_tool.py",
     )
 
@@ -231,7 +231,7 @@ def test_openai_tts_uses_managed_audio_gateway_when_direct_key_absent(monkeypatc
     monkeypatch.setenv("TOOL_GATEWAY_DOMAIN", "nousresearch.com")
     monkeypatch.setenv("TOOL_GATEWAY_USER_TOKEN", "nous-token")
 
-    tts_tool = _load_tool_module("tools.tts_tool", "tts_tool.py")
+    tts_tool = _load_tool_module("hermes_agent.tools.tts_tool", "tts_tool.py")
     monkeypatch.setattr(tts_tool.uuid, "uuid4", lambda: "tts-call-123")
     output_path = tmp_path / "speech.mp3"
     tts_tool._generate_openai_tts("hello world", str(output_path), {"openai": {}})
@@ -253,7 +253,7 @@ def test_openai_tts_accepts_openai_api_key_as_direct_fallback(monkeypatch, tmp_p
     monkeypatch.setenv("TOOL_GATEWAY_DOMAIN", "nousresearch.com")
     monkeypatch.setenv("TOOL_GATEWAY_USER_TOKEN", "nous-token")
 
-    tts_tool = _load_tool_module("tools.tts_tool", "tts_tool.py")
+    tts_tool = _load_tool_module("hermes_agent.tools.tts_tool", "tts_tool.py")
     output_path = tmp_path / "speech.mp3"
     tts_tool._generate_openai_tts("hello world", str(output_path), {"openai": {}})
 
@@ -274,7 +274,7 @@ def test_transcription_uses_model_specific_response_formats(monkeypatch, tmp_pat
     monkeypatch.setenv("TOOL_GATEWAY_USER_TOKEN", "nous-token")
 
     transcription_tools = _load_tool_module(
-        "tools.transcription_tools",
+        "hermes_agent.tools.transcription_tools",
         "transcription_tools.py",
     )
     transcription_tools._load_stt_config = lambda: {"provider": "openai"}
@@ -293,7 +293,7 @@ def test_transcription_uses_model_specific_response_formats(monkeypatch, tmp_pat
         transcription_response=types.SimpleNamespace(text="hello from gpt-4o"),
     )
     transcription_tools = _load_tool_module(
-        "tools.transcription_tools",
+        "hermes_agent.tools.transcription_tools",
         "transcription_tools.py",
     )
 
@@ -317,20 +317,20 @@ def _load_video_gen_plugin(monkeypatch):
     # Also need the agent.video_gen_provider ABC
     agent_dir = Path(__file__).resolve().parents[2] / "agent"
     spec = spec_from_file_location(
-        "agent.video_gen_provider",
+        "hermes_agent.agent.video_gen_provider",
         agent_dir / "video_gen_provider.py",
     )
     assert spec and spec.loader
     mod = module_from_spec(spec)
-    sys.modules["agent.video_gen_provider"] = mod
+    sys.modules["hermes_agent.agent.video_gen_provider"] = mod
     spec.loader.exec_module(mod)
 
     # Load the plugin
     plugin_init = PLUGINS_DIR / "video_gen" / "fal" / "__init__.py"
-    spec = spec_from_file_location("plugins.video_gen.fal", plugin_init)
+    spec = spec_from_file_location("hermes_agent.plugins.video_gen.fal", plugin_init)
     assert spec and spec.loader
     plugin_mod = module_from_spec(spec)
-    sys.modules["plugins.video_gen.fal"] = plugin_mod
+    sys.modules["hermes_agent.plugins.video_gen.fal"] = plugin_mod
     spec.loader.exec_module(plugin_mod)
     return plugin_mod
 
@@ -479,7 +479,7 @@ def test_video_gen_prefers_gateway_overrides_direct_key(monkeypatch):
     plugin = _load_video_gen_plugin(monkeypatch)
 
     # Patch prefers_gateway to return True for video_gen
-    tb_helpers = sys.modules["tools.tool_backend_helpers"]
+    tb_helpers = sys.modules["hermes_agent.tools.tool_backend_helpers"]
     original_pg = tb_helpers.prefers_gateway
     monkeypatch.setattr(tb_helpers, "prefers_gateway", lambda section: section == "video_gen")
 
@@ -501,16 +501,16 @@ def test_video_gen_happy_horse_uses_alibaba_namespace():
 
     agent_dir = Path(__file__).resolve().parents[2] / "agent"
     spec = spec_from_file_location(
-        "agent.video_gen_provider",
+        "hermes_agent.agent.video_gen_provider",
         agent_dir / "video_gen_provider.py",
     )
     mod = module_from_spec(spec)
-    sys.modules["agent.video_gen_provider"] = mod
+    sys.modules["hermes_agent.agent.video_gen_provider"] = mod
     spec.loader.exec_module(mod)
 
-    spec = spec_from_file_location("plugins.video_gen.fal", plugin_init)
+    spec = spec_from_file_location("hermes_agent.plugins.video_gen.fal", plugin_init)
     plugin_mod = module_from_spec(spec)
-    sys.modules["plugins.video_gen.fal"] = plugin_mod
+    sys.modules["hermes_agent.plugins.video_gen.fal"] = plugin_mod
     spec.loader.exec_module(plugin_mod)
 
     hh = plugin_mod.FAL_FAMILIES["happy-horse"]

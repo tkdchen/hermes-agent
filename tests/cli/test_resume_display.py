@@ -10,15 +10,15 @@ import sys
 from io import StringIO
 from unittest.mock import MagicMock, patch
 
-import cli as cli_mod
+import hermes_agent.cli as cli_mod
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 def _make_cli(config_overrides=None, env_overrides=None, **kwargs):
     """Create a HermesCLI instance with minimal mocking."""
-    import cli as _cli_mod
-    from cli import HermesCLI
+    import hermes_agent.cli as _cli_mod
+    from hermes_agent.cli import HermesCLI
 
     _clean_config = {
         "model": {
@@ -41,7 +41,7 @@ def _make_cli(config_overrides=None, env_overrides=None, **kwargs):
     if env_overrides:
         clean_env.update(env_overrides)
     with (
-        patch("cli.get_tool_definitions", return_value=[]),
+        patch("hermes_agent.cli.get_tool_definitions", return_value=[]),
         patch.dict("os.environ", clean_env, clear=False),
         patch.dict(_cli_mod.__dict__, {"CLI_CONFIG": _clean_config}),
     ):
@@ -157,7 +157,7 @@ class TestDisplayResumedHistory:
         # Disable tool-only skip so the summary line is rendered for this fixture.
         cli = _make_cli(config_overrides={"display": {"resume_skip_tool_only": False}})
         cli.conversation_history = _tool_call_history()
-        import cli as _cli_mod
+        import hermes_agent.cli as _cli_mod
         # CLI_CONFIG is read at call-time inside _display_resumed_history, so
         # apply the override for the duration of the capture, not just at init.
         with patch.dict(_cli_mod.__dict__, {"CLI_CONFIG": {
@@ -649,7 +649,7 @@ class TestHandleResumeCommandRecap:
         cli._session_db = mock_db
 
         with (
-            patch("hermes_cli.main._resolve_session_by_name_or_id", return_value="target_session"),
+            patch("hermes_agent.hermes_cli.main._resolve_session_by_name_or_id", return_value="target_session"),
             patch.object(cli, "_display_resumed_history") as display_mock,
         ):
             cli._handle_resume_command("/resume test session")
@@ -671,7 +671,7 @@ class TestHandleResumeCommandRecap:
         cli._session_db = mock_db
 
         with (
-            patch("hermes_cli.main._resolve_session_by_name_or_id", return_value="target_session"),
+            patch("hermes_agent.hermes_cli.main._resolve_session_by_name_or_id", return_value="target_session"),
             patch.object(cli, "_display_resumed_history") as display_mock,
         ):
             cli._handle_resume_command("/resume target_session")
@@ -711,14 +711,14 @@ class TestResumeDisplayConfig:
 
     def test_default_config_has_resume_display(self):
         """DEFAULT_CONFIG in hermes_cli/config.py includes resume_display."""
-        from hermes_cli.config import DEFAULT_CONFIG
+        from hermes_agent.hermes_cli.config import DEFAULT_CONFIG
         display = DEFAULT_CONFIG.get("display", {})
         assert "resume_display" in display
         assert display["resume_display"] == "full"
 
     def test_cli_defaults_have_resume_display(self):
-        """cli.py load_cli_config defaults include resume_display."""
-        from cli import load_cli_config
+        """hermes_agent.cli.py load_cli_config defaults include resume_display."""
+        from hermes_agent.cli import load_cli_config
 
         with (
             patch("pathlib.Path.exists", return_value=False),

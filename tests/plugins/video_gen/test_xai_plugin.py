@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from agent import video_gen_registry
+from hermes_agent.agent import video_gen_registry
 
 
 @pytest.fixture(autouse=True)
@@ -15,7 +15,7 @@ def _reset_registry():
 
 
 def test_xai_provider_registers():
-    from plugins.video_gen.xai import XAIVideoGenProvider
+    from hermes_agent.plugins.video_gen.xai import XAIVideoGenProvider
 
     provider = XAIVideoGenProvider()
     video_gen_registry.register_provider(provider)
@@ -26,7 +26,7 @@ def test_xai_provider_registers():
 
 
 def test_xai_provider_lists_text_and_current_image_video_models():
-    from plugins.video_gen.xai import XAIVideoGenProvider
+    from hermes_agent.plugins.video_gen.xai import XAIVideoGenProvider
 
     models = XAIVideoGenProvider().list_models()
     ids = [model["id"] for model in models]
@@ -38,7 +38,7 @@ def test_xai_provider_lists_text_and_current_image_video_models():
 
 
 def test_xai_routes_default_models_by_modality():
-    from plugins.video_gen.xai import _resolve_model_for_modality
+    from hermes_agent.plugins.video_gen.xai import _resolve_model_for_modality
 
     assert _resolve_model_for_modality(
         "grok-imagine-video",
@@ -66,7 +66,7 @@ def test_xai_capabilities_text_and_image_only():
     """xAI was previously advertised with edit/extend operations. The
     simplified surface only exposes text-to-video and image-to-video —
     confirm those are the only modalities advertised."""
-    from plugins.video_gen.xai import XAIVideoGenProvider
+    from hermes_agent.plugins.video_gen.xai import XAIVideoGenProvider
 
     caps = XAIVideoGenProvider().capabilities()
     assert caps["modalities"] == ["text", "image"]
@@ -76,14 +76,14 @@ def test_xai_capabilities_text_and_image_only():
 
 
 def test_xai_unavailable_without_key(monkeypatch):
-    from plugins.video_gen.xai import XAIVideoGenProvider
+    from hermes_agent.plugins.video_gen.xai import XAIVideoGenProvider
 
     monkeypatch.delenv("XAI_API_KEY", raising=False)
     assert XAIVideoGenProvider().is_available() is False
 
 
 def test_xai_generate_requires_xai_key(monkeypatch):
-    from plugins.video_gen.xai import XAIVideoGenProvider
+    from hermes_agent.plugins.video_gen.xai import XAIVideoGenProvider
 
     monkeypatch.delenv("XAI_API_KEY", raising=False)
     result = XAIVideoGenProvider().generate("a happy dog")
@@ -97,11 +97,11 @@ def test_xai_available_with_oauth_only(monkeypatch):
     ``video_generate`` out of the toolbelt and the agent silently falls
     back to whatever skill advertises video generation (e.g. comfyui).
     """
-    import plugins.video_gen.xai as xai_plugin
+    import hermes_agent.plugins.video_gen.xai as xai_plugin
 
     monkeypatch.delenv("XAI_API_KEY", raising=False)
     monkeypatch.setattr(
-        "tools.xai_http.resolve_xai_http_credentials",
+        "hermes_agent.tools.xai_http.resolve_xai_http_credentials",
         lambda: {
             "provider": "xai-oauth",
             "api_key": "oauth-bearer-token",
@@ -116,11 +116,11 @@ def test_xai_resolved_credentials_threaded_through_request(monkeypatch):
     """OAuth-resolved creds must reach the HTTP layer — bug class where
     ``is_available()`` says yes but the request still hits with no key.
     """
-    import plugins.video_gen.xai as xai_plugin
+    import hermes_agent.plugins.video_gen.xai as xai_plugin
 
     monkeypatch.delenv("XAI_API_KEY", raising=False)
     monkeypatch.setattr(
-        "tools.xai_http.resolve_xai_http_credentials",
+        "hermes_agent.tools.xai_http.resolve_xai_http_credentials",
         lambda: {
             "provider": "xai-oauth",
             "api_key": "oauth-bearer-token",
@@ -138,7 +138,7 @@ def test_xai_resolved_credentials_threaded_through_request(monkeypatch):
 def test_xai_no_operation_kwarg():
     """The ABC's generate() signature no longer accepts 'operation'.
     Passing it through **kwargs should be ignored (forward-compat)."""
-    from plugins.video_gen.xai import XAIVideoGenProvider
+    from hermes_agent.plugins.video_gen.xai import XAIVideoGenProvider
 
     # We're not actually hitting the network — just verify the call
     # doesn't TypeError on the unexpected kwarg.

@@ -21,7 +21,7 @@ import sys
 
 import pytest
 
-from hermes_cli import web_server
+from hermes_agent.hermes_cli import web_server
 
 
 def test_web_server_exposes_pty_bridge_symbols():
@@ -38,13 +38,13 @@ def test_web_server_exposes_pty_bridge_symbols():
 @pytest.mark.skipif(not sys.platform.startswith("win"), reason="Windows-only")
 def test_web_server_uses_win_pty_bridge_on_windows():
     """On native Windows, web_server.PtyBridge must be the ConPTY backend."""
-    from hermes_cli.win_pty_bridge import WinPtyBridge
+    from hermes_agent.hermes_cli.win_pty_bridge import WinPtyBridge
 
     assert web_server.PtyBridge is WinPtyBridge
     assert web_server._PTY_BRIDGE_AVAILABLE is True
     # And the error class must be the one from the same module so isinstance
     # checks in /api/pty's spawn fallback path actually work.
-    from hermes_cli.win_pty_bridge import PtyUnavailableError as WinErr
+    from hermes_agent.hermes_cli.win_pty_bridge import PtyUnavailableError as WinErr
 
     assert web_server.PtyUnavailableError is WinErr
 
@@ -52,8 +52,8 @@ def test_web_server_uses_win_pty_bridge_on_windows():
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="POSIX-only")
 def test_web_server_uses_posix_pty_bridge_on_posix():
     """On POSIX, the bridge must be the fcntl/termios PtyBridge."""
-    from hermes_cli.pty_bridge import PtyBridge as PosixBridge
-    from hermes_cli.pty_bridge import PtyUnavailableError as PosixErr
+    from hermes_agent.hermes_cli.pty_bridge import PtyBridge as PosixBridge
+    from hermes_agent.hermes_cli.pty_bridge import PtyUnavailableError as PosixErr
 
     assert web_server.PtyBridge is PosixBridge
     assert web_server._PTY_BRIDGE_AVAILABLE is True

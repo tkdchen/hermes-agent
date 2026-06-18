@@ -35,7 +35,7 @@ def _run_gateway_import(hermes_home: Path, initial_env: dict[str, str]) -> dict[
         sys.path.insert(0, {str(PROJECT_ROOT)!r})
 
         try:
-            from gateway import run  # noqa: F401  — module import triggers bridge
+            from hermes_agent.gateway import run  # noqa: F401  — module import triggers bridge
         except Exception as exc:
             print(f"IMPORT_ERROR:{{type(exc).__name__}}:{{exc}}", file=sys.stderr)
             sys.exit(2)
@@ -69,7 +69,7 @@ def _run_gateway_import(hermes_home: Path, initial_env: dict[str, str]) -> dict[
     )
     if result.returncode != 0:
         pytest.fail(
-            f"gateway.run import failed (rc={result.returncode})\n"
+            f"hermes_agent.gateway.run import failed (rc={result.returncode})\n"
             f"stderr:\n{result.stderr}\nstdout:\n{result.stdout}"
         )
     out: dict[str, str] = {}

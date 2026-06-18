@@ -5,8 +5,8 @@ transport. api_mode="copilot_acp" is handled separately in run_agent.py.
 The profile captures auth + endpoint metadata for registry migration.
 """
 
-from providers import register_provider
-from providers.base import ProviderProfile
+from hermes_agent.providers import register_provider
+from hermes_agent.providers.base import ProviderProfile
 
 
 class CopilotACPProfile(ProviderProfile):

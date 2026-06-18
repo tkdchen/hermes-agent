@@ -35,7 +35,7 @@ import threading
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-logger = logging.getLogger("agent.lsp.install")
+logger = logging.getLogger("hermes_agent.agent.lsp.install")
 
 # Package-name → install-strategy hint registry.  Each entry is a
 # tuple of strategy name + package name + executable name.  When the

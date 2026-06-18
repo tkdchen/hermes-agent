@@ -6,15 +6,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Set
 
-from hermes_cli.config import get_env_value, load_config
-from hermes_cli.nous_account import (
+from hermes_agent.hermes_cli.config import get_env_value, load_config
+from hermes_agent.hermes_cli.nous_account import (
     NousPortalAccountInfo,
     format_nous_portal_entitlement_message,
     get_nous_portal_account_info,
 )
-from tools.managed_tool_gateway import is_managed_tool_gateway_ready
-from utils import is_truthy_value
-from tools.tool_backend_helpers import (
+from hermes_agent.tools.managed_tool_gateway import is_managed_tool_gateway_ready
+from hermes_agent.utils import is_truthy_value
+from hermes_agent.tools.tool_backend_helpers import (
     fal_key_is_configured,
     has_direct_modal_credentials,
     managed_nous_tools_enabled,
@@ -120,7 +120,7 @@ def _model_config_dict(config: Dict[str, object]) -> Dict[str, object]:
 
 
 def _toolset_enabled(config: Dict[str, object], toolset_key: str) -> bool:
-    from toolsets import resolve_toolset
+    from hermes_agent.toolsets import resolve_toolset
 
     platform_toolsets = config.get("platform_toolsets")
     if not isinstance(platform_toolsets, dict) or not platform_toolsets:
@@ -183,7 +183,7 @@ def _local_browser_runnable() -> bool:
     if not _has_agent_browser():
         return False
     try:
-        from tools.browser_tool import _chromium_installed, _using_lightpanda_engine
+        from hermes_agent.tools.browser_tool import _chromium_installed, _using_lightpanda_engine
     except Exception:
         # If the runtime probe can't be imported, fall back to binary presence
         # (prior behaviour) rather than crashing the setup/status surface.
@@ -237,7 +237,7 @@ def _local_stt_backend_available() -> bool:
     if get_env_value("HERMES_LOCAL_STT_COMMAND"):
         return True
     try:
-        from tools.transcription_tools import _HAS_FASTER_WHISPER
+        from hermes_agent.tools.transcription_tools import _HAS_FASTER_WHISPER
 
         return bool(_HAS_FASTER_WHISPER)
     except Exception:
@@ -423,7 +423,7 @@ def get_nous_subscription_features(
     direct_groq_stt = bool(get_env_value("GROQ_API_KEY"))
     direct_mistral_stt = bool(get_env_value("MISTRAL_API_KEY"))
     try:
-        from tools.transcription_tools import _HAS_FASTER_WHISPER
+        from hermes_agent.tools.transcription_tools import _HAS_FASTER_WHISPER
         local_stt_available = bool(_HAS_FASTER_WHISPER) or bool(
             get_env_value("HERMES_LOCAL_STT_COMMAND")
         )
@@ -1067,7 +1067,7 @@ def prompt_enable_tool_gateway(
         return set()
 
     try:
-        from hermes_cli.setup import prompt_checklist
+        from hermes_agent.hermes_cli.setup import prompt_checklist
     except Exception:
         return set()
 
@@ -1115,7 +1115,7 @@ def prompt_enable_tool_gateway(
 
     changed = apply_gateway_defaults(config, chosen_keys)
     if changed:
-        from hermes_cli.config import save_config
+        from hermes_agent.hermes_cli.config import save_config
 
         save_config(config)
         for key in sorted(changed):
@@ -1205,7 +1205,7 @@ def _run_nous_portal_login_only(*, capability: str) -> bool:
     the flow failed.
     """
     try:
-        from hermes_cli.auth import (
+        from hermes_agent.hermes_cli.auth import (
             _auth_store_lock,
             _load_auth_store,
             _nous_device_code_login,

@@ -23,7 +23,7 @@ from pathlib import Path
 
 import pytest
 
-from tui_gateway import server
+from hermes_agent.tui_gateway import server
 
 
 def _fixture(tmp_path: Path):

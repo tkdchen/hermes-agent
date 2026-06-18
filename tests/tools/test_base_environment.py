@@ -6,7 +6,7 @@ init_session() failure handling, and the CWD marker contract.
 
 from unittest.mock import MagicMock
 
-from tools.environments.base import BaseEnvironment
+from hermes_agent.tools.environments.base import BaseEnvironment
 
 
 class _TestableEnv(BaseEnvironment):

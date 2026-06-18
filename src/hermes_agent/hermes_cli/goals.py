@@ -216,8 +216,8 @@ def _get_session_db() -> Optional[Any]:
     non-standard launchers can still use the GoalManager.
     """
     try:
-        from hermes_constants import get_hermes_home
-        from hermes_state import SessionDB
+        from hermes_agent.hermes_constants import get_hermes_home
+        from hermes_agent.hermes_state import SessionDB
 
         home = str(get_hermes_home())
     except Exception as exc:  # pragma: no cover
@@ -303,7 +303,7 @@ def _goal_judge_max_tokens() -> int:
     back to the default rather than crashing the goal loop.
     """
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
 
         cfg = load_config()
         value = (
@@ -402,7 +402,7 @@ def judge_goal(
         return "continue", "empty response (nothing to evaluate)", False
 
     try:
-        from agent.auxiliary_client import get_auxiliary_extra_body, get_text_auxiliary_client
+        from hermes_agent.agent.auxiliary_client import get_auxiliary_extra_body, get_text_auxiliary_client
     except Exception as exc:
         logger.debug("goal judge: auxiliary client import failed: %s", exc)
         return "continue", "auxiliary client unavailable", False

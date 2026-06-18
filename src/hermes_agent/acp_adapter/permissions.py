@@ -131,7 +131,7 @@ def make_approval_callback(
         allow_permanent: bool = True,
         **_: object,
     ) -> str:
-        from agent.async_utils import safe_schedule_threadsafe
+        from hermes_agent.agent.async_utils import safe_schedule_threadsafe
 
         options = _build_permission_options(allow_permanent=allow_permanent)
 

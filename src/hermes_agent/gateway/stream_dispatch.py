@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Optional
 
-from gateway.stream_events import (
+from hermes_agent.gateway.stream_events import (
     Commentary,
     GatewayNotice,
     LongToolHint,
@@ -34,7 +34,7 @@ from gateway.stream_events import (
     ToolCallFinished,
 )
 
-logger = logging.getLogger("gateway.stream_events")
+logger = logging.getLogger("hermes_agent.gateway.stream_events")
 
 
 class GatewayEventDispatcher:

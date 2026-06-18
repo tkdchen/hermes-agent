@@ -28,8 +28,8 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from agent.iteration_budget import IterationBudget
-from agent.model_metadata import estimate_request_tokens_rough
+from hermes_agent.agent.iteration_budget import IterationBudget
+from hermes_agent.agent.model_metadata import estimate_request_tokens_rough
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ def build_turn_context(
 
     # Tell auxiliary_client what the live main provider/model are for this turn.
     try:
-        from agent.auxiliary_client import set_runtime_main
+        from hermes_agent.agent.auxiliary_client import set_runtime_main
         set_runtime_main(
             getattr(agent, "provider", "") or "",
             getattr(agent, "model", "") or "",
@@ -318,7 +318,7 @@ def build_turn_context(
     # Plugin hook: pre_llm_call (context injected into user message, not system prompt).
     plugin_user_context = ""
     try:
-        from hermes_cli.plugins import invoke_hook as _invoke_hook
+        from hermes_agent.hermes_cli.plugins import invoke_hook as _invoke_hook
         _pre_results = _invoke_hook(
             "pre_llm_call",
             session_id=agent.session_id,

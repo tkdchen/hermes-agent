@@ -14,7 +14,7 @@ import importlib
 
 import pytest
 
-gateway_run = importlib.import_module("gateway.run")
+gateway_run = importlib.import_module("hermes_agent.gateway.run")
 _build_document_context_note = gateway_run._build_document_context_note
 
 

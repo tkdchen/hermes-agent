@@ -288,7 +288,7 @@ def _push_completion_event(
     silently-lost result, so we log loudly.
     """
     try:
-        from tools.process_registry import process_registry
+        from hermes_agent.tools.process_registry import process_registry
     except Exception as exc:  # pragma: no cover
         logger.error(
             "Async delegation %s finished but process_registry import failed; "

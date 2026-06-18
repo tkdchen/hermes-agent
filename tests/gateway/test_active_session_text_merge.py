@@ -29,14 +29,14 @@ sys.modules.setdefault("telegram", _tg)
 sys.modules.setdefault("telegram.constants", _tg.constants)
 sys.modules.setdefault("telegram.ext", types.ModuleType("telegram.ext"))
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
     SendResult,
 )
-from gateway.session import SessionSource, build_session_key
+from hermes_agent.gateway.session import SessionSource, build_session_key
 
 
 def _make_event(
@@ -291,7 +291,7 @@ async def test_control_and_clarify_messages_bypass_text_debounce():
     adapter._active_sessions[session_key] = asyncio.Event()
     adapter._message_handler = AsyncMock(return_value=None)
 
-    with patch("tools.clarify_gateway.get_pending_for_session", return_value=object()):
+    with patch("hermes_agent.tools.clarify_gateway.get_pending_for_session", return_value=object()):
         await adapter.handle_message(answer)
 
     adapter._message_handler.assert_awaited_once_with(answer)

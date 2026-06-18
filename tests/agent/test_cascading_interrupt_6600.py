@@ -29,7 +29,7 @@ from unittest.mock import MagicMock
 import httpx
 import pytest
 
-from agent import chat_completion_helpers as cch
+from hermes_agent.agent import chat_completion_helpers as cch
 
 
 class _FakeInterruptError(Exception):

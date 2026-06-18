@@ -21,9 +21,9 @@ import subprocess
 from pathlib import Path
 from urllib.parse import urlparse
 
-from hermes_constants import get_hermes_home
+from hermes_agent.hermes_constants import get_hermes_home
 from typing import Any, Dict, List, Optional, Tuple
-from utils import base_url_host_matches, normalize_proxy_env_vars
+from hermes_agent.utils import base_url_host_matches, normalize_proxy_env_vars
 
 # NOTE: `import anthropic` is deliberately NOT at module top — the SDK pulls
 # ~220 ms of imports (anthropic.types, anthropic.lib.tools._beta_runner, etc.)
@@ -39,7 +39,7 @@ def _get_anthropic_sdk():
     global _anthropic_sdk
     if _anthropic_sdk is ...:
         try:
-            from tools.lazy_deps import ensure as _lazy_ensure
+            from hermes_agent.tools.lazy_deps import ensure as _lazy_ensure
             _lazy_ensure("provider.anthropic", prompt=False)
         except ImportError:
             pass
@@ -657,7 +657,7 @@ def _build_anthropic_client_with_bearer_hook(
     normalize_proxy_env_vars()
 
     from httpx import Timeout
-    from agent.azure_identity_adapter import build_bearer_http_client
+    from hermes_agent.agent.azure_identity_adapter import build_bearer_http_client
 
     _read_timeout = timeout if (isinstance(timeout, (int, float)) and timeout > 0) else 900.0
     timeout_obj = Timeout(timeout=float(_read_timeout), connect=10.0)
@@ -1305,7 +1305,7 @@ def run_hermes_oauth_login_pure() -> Optional[Dict[str, Any]]:
     print()
 
     try:
-        from hermes_cli.auth import _can_open_graphical_browser as _can_open_gui
+        from hermes_agent.hermes_cli.auth import _can_open_graphical_browser as _can_open_gui
     except Exception:
         _can_open_gui = lambda: True  # noqa: E731 — degrade to prior behavior
 
@@ -1485,7 +1485,7 @@ def _normalize_tool_input_schema(schema: Any) -> Dict[str, Any]:
     if not schema:
         return {"type": "object", "properties": {}}
 
-    from tools.schema_sanitizer import strip_nullable_unions
+    from hermes_agent.tools.schema_sanitizer import strip_nullable_unions
 
     normalized = strip_nullable_unions(schema, keep_nullable_hint=False)
     if not isinstance(normalized, dict):

@@ -380,7 +380,7 @@ def lookup_context_length(model: str,
     if not model_id:
         return None
     try:
-        from agent.model_metadata import (
+        from hermes_agent.agent.model_metadata import (
             DEFAULT_FALLBACK_CONTEXT,
             get_model_context_length,
         )

@@ -2,7 +2,7 @@
 
 import json
 
-from agent.tool_guardrails import (
+from hermes_agent.agent.tool_guardrails import (
     ToolCallGuardrailConfig,
     ToolCallGuardrailController,
     ToolCallSignature,

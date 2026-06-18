@@ -20,7 +20,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from agent.lsp.install import INSTALL_RECIPES
+from hermes_agent.agent.lsp.install import INSTALL_RECIPES
 
 
 # ---------------------------------------------------------------------------
@@ -50,7 +50,7 @@ def test_install_npm_passes_extras_to_npm_command(tmp_path, monkeypatch):
         # will return None, which is fine for this test.
         return MagicMock(returncode=0, stderr="")
 
-    from agent.lsp import install as install_mod
+    from hermes_agent.agent.lsp import install as install_mod
 
     monkeypatch.setattr(install_mod.subprocess, "run", fake_run)
     monkeypatch.setattr(install_mod.shutil, "which", lambda c: "/usr/bin/npm" if c == "npm" else None)
@@ -77,7 +77,7 @@ def test_install_npm_works_without_extras(tmp_path, monkeypatch):
         captured["cmd"] = cmd
         return MagicMock(returncode=0, stderr="")
 
-    from agent.lsp import install as install_mod
+    from hermes_agent.agent.lsp import install as install_mod
 
     monkeypatch.setattr(install_mod.subprocess, "run", fake_run)
     monkeypatch.setattr(install_mod.shutil, "which", lambda c: "/usr/bin/npm" if c == "npm" else None)
@@ -98,7 +98,7 @@ def test_existing_binary_finds_windows_wrapper_in_staging(tmp_path, monkeypatch)
     """Installed Windows shims should satisfy later status/probe calls."""
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
 
-    from agent.lsp import install as install_mod
+    from hermes_agent.agent.lsp import install as install_mod
 
     wrapper = install_mod.hermes_lsp_bin_dir() / "pyright-langserver.cmd"
     wrapper.write_text("@echo off\n")
@@ -115,7 +115,7 @@ def test_install_pip_finds_windows_scripts_launcher(tmp_path, monkeypatch):
     """pip console scripts can land in Scripts/ on native Windows."""
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
 
-    from agent.lsp import install as install_mod
+    from hermes_agent.agent.lsp import install as install_mod
 
     def fake_run(cmd, **kwargs):
         scripts_dir = install_mod.hermes_lsp_bin_dir().parent / "python-packages" / "Scripts"
@@ -143,7 +143,7 @@ def test_install_pip_finds_windows_scripts_launcher(tmp_path, monkeypatch):
 def test_backend_warnings_quiet_when_bash_not_installed(tmp_path, monkeypatch):
     """No bash → no warning."""
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    from agent.lsp import cli as lsp_cli
+    from hermes_agent.agent.lsp import cli as lsp_cli
 
     with patch("shutil.which", return_value=None):
         notes = lsp_cli._backend_warnings()
@@ -153,7 +153,7 @@ def test_backend_warnings_quiet_when_bash_not_installed(tmp_path, monkeypatch):
 def test_backend_warnings_quiet_when_bash_and_shellcheck_both_present(tmp_path, monkeypatch):
     """Both installed → no warning."""
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    from agent.lsp import cli as lsp_cli
+    from hermes_agent.agent.lsp import cli as lsp_cli
 
     def which(name):
         return f"/usr/bin/{name}"  # both found
@@ -166,7 +166,7 @@ def test_backend_warnings_quiet_when_bash_and_shellcheck_both_present(tmp_path, 
 def test_backend_warnings_fires_when_bash_installed_but_shellcheck_missing(tmp_path, monkeypatch):
     """The exact scenario from the bug report."""
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    from agent.lsp import cli as lsp_cli
+    from hermes_agent.agent.lsp import cli as lsp_cli
 
     def which(name):
         if name == "bash-language-server":
@@ -190,7 +190,7 @@ def test_status_output_includes_backend_warnings_section(tmp_path, monkeypatch):
             return "/fake/bin/bash-language-server"
         return None
 
-    from agent.lsp import cli as lsp_cli
+    from hermes_agent.agent.lsp import cli as lsp_cli
 
     buf = io.StringIO()
     with patch("shutil.which", side_effect=which), redirect_stdout(buf):
@@ -213,7 +213,7 @@ def test_npx_tsc_missing_treated_as_skipped():
     semantic tier (gated on ``success or skipped``) is skipped — the user
     gets a useless tooling-error message instead of real diagnostics.
     """
-    from tools.file_operations import _looks_like_linter_unusable
+    from hermes_agent.tools.file_operations import _looks_like_linter_unusable
 
     npx_failure_output = (
         "                                                                               \n"
@@ -229,7 +229,7 @@ def test_npx_tsc_missing_treated_as_skipped():
 
 def test_real_lint_error_not_classified_as_unusable():
     """A genuine TypeScript type error must NOT be misclassified."""
-    from tools.file_operations import _looks_like_linter_unusable
+    from hermes_agent.tools.file_operations import _looks_like_linter_unusable
 
     real_error = (
         "bad.ts:5:1 - error TS2322: Type 'number' is not assignable to type 'string'.\n"
@@ -242,7 +242,7 @@ def test_real_lint_error_not_classified_as_unusable():
 
 def test_unknown_base_cmd_returns_false():
     """Unfamiliar linters fall through and use the normal error path."""
-    from tools.file_operations import _looks_like_linter_unusable
+    from hermes_agent.tools.file_operations import _looks_like_linter_unusable
 
     assert _looks_like_linter_unusable("eslint", "any output") is False
     assert _looks_like_linter_unusable("", "anything") is False
@@ -251,8 +251,8 @@ def test_unknown_base_cmd_returns_false():
 def test_check_lint_returns_skipped_when_npx_tsc_unusable(tmp_path):
     """Integration: _check_lint sees npx exit non-zero with the npx banner
     and returns a ``skipped`` LintResult so LSP can still run."""
-    from tools.environments.local import LocalEnvironment
-    from tools.file_operations import ShellFileOperations
+    from hermes_agent.tools.environments.local import LocalEnvironment
+    from hermes_agent.tools.file_operations import ShellFileOperations
 
     ts_file = tmp_path / "bad.ts"
     ts_file.write_text("const x: string = 42;\n")
@@ -285,8 +285,8 @@ def test_check_lint_returns_skipped_when_npx_tsc_unusable(tmp_path):
 
 def test_check_lint_returns_error_for_real_ts_type_errors(tmp_path):
     """Sanity: real TypeScript errors still go through the error path."""
-    from tools.environments.local import LocalEnvironment
-    from tools.file_operations import ShellFileOperations
+    from hermes_agent.tools.environments.local import LocalEnvironment
+    from hermes_agent.tools.file_operations import ShellFileOperations
 
     ts_file = tmp_path / "bad.ts"
     ts_file.write_text("const x: string = 42;\n")

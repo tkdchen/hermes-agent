@@ -6,7 +6,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from hermes_cli import active_sessions
+from hermes_agent.hermes_cli import active_sessions
 
 
 def test_resolve_max_concurrent_sessions_values(caplog):
@@ -80,7 +80,7 @@ def test_active_session_registry_prunes_dead_pids(tmp_path, monkeypatch):
     home = tmp_path / ".hermes"
     monkeypatch.setenv("HERMES_HOME", str(home))
     monkeypatch.setattr(
-        "gateway.status._pid_exists",
+        "hermes_agent.gateway.status._pid_exists",
         lambda pid: int(pid) != 99999999,
     )
     runtime = home / "runtime"
@@ -122,7 +122,7 @@ def test_pid_alive_uses_safe_pid_exists_without_signalling(monkeypatch):
         lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("os.kill used")),
     )
     monkeypatch.setattr(
-        "gateway.status._pid_exists",
+        "hermes_agent.gateway.status._pid_exists",
         lambda pid: checked.append(int(pid)) or True,
     )
 
@@ -280,7 +280,7 @@ def test_cross_process_acquire_claims_only_one_last_slot(tmp_path, monkeypatch):
 def test_pid_start_time_mismatch_prunes_reused_pid(tmp_path, monkeypatch):
     home = tmp_path / ".hermes"
     monkeypatch.setenv("HERMES_HOME", str(home))
-    monkeypatch.setattr("gateway.status._pid_exists", lambda _pid: True)
+    monkeypatch.setattr("hermes_agent.gateway.status._pid_exists", lambda _pid: True)
     monkeypatch.setattr(active_sessions, "_process_start_time", lambda _pid: 200.0)
     runtime = home / "runtime"
     runtime.mkdir(parents=True)

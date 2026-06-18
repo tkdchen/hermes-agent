@@ -30,13 +30,13 @@ except ImportError:  # pragma: no cover - non-Windows
     msvcrt = None
 from datetime import datetime, timedelta
 from pathlib import Path
-from hermes_constants import get_hermes_home
+from hermes_agent.hermes_constants import get_hermes_home
 from typing import Optional, Dict, List, Any, Union
 
 logger = logging.getLogger(__name__)
 
-from hermes_time import now as _hermes_now
-from utils import atomic_replace
+from hermes_agent.hermes_time import now as _hermes_now
+from hermes_agent.utils import atomic_replace
 
 try:
     from croniter import croniter

@@ -29,11 +29,11 @@ def hermes_env(tmp_path, monkeypatch):
 
     # Reload modules that cache get_hermes_home() at import time.
     import importlib
-    import hermes_constants
+    import hermes_agent.hermes_constants as hermes_constants
     importlib.reload(hermes_constants)
-    import cron.jobs
+    import hermes_agent.cron.jobs
     importlib.reload(cron.jobs)
-    import cron.scheduler
+    import hermes_agent.cron.scheduler
     importlib.reload(cron.scheduler)
 
     return home
@@ -45,14 +45,14 @@ def hermes_env(tmp_path, monkeypatch):
 
 
 def test_create_job_no_agent_requires_script(hermes_env):
-    from cron.jobs import create_job
+    from hermes_agent.cron.jobs import create_job
 
     with pytest.raises(ValueError, match="no_agent=True requires a script"):
         create_job(prompt=None, schedule="every 5m", no_agent=True)
 
 
 def test_create_job_no_agent_stores_field(hermes_env):
-    from cron.jobs import create_job
+    from hermes_agent.cron.jobs import create_job
 
     script_path = hermes_env / "scripts" / "watchdog.sh"
     script_path.write_text("#!/bin/bash\necho hi\n")
@@ -71,14 +71,14 @@ def test_create_job_no_agent_stores_field(hermes_env):
 
 
 def test_create_job_default_is_not_no_agent(hermes_env):
-    from cron.jobs import create_job
+    from hermes_agent.cron.jobs import create_job
 
     job = create_job(prompt="say hi", schedule="every 5m", deliver="local")
     assert job.get("no_agent") is False
 
 
 def test_update_job_roundtrips_no_agent_flag(hermes_env):
-    from cron.jobs import create_job, update_job, get_job
+    from hermes_agent.cron.jobs import create_job, update_job, get_job
 
     script_path = hermes_env / "scripts" / "w.sh"
     script_path.write_text("echo hi\n")
@@ -99,7 +99,7 @@ def test_update_job_roundtrips_no_agent_flag(hermes_env):
 
 
 def test_cronjob_tool_create_no_agent_without_script_errors(hermes_env):
-    from tools.cronjob_tools import cronjob
+    from hermes_agent.tools.cronjob_tools import cronjob
 
     result = json.loads(
         cronjob(action="create", schedule="every 5m", no_agent=True, deliver="local")
@@ -109,7 +109,7 @@ def test_cronjob_tool_create_no_agent_without_script_errors(hermes_env):
 
 
 def test_cronjob_tool_create_no_agent_with_script_succeeds(hermes_env):
-    from tools.cronjob_tools import cronjob
+    from hermes_agent.tools.cronjob_tools import cronjob
 
     script_path = hermes_env / "scripts" / "alert.sh"
     script_path.write_text("#!/bin/bash\necho alert\n")
@@ -129,7 +129,7 @@ def test_cronjob_tool_create_no_agent_with_script_succeeds(hermes_env):
 
 
 def test_cronjob_tool_update_toggles_no_agent(hermes_env):
-    from tools.cronjob_tools import cronjob
+    from hermes_agent.tools.cronjob_tools import cronjob
 
     script_path = hermes_env / "scripts" / "w.sh"
     script_path.write_text("echo hi\n")
@@ -156,7 +156,7 @@ def test_cronjob_tool_update_toggles_no_agent(hermes_env):
 
 def test_cronjob_tool_update_no_agent_without_script_errors(hermes_env):
     """Flipping no_agent=True on a job that has no script must fail."""
-    from tools.cronjob_tools import cronjob
+    from hermes_agent.tools.cronjob_tools import cronjob
 
     created = json.loads(
         cronjob(action="create", schedule="every 5m", prompt="do a thing", deliver="local")
@@ -170,7 +170,7 @@ def test_cronjob_tool_update_no_agent_without_script_errors(hermes_env):
 
 def test_cronjob_tool_create_does_not_require_prompt_when_no_agent(hermes_env):
     """The 'prompt or skill required' rule is relaxed for no_agent jobs."""
-    from tools.cronjob_tools import cronjob
+    from hermes_agent.tools.cronjob_tools import cronjob
 
     script_path = hermes_env / "scripts" / "w.sh"
     script_path.write_text("echo hi\n")
@@ -194,8 +194,8 @@ def test_cronjob_tool_create_does_not_require_prompt_when_no_agent(hermes_env):
 
 def test_run_job_no_agent_success_returns_script_stdout(hermes_env):
     """Happy path: script exits 0 with output, delivered verbatim."""
-    from cron.jobs import create_job
-    from cron.scheduler import run_job
+    from hermes_agent.cron.jobs import create_job
+    from hermes_agent.cron.scheduler import run_job
 
     script_path = hermes_env / "scripts" / "alert.sh"
     script_path.write_text("#!/bin/bash\necho 'RAM 92% on host'\n")
@@ -212,8 +212,8 @@ def test_run_job_no_agent_success_returns_script_stdout(hermes_env):
 
 def test_run_job_no_agent_empty_output_is_silent(hermes_env):
     """Empty stdout → SILENT_MARKER, which suppresses delivery downstream."""
-    from cron.jobs import create_job
-    from cron.scheduler import run_job, SILENT_MARKER
+    from hermes_agent.cron.jobs import create_job
+    from hermes_agent.cron.scheduler import run_job, SILENT_MARKER
 
     script_path = hermes_env / "scripts" / "quiet.sh"
     script_path.write_text("#!/bin/bash\n# nothing to say\n")
@@ -229,8 +229,8 @@ def test_run_job_no_agent_empty_output_is_silent(hermes_env):
 
 def test_run_job_no_agent_wake_gate_is_silent(hermes_env):
     """wakeAgent=false gate in stdout triggers a silent run."""
-    from cron.jobs import create_job
-    from cron.scheduler import run_job, SILENT_MARKER
+    from hermes_agent.cron.jobs import create_job
+    from hermes_agent.cron.scheduler import run_job, SILENT_MARKER
 
     script_path = hermes_env / "scripts" / "gated.sh"
     script_path.write_text('#!/bin/bash\necho \'{"wakeAgent": false}\'\n')
@@ -245,8 +245,8 @@ def test_run_job_no_agent_wake_gate_is_silent(hermes_env):
 
 def test_run_job_no_agent_script_failure_delivers_error(hermes_env):
     """Non-zero exit → success=False, error alert is the delivered message."""
-    from cron.jobs import create_job
-    from cron.scheduler import run_job
+    from hermes_agent.cron.jobs import create_job
+    from hermes_agent.cron.scheduler import run_job
 
     script_path = hermes_env / "scripts" / "broken.sh"
     script_path.write_text("#!/bin/bash\necho oops >&2\nexit 3\n")
@@ -263,7 +263,7 @@ def test_run_job_no_agent_script_failure_delivers_error(hermes_env):
 
 def test_run_job_no_agent_never_invokes_aiagent(hermes_env):
     """no_agent jobs must NOT import/construct the AIAgent."""
-    from cron.jobs import create_job
+    from hermes_agent.cron.jobs import create_job
 
     script_path = hermes_env / "scripts" / "alert.sh"
     script_path.write_text("#!/bin/bash\necho alert\n")
@@ -272,8 +272,8 @@ def test_run_job_no_agent_never_invokes_aiagent(hermes_env):
         prompt=None, schedule="every 5m", script="alert.sh", no_agent=True, deliver="local"
     )
 
-    with patch("run_agent.AIAgent") as ai_mock:
-        from cron.scheduler import run_job
+    with patch("hermes_agent.run_agent.AIAgent") as ai_mock:
+        from hermes_agent.cron.scheduler import run_job
 
         run_job(job)
 
@@ -287,7 +287,7 @@ def test_run_job_no_agent_never_invokes_aiagent(hermes_env):
 
 def test_run_job_script_shell_script_runs_via_bash(hermes_env):
     """.sh files should execute under /bin/bash even without a shebang line."""
-    from cron.scheduler import _run_job_script
+    from hermes_agent.cron.scheduler import _run_job_script
 
     script_path = hermes_env / "scripts" / "shelly.sh"
     # No shebang — relies on the interpreter-by-extension rule.
@@ -299,7 +299,7 @@ def test_run_job_script_shell_script_runs_via_bash(hermes_env):
 
 
 def test_run_job_script_bash_extension_also_runs_via_bash(hermes_env):
-    from cron.scheduler import _run_job_script
+    from hermes_agent.cron.scheduler import _run_job_script
 
     script_path = hermes_env / "scripts" / "thing.bash"
     script_path.write_text('printf "via bash\\n"\n')
@@ -311,7 +311,7 @@ def test_run_job_script_bash_extension_also_runs_via_bash(hermes_env):
 
 def test_run_job_script_python_still_runs_via_python(hermes_env):
     """Regression: .py files must keep running via sys.executable."""
-    from cron.scheduler import _run_job_script
+    from hermes_agent.cron.scheduler import _run_job_script
 
     script_path = hermes_env / "scripts" / "py.py"
     script_path.write_text("import sys\nprint(f'python {sys.version_info.major}')\n")
@@ -323,7 +323,7 @@ def test_run_job_script_python_still_runs_via_python(hermes_env):
 
 def test_run_job_script_path_traversal_still_blocked(hermes_env):
     """Security regression: shell-script support must NOT loosen containment."""
-    from cron.scheduler import _run_job_script
+    from hermes_agent.cron.scheduler import _run_job_script
 
     # Absolute path outside the scripts dir should be rejected.
     ok, output = _run_job_script("/etc/passwd")

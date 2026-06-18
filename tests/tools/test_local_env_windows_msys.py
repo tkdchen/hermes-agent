@@ -21,8 +21,8 @@ on the real OS.
 from unittest.mock import patch
 
 
-from tools.environments import local as local_mod
-from tools.environments.local import (
+from hermes_agent.tools.environments import local as local_mod
+from hermes_agent.tools.environments.local import (
     LocalEnvironment,
     _msys_to_windows_path,
     _resolve_safe_cwd,

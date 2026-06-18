@@ -20,7 +20,7 @@ import json
 import logging
 from typing import Any, Optional, Tuple
 
-logger = logging.getLogger("agent.lsp.protocol")
+logger = logging.getLogger("hermes_agent.agent.lsp.protocol")
 
 # LSP error codes we care about.  Full list in
 # https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#errorCodes

@@ -30,7 +30,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from agent.tool_result_classification import (
+from hermes_agent.agent.tool_result_classification import (
     FILE_MUTATING_TOOL_NAMES as _FILE_MUTATING_TOOLS,
 )
 
@@ -94,7 +94,7 @@ def _is_mcp_tool_parallel_safe(tool_name: str) -> bool:
     Returns False if the MCP module is not available.
     """
     try:
-        from tools.mcp_tool import is_mcp_tool_parallel_safe
+        from hermes_agent.tools.mcp_tool import is_mcp_tool_parallel_safe
         return is_mcp_tool_parallel_safe(tool_name)
     except Exception:
         return False

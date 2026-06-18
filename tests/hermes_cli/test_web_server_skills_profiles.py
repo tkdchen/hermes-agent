@@ -23,8 +23,8 @@ def _write_skill(skills_dir, name, description="test skill"):
 @pytest.fixture
 def isolated_profiles(tmp_path, monkeypatch, _isolate_hermes_home):
     """Isolated default home + one named profile, each with its own skills."""
-    from hermes_constants import get_hermes_home
-    from hermes_cli import profiles
+    from hermes_agent.hermes_constants import get_hermes_home
+    from hermes_agent.hermes_cli import profiles
 
     default_home = get_hermes_home()
     profiles_root = default_home / "profiles"
@@ -48,9 +48,9 @@ def client(monkeypatch, isolated_profiles):
     except ImportError:
         pytest.skip("fastapi/starlette not installed")
 
-    import hermes_state
-    from hermes_constants import get_hermes_home
-    from hermes_cli.web_server import app, _SESSION_HEADER_NAME, _SESSION_TOKEN
+    import hermes_agent.hermes_state as hermes_state
+    from hermes_agent.hermes_constants import get_hermes_home
+    from hermes_agent.hermes_cli.web_server import app, _SESSION_HEADER_NAME, _SESSION_TOKEN
 
     monkeypatch.setattr(hermes_state, "DEFAULT_DB_PATH", get_hermes_home() / "state.db")
     c = TestClient(app)
@@ -117,7 +117,7 @@ class TestProfileScopedSkills:
     def test_scope_restores_module_globals(self, client, isolated_profiles):
         """The SKILLS_DIR swap is per-request; the module global must be
         restored even after a scoped call (cron-style locked swap)."""
-        import tools.skills_tool as skills_tool
+        import hermes_agent.tools.skills_tool as skills_tool
 
         before = skills_tool.SKILLS_DIR
         client.get("/api/skills", params={"profile": "worker_alpha"})
@@ -160,7 +160,7 @@ class TestProfileScopedHubActions:
         """Hub installs must go through a fresh ``hermes -p <profile>``
         subprocess — the in-process scope can't reach skills_hub's
         import-time SKILLS_DIR binding."""
-        import hermes_cli.web_server as web_server
+        import hermes_agent.hermes_cli.web_server as web_server
 
         calls = []
 
@@ -187,7 +187,7 @@ class TestProfileScopedHubActions:
     def test_hub_install_without_profile_keeps_legacy_argv(
         self, client, isolated_profiles, monkeypatch
     ):
-        import hermes_cli.web_server as web_server
+        import hermes_agent.hermes_cli.web_server as web_server
 
         calls = []
 

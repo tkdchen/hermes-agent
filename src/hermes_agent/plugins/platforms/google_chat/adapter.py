@@ -116,7 +116,7 @@ def _load_google_modules() -> bool:
     GOOGLE_CHAT_AVAILABLE = True
     return True
 
-from gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.config import Platform, PlatformConfig
 
 # Trigger registration of the dynamic ``google_chat`` enum member at module
 # import time.  ``_missing_()`` caches the pseudo-member in
@@ -127,8 +127,8 @@ from gateway.config import Platform, PlatformConfig
 # Built-ins avoid this because they have explicit enum members; plugin
 # platforms earn the attribute by asking for it once.
 Platform("google_chat")
-from gateway.platforms.helpers import MessageDeduplicator
-from gateway.platforms.base import (
+from hermes_agent.gateway.platforms.helpers import MessageDeduplicator
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
@@ -147,7 +147,7 @@ from gateway.platforms.base import (
 # ``hermes_plugins.platforms__google_chat.adapter`` once the plugin
 # loader namespaces this module, which would silently break every
 # downstream log-monitor that greps for ``gateway.platforms.google_chat``.
-logger = logging.getLogger("gateway.platforms.google_chat")
+logger = logging.getLogger("hermes_agent.gateway.platforms.google_chat")
 
 
 # Regex validating Pub/Sub subscription path format.
@@ -522,7 +522,7 @@ class GoogleChatAdapter(BasePlatformAdapter):
         # made the in-memory version of this heuristic flaky for
         # multi-restart sessions).
         try:
-            from hermes_constants import get_hermes_home as _get_hermes_home
+            from hermes_agent.hermes_constants import get_hermes_home as _get_hermes_home
             _hermes_home = _get_hermes_home()
         except (ModuleNotFoundError, ImportError):
             _hermes_home = _Path.home() / ".hermes"
@@ -676,7 +676,7 @@ class GoogleChatAdapter(BasePlatformAdapter):
             logger.warning("[GoogleChat] Loop not accepting callbacks; dropping event")
             return
         try:
-            from agent.async_utils import safe_schedule_threadsafe
+            from hermes_agent.agent.async_utils import safe_schedule_threadsafe
             future = safe_schedule_threadsafe(
                 coro, loop,
                 logger=logger,
@@ -1175,7 +1175,7 @@ class GoogleChatAdapter(BasePlatformAdapter):
             # default log configurations never surface it. Operators must
             # enable DEBUG logging AND set this env var to see the dump.
             try:
-                from agent.redact import redact_sensitive_text
+                from hermes_agent.agent.redact import redact_sensitive_text
 
                 dump = redact_sensitive_text(json.dumps(envelope))
             except Exception:
@@ -3037,14 +3037,14 @@ def interactive_setup() -> None:
     prompt for env vars, persist them to ``~/.hermes/.env`` so the next
     gateway restart picks them up.
     """
-    from hermes_cli.cli_output import (
+    from hermes_agent.hermes_cli.cli_output import (
         print_info,
         print_success,
         print_warning,
         prompt,
         prompt_yes_no,
     )
-    from hermes_cli.config import get_env_value, save_env_value
+    from hermes_agent.hermes_cli.config import get_env_value, save_env_value
 
     existing_sub = get_env_value("GOOGLE_CHAT_SUBSCRIPTION_NAME")
     if existing_sub:

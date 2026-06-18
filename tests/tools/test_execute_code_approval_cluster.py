@@ -21,8 +21,8 @@ import threading
 
 import pytest
 
-from tools import approval as A
-from tools.thread_context import propagate_context_to_thread
+from hermes_agent.tools import approval as A
+from hermes_agent.tools.thread_context import propagate_context_to_thread
 
 
 # ---------------------------------------------------------------------------
@@ -30,7 +30,7 @@ from tools.thread_context import propagate_context_to_thread
 # ---------------------------------------------------------------------------
 
 def test_helper_propagates_contextvar_and_approval_callback():
-    from tools import terminal_tool as TT
+    from hermes_agent.tools import terminal_tool as TT
 
     probe: contextvars.ContextVar[str] = contextvars.ContextVar(
         "cluster_probe", default="unset"
@@ -58,7 +58,7 @@ def test_helper_propagates_contextvar_and_approval_callback():
 def test_helper_clears_callbacks_on_teardown():
     """A recycled worker thread must not retain the propagated callback after
     the wrapped target finishes (mirrors the GHSA-qg5c-hvr5-hjgr teardown)."""
-    from tools import terminal_tool as TT
+    from hermes_agent.tools import terminal_tool as TT
 
     sentinel = object()
     TT.set_approval_callback(sentinel)
@@ -86,7 +86,7 @@ def test_both_rpc_threads_use_propagation_helper():
     propagate_context_to_thread, or the gateway approval bypass (#33057)
     silently returns."""
     import inspect
-    import tools.code_execution_tool as cet
+    import hermes_agent.tools.code_execution_tool as cet
 
     src = inspect.getsource(cet)
     assert "propagate_context_to_thread(_rpc_server_loop)" in src, (
@@ -281,7 +281,7 @@ def test_guard_session_yolo_bypasses(gw_session):
 # ---------------------------------------------------------------------------
 
 def test_env_scrub_hermes_allowlist_and_secret_blocks():
-    from tools.code_execution_tool import _scrub_child_env
+    from hermes_agent.tools.code_execution_tool import _scrub_child_env
 
     env = {
         # operational allowlist → kept
@@ -311,7 +311,7 @@ def test_env_scrub_hermes_allowlist_and_secret_blocks():
 def test_env_scrub_passthrough_overrides_secret_block():
     """A skill/config-declared passthrough var is an explicit user opt-in and
     passes even if it matches a secret substring (precedence is intentional)."""
-    from tools.code_execution_tool import _scrub_child_env
+    from hermes_agent.tools.code_execution_tool import _scrub_child_env
 
     env = {"MY_SERVICE_DSN": "value"}
     out = _scrub_child_env(env, is_passthrough=lambda k: k == "MY_SERVICE_DSN",
@@ -329,8 +329,8 @@ def test_execute_code_entry_blocks_before_spawn_when_guard_denies(monkeypatch, t
     marker file the script would create that never appears."""
     import json
 
-    import tools.code_execution_tool as cet
-    from tools import terminal_tool as TT
+    import hermes_agent.tools.code_execution_tool as cet
+    from hermes_agent.tools import terminal_tool as TT
 
     marker = tmp_path / "child-ran.marker"
     monkeypatch.setenv("HERMES_CRON_SESSION", "1")
@@ -359,7 +359,7 @@ def test_env_scrub_logs_dropped_hermes_vars(caplog):
     leave users guessing why a sandbox script sees an unset HERMES_* var."""
     import logging
 
-    from tools.code_execution_tool import _scrub_child_env
+    from hermes_agent.tools.code_execution_tool import _scrub_child_env
 
     env = {
         "HERMES_HOME": "/h",          # allowlisted → kept, not logged
@@ -368,7 +368,7 @@ def test_env_scrub_logs_dropped_hermes_vars(caplog):
         "HERMES_API_KEY": "sk",       # secret → dropped silently (not logged)
         "PATH": "/usr/bin",           # safe prefix → kept
     }
-    with caplog.at_level(logging.DEBUG, logger="tools.code_execution_tool"):
+    with caplog.at_level(logging.DEBUG, logger="hermes_agent.tools.code_execution_tool"):
         out = _scrub_child_env(env, is_passthrough=lambda _: False, is_windows=False)
 
     assert "HERMES_HOME" in out and "PATH" in out
@@ -385,9 +385,9 @@ def test_env_scrub_no_log_when_nothing_dropped(caplog):
     """No diagnostic noise when there are no dropped HERMES_* vars."""
     import logging
 
-    from tools.code_execution_tool import _scrub_child_env
+    from hermes_agent.tools.code_execution_tool import _scrub_child_env
 
-    with caplog.at_level(logging.DEBUG, logger="tools.code_execution_tool"):
+    with caplog.at_level(logging.DEBUG, logger="hermes_agent.tools.code_execution_tool"):
         _scrub_child_env(
             {"HERMES_HOME": "/h", "PATH": "/usr/bin"},
             is_passthrough=lambda _: False,

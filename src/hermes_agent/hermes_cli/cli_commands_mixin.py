@@ -27,8 +27,8 @@ from rich import box as rich_box
 from rich.markup import escape as _escape
 from rich.panel import Panel
 
-from hermes_constants import display_hermes_home, is_termux as _is_termux_environment
-from hermes_cli.browser_connect import (
+from hermes_agent.hermes_constants import display_hermes_home, is_termux as _is_termux_environment
+from hermes_agent.hermes_cli.browser_connect import (
     DEFAULT_BROWSER_CDP_URL,
     is_browser_debug_ready,
     manual_chrome_debug_command,
@@ -52,7 +52,7 @@ class CLICommandsMixin:
             /rollback diff <N>        — preview changes since checkpoint N
             /rollback <N> <file>      — restore a single file from checkpoint N
         """
-        from tools.checkpoint_manager import format_checkpoint_list
+        from hermes_agent.tools.checkpoint_manager import format_checkpoint_list
 
         if not hasattr(self, 'agent') or not self.agent:
             print("  No active agent session.")
@@ -146,11 +146,11 @@ class CLICommandsMixin:
             /snapshot restore <id>     — restore state from snapshot
             /snapshot prune [N]        — prune to N snapshots (default 20)
         """
-        from hermes_cli.backup import (
+        from hermes_agent.hermes_cli.backup import (
             create_quick_snapshot, list_quick_snapshots,
             restore_quick_snapshot, prune_quick_snapshots,
         )
-        from hermes_constants import display_hermes_home
+        from hermes_agent.hermes_constants import display_hermes_home
 
         parts = command.split()
         subcmd = parts[1].lower() if len(parts) > 1 else "list"
@@ -231,7 +231,7 @@ class CLICommandsMixin:
         Inspired by OpenAI Codex's separation of interrupt (stop current turn)
         from /stop (clean up background processes). See openai/codex#14602.
         """
-        from tools.process_registry import process_registry
+        from hermes_agent.tools.process_registry import process_registry
 
         processes = process_registry.list_sessions()
         running = [p for p in processes if p.get("status") == "running"]
@@ -239,7 +239,7 @@ class CLICommandsMixin:
         # Background subagents dispatched via delegate_task(background=true)
         # live in their own registry, not the process registry.
         try:
-            from tools.async_delegation import active_count, interrupt_all
+            from hermes_agent.tools.async_delegation import active_count, interrupt_all
             n_async = active_count()
         except Exception:
             n_async = 0
@@ -259,8 +259,8 @@ class CLICommandsMixin:
 
     def _handle_agents_command(self):
         """Handle /agents — show background processes and agent status."""
-        from cli import _cprint
-        from tools.process_registry import format_uptime_short, process_registry
+        from hermes_agent.cli import _cprint
+        from hermes_agent.tools.process_registry import format_uptime_short, process_registry
 
         processes = process_registry.list_sessions()
         running = [p for p in processes if p.get("status") == "running"]
@@ -277,7 +277,7 @@ class CLICommandsMixin:
 
         # Background (async) delegations — delegate_task(background=true)
         try:
-            from tools.async_delegation import list_async_delegations
+            from hermes_agent.tools.async_delegation import list_async_delegations
             delegations = list_async_delegations()
         except Exception:
             delegations = []
@@ -301,7 +301,7 @@ class CLICommandsMixin:
         doesn't fire for image-only clipboard content (e.g., VSCode terminal,
         Windows Terminal with WSL2).
         """
-        from cli import _DIM, _RST, _cprint, _termux_example_image_path
+        from hermes_agent.cli import _DIM, _RST, _cprint, _termux_example_image_path
         if _is_termux_environment():
             _cprint(
                 f"  {_DIM}Clipboard image paste is not available on Termux — "
@@ -310,7 +310,7 @@ class CLICommandsMixin:
             )
             return
 
-        from hermes_cli.clipboard import has_clipboard_image
+        from hermes_agent.hermes_cli.clipboard import has_clipboard_image
         if has_clipboard_image():
             if self._try_attach_clipboard_image():
                 n = len(self._attached_images)
@@ -322,7 +322,7 @@ class CLICommandsMixin:
 
     def _handle_copy_command(self, cmd_original: str) -> None:
         """Handle /copy [number] — copy assistant output to clipboard."""
-        from cli import _assistant_copy_text, _cprint
+        from hermes_agent.cli import _assistant_copy_text, _cprint
         parts = cmd_original.split(maxsplit=1)
         arg = parts[1].strip() if len(parts) > 1 else ""
 
@@ -361,7 +361,7 @@ class CLICommandsMixin:
 
     def _handle_image_command(self, cmd_original: str):
         """Handle /image <path> — attach a local image file for the next prompt."""
-        from cli import _DIM, _IMAGE_EXTENSIONS, _RST, _cprint, _resolve_attachment_path, _split_path_input, _termux_example_image_path
+        from hermes_agent.cli import _DIM, _IMAGE_EXTENSIONS, _RST, _cprint, _resolve_attachment_path, _split_path_input, _termux_example_image_path
         raw_args = (cmd_original.split(None, 1)[1].strip() if " " in cmd_original else "")
         if not raw_args:
             hint = _termux_example_image_path() if _is_termux_environment() else "/path/to/image.png"
@@ -393,12 +393,12 @@ class CLICommandsMixin:
         the session so the new tool set takes effect cleanly (no
         prompt-cache breakage mid-conversation).
         """
-        from cli import _ACCENT, _DIM, _RST, _cprint
+        from hermes_agent.cli import _ACCENT, _DIM, _RST, _cprint
         import shlex
         from argparse import Namespace
         from contextlib import redirect_stdout
         from io import StringIO
-        from hermes_cli.tools_config import tools_disable_enable_command
+        from hermes_agent.hermes_cli.tools_config import tools_disable_enable_command
 
         def _run_capture(ns: Namespace) -> None:
             """Run tools_disable_enable_command, routing its ANSI-colored
@@ -458,16 +458,16 @@ class CLICommandsMixin:
         _run_capture(Namespace(tools_action=subcommand, names=names, platform="cli"))
 
         # Reset session so the new tool config is picked up from a clean state
-        from hermes_cli.tools_config import _get_platform_tools
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.tools_config import _get_platform_tools
+        from hermes_agent.hermes_cli.config import load_config
         self.enabled_toolsets = _get_platform_tools(load_config(), "cli")
         self.new_session()
         _cprint(f"{_DIM}Session reset. New tool configuration is active.{_RST}")
 
     def _handle_profile_command(self):
         """Display active profile name and home directory."""
-        from hermes_constants import display_hermes_home
-        from hermes_cli.profiles import get_active_profile_name
+        from hermes_agent.hermes_constants import display_hermes_home
+        from hermes_agent.hermes_cli.profiles import get_active_profile_name
 
         display = display_hermes_home()
         profile_name = get_active_profile_name()
@@ -494,8 +494,8 @@ class CLICommandsMixin:
         Returns:
             False to signal CLI exit, True to keep going.
         """
-        from cli import _cprint
-        from hermes_state import format_session_db_unavailable
+        from hermes_agent.cli import _cprint
+        from hermes_agent.hermes_state import format_session_db_unavailable
 
         parts = cmd_original.split(maxsplit=1)
         if len(parts) < 2 or not parts[1].strip():
@@ -508,7 +508,7 @@ class CLICommandsMixin:
 
         # Validate platform name + home channel via the live gateway config.
         try:
-            from gateway.config import load_gateway_config, Platform
+            from hermes_agent.gateway.config import load_gateway_config, Platform
         except Exception as exc:  # pragma: no cover — gateway pkg always shipped
             _cprint(f"  Could not load gateway config: {exc}")
             return True
@@ -545,7 +545,7 @@ class CLICommandsMixin:
         # Make sure we have a SessionDB handle.
         if not self._session_db:
             try:
-                from hermes_state import SessionDB
+                from hermes_agent.hermes_state import SessionDB
                 self._session_db = SessionDB()
             except Exception:
                 pass
@@ -630,7 +630,7 @@ class CLICommandsMixin:
 
     def _handle_resume_command(self, cmd_original: str) -> None:
         """Handle /resume <session_id_or_title> — switch to a previous session mid-conversation."""
-        from cli import _cprint, _sync_process_session_id
+        from hermes_agent.cli import _cprint, _sync_process_session_id
         parts = cmd_original.split(None, 1)
         target = parts[1].strip() if len(parts) > 1 else ""
 
@@ -666,7 +666,7 @@ class CLICommandsMixin:
         self._pending_resume_sessions = None
 
         if not self._session_db:
-            from hermes_state import format_session_db_unavailable
+            from hermes_agent.hermes_state import format_session_db_unavailable
             _cprint(f"  {format_session_db_unavailable()}")
             return
 
@@ -681,7 +681,7 @@ class CLICommandsMixin:
             selected = sessions[index - 1]
             target_id = selected["id"]
         else:
-            from hermes_cli.main import _resolve_session_by_name_or_id
+            from hermes_agent.hermes_cli.main import _resolve_session_by_name_or_id
             resolved = _resolve_session_by_name_or_id(target)
             target_id = resolved or target
 
@@ -743,7 +743,7 @@ class CLICommandsMixin:
                 self.agent._last_flushed_db_idx = len(self.conversation_history)
             if hasattr(self.agent, "_todo_store"):
                 try:
-                    from tools.todo_tool import TodoStore
+                    from hermes_agent.tools.todo_tool import TodoStore
                     self.agent._todo_store = TodoStore()
                 except Exception:
                     pass
@@ -793,7 +793,7 @@ class CLICommandsMixin:
         prints ``Unknown command: sessions`` even though the command is
         registered in the central COMMAND_REGISTRY.
         """
-        from cli import _cprint
+        from hermes_agent.cli import _cprint
         parts = cmd_original.split(None, 1)
         arg = parts[1].strip() if len(parts) > 1 else ""
         sub = arg.lower()
@@ -801,7 +801,7 @@ class CLICommandsMixin:
         # Bare /sessions or /sessions list — show recent sessions inline.
         if not arg or sub in {"list", "ls", "browse"}:
             if not self._session_db:
-                from hermes_state import format_session_db_unavailable
+                from hermes_agent.hermes_state import format_session_db_unavailable
                 _cprint(f"  {format_session_db_unavailable()}")
                 return
             if not self._show_recent_sessions(reason="sessions"):
@@ -818,13 +818,13 @@ class CLICommandsMixin:
         explore a different approach without losing the original session state.
         Inspired by Claude Code's /branch command.
         """
-        from cli import _cprint, _sync_process_session_id
+        from hermes_agent.cli import _cprint, _sync_process_session_id
         if not self.conversation_history:
             _cprint("  No conversation to branch — send a message first.")
             return
 
         if not self._session_db:
-            from hermes_state import format_session_db_unavailable
+            from hermes_agent.hermes_state import format_session_db_unavailable
             _cprint(f"  {format_session_db_unavailable()}")
             return
 
@@ -916,7 +916,7 @@ class CLICommandsMixin:
                 self.agent._last_flushed_db_idx = len(self.conversation_history)
             if hasattr(self.agent, "_todo_store"):
                 try:
-                    from tools.todo_tool import TodoStore
+                    from hermes_agent.tools.todo_tool import TodoStore
                     self.agent._todo_store = TodoStore()
                 except Exception:
                     pass
@@ -950,8 +950,8 @@ class CLICommandsMixin:
     def _handle_gquota_command(self, cmd_original: str) -> None:
         """Show Google Gemini Code Assist quota usage for the current OAuth account."""
         try:
-            from agent.google_oauth import get_valid_access_token, GoogleOAuthError, load_credentials
-            from agent.google_code_assist import retrieve_user_quota, CodeAssistError
+            from hermes_agent.agent.google_oauth import get_valid_access_token, GoogleOAuthError, load_credentials
+            from hermes_agent.agent.google_code_assist import retrieve_user_quota, CodeAssistError
         except ImportError as exc:
             self._console_print(f"  [red]Gemini modules unavailable: {exc}[/]")
             return
@@ -995,7 +995,7 @@ class CLICommandsMixin:
 
     def _handle_personality_command(self, cmd: str):
         """Handle the /personality command to set predefined personalities."""
-        from cli import save_config_value
+        from hermes_agent.cli import save_config_value
         parts = cmd.split(maxsplit=1)
         
         if len(parts) > 1:
@@ -1005,7 +1005,7 @@ class CLICommandsMixin:
             if personality_name in {"none", "default", "neutral"}:
                 self.system_prompt = ""
                 self.agent = None  # Force re-init
-                if save_config_value("agent.system_prompt", ""):
+                if save_config_value("hermes_agent.agent.system_prompt", ""):
                     print("(^_^)b Personality cleared (saved to config)")
                 else:
                     print("(^_^) Personality cleared (session only)")
@@ -1013,7 +1013,7 @@ class CLICommandsMixin:
             elif personality_name in self.personalities:
                 self.system_prompt = self._resolve_personality_prompt(self.personalities[personality_name])
                 self.agent = None  # Force re-init
-                if save_config_value("agent.system_prompt", self.system_prompt):
+                if save_config_value("hermes_agent.agent.system_prompt", self.system_prompt):
                     print(f"(^_^)b Personality set to '{personality_name}' (saved to config)")
                 else:
                     print(f"(^_^) Personality set to '{personality_name}' (session only)")
@@ -1041,9 +1041,9 @@ class CLICommandsMixin:
 
     def _handle_cron_command(self, cmd: str):
         """Handle the /cron command to manage scheduled tasks."""
-        from cli import get_job
+        from hermes_agent.cli import get_job
         import shlex
-        from tools.cronjob_tools import cronjob as cronjob_tool
+        from hermes_agent.tools.cronjob_tools import cronjob as cronjob_tool
 
         def _cron_api(**kwargs):
             return json.loads(cronjob_tool(**kwargs))
@@ -1300,7 +1300,7 @@ class CLICommandsMixin:
             tokens = (cmd or "").split()[1:]
         args = " ".join(tokens)
         try:
-            from hermes_cli.suggestions_cmd import handle_suggestions_command
+            from hermes_agent.hermes_cli.suggestions_cmd import handle_suggestions_command
             output = handle_suggestions_command(args)
         except Exception as e:
             output = f"Suggestions command failed: {e}"
@@ -1324,7 +1324,7 @@ class CLICommandsMixin:
             tokens = (cmd or "").split()[1:]
         args = " ".join(shlex.quote(t) for t in tokens)
         try:
-            from hermes_cli.blueprint_cmd import handle_blueprint_command
+            from hermes_agent.hermes_cli.blueprint_cmd import handle_blueprint_command
             result = handle_blueprint_command(args)
         except Exception as e:
             self._console_print(f"Cron blueprint command failed: {e}")
@@ -1349,7 +1349,7 @@ class CLICommandsMixin:
             tokens = ["status"]
 
         try:
-            from hermes_cli.curator import cli_main
+            from hermes_agent.hermes_cli.curator import cli_main
             cli_main(tokens)
         except SystemExit:
             # argparse calls sys.exit() on --help or errors; swallow so we
@@ -1365,7 +1365,7 @@ class CLICommandsMixin:
         including the leading slash; we strip it and hand the remainder
         to ``kanban.run_slash`` which returns a single formatted string.
         """
-        from hermes_cli.kanban import run_slash
+        from hermes_agent.hermes_cli.kanban import run_slash
 
         rest = cmd.strip()
         if rest.startswith("/"):
@@ -1381,15 +1381,15 @@ class CLICommandsMixin:
 
     def _handle_skills_command(self, cmd: str):
         """Handle /skills slash command — delegates to hermes_cli.skills_hub."""
-        from cli import ChatConsole
+        from hermes_agent.cli import ChatConsole
         # Intercept write-approval review subcommands first (pending/approve/
         # reject/diff/mode); everything else goes to the skills hub.
         parts = cmd.strip().split()
         args = parts[1:] if len(parts) > 1 else []
         if args and args[0].lower() in {"pending", "approve", "apply", "reject",
                                         "deny", "drop", "diff", "approval", "mode"}:
-            from hermes_cli.write_approval_commands import handle_pending_subcommand
-            from tools import write_approval as wa
+            from hermes_agent.hermes_cli.write_approval_commands import handle_pending_subcommand
+            from hermes_agent.tools import write_approval as wa
             out = handle_pending_subcommand(
                 wa.SKILLS, args,
                 set_mode_fn=lambda enabled: self._save_write_approval("skills", enabled),
@@ -1397,13 +1397,13 @@ class CLICommandsMixin:
             if out is not None:
                 print(out)
                 return
-        from hermes_cli.skills_hub import handle_skills_slash
+        from hermes_agent.hermes_cli.skills_hub import handle_skills_slash
         handle_skills_slash(cmd, ChatConsole())
 
     def _handle_memory_command(self, cmd: str):
         """Handle /memory slash command — pending review + approval-gate toggle."""
-        from hermes_cli.write_approval_commands import handle_pending_subcommand
-        from tools import write_approval as wa
+        from hermes_agent.hermes_cli.write_approval_commands import handle_pending_subcommand
+        from hermes_agent.tools import write_approval as wa
         parts = cmd.strip().split()
         args = parts[1:] if len(parts) > 1 else []
         store = getattr(self.agent, "_memory_store", None) if getattr(self, "agent", None) else None
@@ -1419,7 +1419,7 @@ class CLICommandsMixin:
 
     def _save_write_approval(self, subsystem: str, enabled: bool):
         """Persist <subsystem>.write_approval to config (for /memory|/skills approval)."""
-        from cli import save_config_value
+        from hermes_agent.cli import save_config_value
         save_config_value(f"{subsystem}.write_approval", bool(enabled))
 
     def _handle_background_command(self, cmd: str):
@@ -1429,7 +1429,7 @@ class CLICommandsMixin:
         When it completes, prints the result to the CLI without modifying
         the active session's conversation history.
         """
-        from cli import AIAgent, ChatConsole, _accent_hex, _cprint, _maybe_remap_for_light_mode, _render_final_assistant_content, set_approval_callback, set_secret_capture_callback, set_sudo_password_callback
+        from hermes_agent.cli import AIAgent, ChatConsole, _accent_hex, _cprint, _maybe_remap_for_light_mode, _render_final_assistant_content, set_approval_callback, set_secret_capture_callback, set_sudo_password_callback
         parts = cmd.strip().split(maxsplit=1)
         if len(parts) < 2 or not parts[1].strip():
             _cprint("  Usage: /background <prompt>")
@@ -1523,7 +1523,7 @@ class CLICommandsMixin:
                 ChatConsole().print(f"[{_accent_hex()}]{'─' * 40}[/]")
                 if response:
                     try:
-                        from hermes_cli.skin_engine import get_active_skin
+                        from hermes_agent.hermes_cli.skin_engine import get_active_skin
                         _skin = get_active_skin()
                         label = _skin.get_branding("response_label", "⚕ Hermes")
                         _resp_color = _maybe_remap_for_light_mode(_skin.get_color("response_border", "#CD7F32"))
@@ -1584,9 +1584,9 @@ class CLICommandsMixin:
         CLI so users can discover what's available without dropping out
         of their session. Bundles are loaded via ``/<bundle-name>``.
         """
-        from cli import ChatConsole, _BOLD, _DIM, _RST, _accent_hex, _cprint
+        from hermes_agent.cli import ChatConsole, _BOLD, _DIM, _RST, _accent_hex, _cprint
         try:
-            from agent.skill_bundles import list_bundles, _bundles_dir
+            from hermes_agent.agent.skill_bundles import list_bundles, _bundles_dir
         except Exception as exc:
             _cprint(f"\033[1;31mBundle subsystem unavailable: {exc}{_RST}")
             return
@@ -1664,7 +1664,7 @@ class CLICommandsMixin:
 
             # Clear any existing browser sessions so the next tool call uses the new backend
             try:
-                from tools.browser_tool import cleanup_all_browsers
+                from hermes_agent.tools.browser_tool import cleanup_all_browsers
                 cleanup_all_browsers()
             except Exception:
                 pass
@@ -1714,7 +1714,7 @@ class CLICommandsMixin:
             # Eagerly start the CDP supervisor so pending_dialogs + frame_tree
             # show up in the next browser_snapshot.  No-op if already started.
             try:
-                from tools.browser_tool import _ensure_cdp_supervisor  # type: ignore[import-not-found]
+                from hermes_agent.tools.browser_tool import _ensure_cdp_supervisor  # type: ignore[import-not-found]
                 _ensure_cdp_supervisor("default")
             except Exception:
                 pass
@@ -1742,7 +1742,7 @@ class CLICommandsMixin:
             if current:
                 os.environ.pop("BROWSER_CDP_URL", None)
                 try:
-                    from tools.browser_tool import cleanup_all_browsers, _stop_cdp_supervisor
+                    from hermes_agent.tools.browser_tool import cleanup_all_browsers, _stop_cdp_supervisor
                     _stop_cdp_supervisor("default")
                     cleanup_all_browsers()
                 except Exception:
@@ -1784,7 +1784,7 @@ class CLICommandsMixin:
                     print("   Status: ⚠ not reachable (browser may not be running)")
             else:
                 try:
-                    from tools.browser_tool import _get_cloud_provider
+                    from hermes_agent.tools.browser_tool import _get_cloud_provider
                     provider = _get_cloud_provider()
                 except Exception:
                     provider = None
@@ -1794,7 +1794,7 @@ class CLICommandsMixin:
                 else:
                     # Show engine info for local mode
                     try:
-                        from tools.browser_tool import _get_browser_engine
+                        from hermes_agent.tools.browser_tool import _get_browser_engine
                         engine = _get_browser_engine()
                     except Exception:
                         engine = "auto"
@@ -1822,7 +1822,7 @@ class CLICommandsMixin:
 
     def _handle_goal_command(self, cmd: str) -> None:
         """Dispatch /goal subcommands: set / status / pause / resume / clear."""
-        from cli import _DIM, _RST, _cprint
+        from hermes_agent.cli import _DIM, _RST, _cprint
         parts = (cmd or "").strip().split(None, 1)
         arg = parts[1].strip() if len(parts) > 1 else ""
 
@@ -1902,7 +1902,7 @@ class CLICommandsMixin:
         boundary. No special kick — the running turn finishes, the next
         judge call includes them.
         """
-        from cli import _DIM, _RST, _cprint
+        from hermes_agent.cli import _DIM, _RST, _cprint
         parts = (cmd or "").strip().split(None, 2)
         arg = " ".join(parts[1:]).strip() if len(parts) > 1 else ""
 
@@ -1965,9 +1965,9 @@ class CLICommandsMixin:
 
     def _handle_skin_command(self, cmd: str):
         """Handle /skin [name] — show or change the display skin."""
-        from cli import _ACCENT, save_config_value
+        from hermes_agent.cli import _ACCENT, save_config_value
         try:
-            from hermes_cli.skin_engine import list_skins, set_active_skin, get_active_skin_name
+            from hermes_agent.hermes_cli.skin_engine import list_skins, set_active_skin, get_active_skin_name
         except ImportError:
             print("Skin engine not available.")
             return
@@ -2014,9 +2014,9 @@ class CLICommandsMixin:
             /footer on|off    → explicit
             /footer status    → show current state
         """
-        from cli import _cprint, save_config_value
-        from hermes_cli.config import load_config
-        from hermes_cli.colors import Colors as _Colors
+        from hermes_agent.cli import _cprint, save_config_value
+        from hermes_agent.hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.colors import Colors as _Colors
 
         # Parse arg
         arg = ""
@@ -2068,7 +2068,7 @@ class CLICommandsMixin:
             /reasoning show|on      Show model thinking/reasoning in output
             /reasoning hide|off     Hide model thinking/reasoning from output
         """
-        from cli import _ACCENT, _DIM, _RST, _cprint, _parse_reasoning_config, save_config_value
+        from hermes_agent.cli import _ACCENT, _DIM, _RST, _cprint, _parse_reasoning_config, save_config_value
         parts = cmd.strip().split(maxsplit=1)
 
         if len(parts) < 2:
@@ -2116,7 +2116,7 @@ class CLICommandsMixin:
         self.reasoning_config = parsed
         self.agent = None  # Force agent re-init with new reasoning config
 
-        if save_config_value("agent.reasoning_effort", arg):
+        if save_config_value("hermes_agent.agent.reasoning_effort", arg):
             _cprint(f"  {_ACCENT}✓ Reasoning effort set to '{arg}' (saved to config){_RST}")
         else:
             _cprint(f"  {_ACCENT}✓ Reasoning effort set to '{arg}' (session only){_RST}")
@@ -2131,7 +2131,7 @@ class CLICommandsMixin:
             /busy steer         Inject Enter mid-run via /steer (after next tool call)
             /busy interrupt     Interrupt the current run on Enter (default)
         """
-        from cli import _ACCENT, _DIM, _RST, _cprint, save_config_value
+        from hermes_agent.cli import _ACCENT, _DIM, _RST, _cprint, save_config_value
         parts = cmd.strip().split(maxsplit=1)
         if len(parts) < 2 or parts[1].strip().lower() == "status":
             _cprint(f"  {_ACCENT}Busy input mode: {self.busy_input_mode}{_RST}")
@@ -2166,14 +2166,14 @@ class CLICommandsMixin:
 
     def _handle_fast_command(self, cmd: str):
         """Handle /fast — toggle fast mode (OpenAI Priority Processing / Anthropic Fast Mode)."""
-        from cli import _ACCENT, _DIM, _RST, _cprint, save_config_value
+        from hermes_agent.cli import _ACCENT, _DIM, _RST, _cprint, save_config_value
         if not self._fast_command_available():
             _cprint("  (._.) /fast is only available for models that support fast mode (OpenAI Priority Processing or Anthropic Fast Mode).")
             return
 
         # Determine the branding for the current model
         try:
-            from hermes_cli.models import _is_anthropic_fast_model
+            from hermes_agent.hermes_cli.models import _is_anthropic_fast_model
             agent = getattr(self, "agent", None)
             model = getattr(agent, "model", None) or getattr(self, "model", None)
             feature_name = "Anthropic Fast Mode" if _is_anthropic_fast_model(model) else "Priority Processing"
@@ -2203,14 +2203,14 @@ class CLICommandsMixin:
             return
 
         self.agent = None  # Force agent re-init with new service-tier config
-        if save_config_value("agent.service_tier", saved_value):
+        if save_config_value("hermes_agent.agent.service_tier", saved_value):
             _cprint(f"  {_ACCENT}✓ {feature_name} set to {label} (saved to config){_RST}")
         else:
             _cprint(f"  {_ACCENT}✓ {feature_name} set to {label} (session only){_RST}")
 
     def _handle_debug_command(self):
         """Handle /debug — upload debug report + logs and print paste URLs."""
-        from hermes_cli.debug import run_debug_share
+        from hermes_agent.hermes_cli.debug import run_debug_share
         from types import SimpleNamespace
 
         args = SimpleNamespace(lines=200, expire=7, local=False)
@@ -2228,7 +2228,7 @@ class CLICommandsMixin:
         prompt_toolkit cleans up terminal modes).  Returns ``False`` / falsy
         when cancelled.
         """
-        from hermes_cli.config import is_managed, format_managed_message
+        from hermes_agent.hermes_cli.config import is_managed, format_managed_message
 
         if is_managed():
             print(f"  ✗ {format_managed_message('update Hermes Agent')}")
@@ -2270,7 +2270,7 @@ class CLICommandsMixin:
 
     def _handle_voice_command(self, command: str):
         """Handle /voice [on|off|tts|status] command."""
-        from cli import _cprint
+        from hermes_agent.cli import _cprint
         parts = command.strip().split(maxsplit=1)
         subcommand = parts[1].lower().strip() if len(parts) > 1 else ""
 

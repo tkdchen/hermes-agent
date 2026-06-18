@@ -23,7 +23,7 @@ import pytest
 
 def _make_agent(provider="openrouter", model="gpt-4o"):
     """Create a minimal AIAgent mock with provider/model attributes."""
-    from run_agent import AIAgent
+    from hermes_agent.run_agent import AIAgent
     agent = MagicMock(spec=AIAgent)
     agent.provider = provider
     agent.model = model
@@ -182,7 +182,7 @@ class TestToolResultContentProactiveDowngrade:
 
 class TestProviderProfileField:
     def test_default_is_true(self):
-        from providers.base import ProviderProfile
+        from hermes_agent.providers.base import ProviderProfile
         # ProviderProfile uses __init__ with defaults; check via a minimal instance
         # by reading the class-level default from a dataclass-like field
         import dataclasses
@@ -194,19 +194,19 @@ class TestProviderProfileField:
             assert getattr(ProviderProfile, "supports_vision_tool_messages", True) is True
 
     def test_xiaomi_profile_has_false(self):
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("xiaomi")
         assert profile is not None
         assert profile.supports_vision_tool_messages is False
 
     def test_xiaomi_alias_mimo_has_false(self):
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("mimo")
         assert profile is not None
         assert profile.supports_vision_tool_messages is False
 
     def test_anthropic_profile_defaults_true(self):
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile("anthropic")
         if profile is not None:
             assert profile.supports_vision_tool_messages is True

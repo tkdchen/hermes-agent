@@ -12,13 +12,13 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
-from agent.codex_responses_adapter import _chat_content_to_responses_parts, _chat_messages_to_responses_input, _normalize_codex_response, _preflight_codex_input_items
+from hermes_agent.agent.codex_responses_adapter import _chat_content_to_responses_parts, _chat_messages_to_responses_input, _normalize_codex_response, _preflight_codex_input_items
 
 sys.modules.setdefault("fire", types.SimpleNamespace(Fire=lambda *a, **k: None))
 sys.modules.setdefault("firecrawl", types.SimpleNamespace(Firecrawl=object))
 sys.modules.setdefault("fal_client", types.SimpleNamespace())
 
-from run_agent import AIAgent
+from hermes_agent.run_agent import AIAgent
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -57,9 +57,9 @@ class _FakeOpenAI:
 
 
 def _make_agent(monkeypatch, provider, api_mode="chat_completions", base_url="https://openrouter.ai/api/v1", model=None):
-    monkeypatch.setattr("run_agent.get_tool_definitions", lambda **kw: _tool_defs("web_search", "terminal"))
-    monkeypatch.setattr("run_agent.check_toolset_requirements", lambda: {})
-    monkeypatch.setattr("run_agent.OpenAI", _FakeOpenAI)
+    monkeypatch.setattr("hermes_agent.run_agent.get_tool_definitions", lambda **kw: _tool_defs("web_search", "terminal"))
+    monkeypatch.setattr("hermes_agent.run_agent.check_toolset_requirements", lambda: {})
+    monkeypatch.setattr("hermes_agent.run_agent.OpenAI", _FakeOpenAI)
     kwargs = dict(
         api_key="test-key",
         base_url=base_url,
@@ -410,7 +410,7 @@ class TestBuildApiKwargsKimiNoTemperatureOverride:
 
 class TestBuildApiKwargsNousPortal:
     def test_includes_nous_product_tags(self, monkeypatch):
-        from agent.portal_tags import nous_portal_tags
+        from hermes_agent.agent.portal_tags import nous_portal_tags
         agent = _make_agent(
             monkeypatch,
             "nous",
@@ -1013,22 +1013,22 @@ class TestAuxiliaryClientProviderPriority:
 
     def test_openrouter_always_wins(self, monkeypatch):
         monkeypatch.setenv("OPENROUTER_API_KEY", "or-key")
-        from agent.auxiliary_client import get_text_auxiliary_client
-        with patch("agent.auxiliary_client.OpenAI") as mock:
+        from hermes_agent.agent.auxiliary_client import get_text_auxiliary_client
+        with patch("hermes_agent.agent.auxiliary_client.OpenAI") as mock:
             client, model = get_text_auxiliary_client()
         assert model == "google/gemini-3-flash-preview"
         assert "openrouter" in str(mock.call_args.kwargs["base_url"]).lower()
 
     def test_nous_when_no_openrouter(self, monkeypatch):
         monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
-        from agent.auxiliary_client import get_text_auxiliary_client
+        from hermes_agent.agent.auxiliary_client import get_text_auxiliary_client
         nous_auth = {
             "access_token": _fake_invoke_jwt(),
             "scope": "inference:invoke",
         }
-        with patch("agent.auxiliary_client._read_nous_auth", return_value=nous_auth), \
-             patch("agent.auxiliary_client.OpenAI") as mock, \
-             patch("hermes_cli.models.get_nous_recommended_aux_model", return_value=None):
+        with patch("hermes_agent.agent.auxiliary_client._read_nous_auth", return_value=nous_auth), \
+             patch("hermes_agent.agent.auxiliary_client.OpenAI") as mock, \
+             patch("hermes_agent.hermes_cli.models.get_nous_recommended_aux_model", return_value=None):
             client, model = get_text_auxiliary_client()
         assert model == "google/gemini-3-flash-preview"
 
@@ -1041,11 +1041,11 @@ class TestAuxiliaryClientProviderPriority:
         """
         monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
         monkeypatch.setenv("OPENAI_API_KEY", "local-key")
-        from agent.auxiliary_client import get_text_auxiliary_client
-        with patch("agent.auxiliary_client._read_nous_auth", return_value=None), \
-             patch("agent.auxiliary_client._resolve_custom_runtime",
+        from hermes_agent.agent.auxiliary_client import get_text_auxiliary_client
+        with patch("hermes_agent.agent.auxiliary_client._read_nous_auth", return_value=None), \
+             patch("hermes_agent.agent.auxiliary_client._resolve_custom_runtime",
                    return_value=("http://localhost:1234/v1", "local-key")), \
-             patch("agent.auxiliary_client.OpenAI") as mock:
+             patch("hermes_agent.agent.auxiliary_client.OpenAI") as mock:
             client, model = get_text_auxiliary_client()
         assert mock.call_args.kwargs["base_url"] == "http://localhost:1234/v1"
 
@@ -1061,10 +1061,10 @@ class TestAuxiliaryClientProviderPriority:
         monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        from agent.auxiliary_client import get_text_auxiliary_client
-        with patch("agent.auxiliary_client._read_nous_auth", return_value=None), \
-             patch("agent.auxiliary_client._read_codex_access_token", return_value="codex-tok"), \
-             patch("agent.auxiliary_client.OpenAI"):
+        from hermes_agent.agent.auxiliary_client import get_text_auxiliary_client
+        with patch("hermes_agent.agent.auxiliary_client._read_nous_auth", return_value=None), \
+             patch("hermes_agent.agent.auxiliary_client._read_codex_access_token", return_value="codex-tok"), \
+             patch("hermes_agent.agent.auxiliary_client.OpenAI"):
             client, model = get_text_auxiliary_client()
         assert client is None
         assert model is None

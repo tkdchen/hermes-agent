@@ -19,8 +19,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 # Match the logger run.py uses (logging.getLogger(__name__) where __name__ ==
-# "gateway.run") so extracted log records keep their original logger name.
-logger = logging.getLogger("gateway.run")
+# "hermes_agent.gateway.run") so extracted log records keep their original logger name.
+logger = logging.getLogger("hermes_agent.gateway.run")
 
 
 class GatewayKanbanWatchersMixin:
@@ -50,7 +50,7 @@ class GatewayKanbanWatchersMixin:
         # in the dispatch owner's per-board DBs. This prevents N-gateway -shm contention.
         # TODO: gate per-board when per-board dispatcher_owner tracking lands.
         try:
-            from hermes_cli.config import load_config as _load_config
+            from hermes_agent.hermes_cli.config import load_config as _load_config
         except Exception:
             logger.warning("kanban notifier: config loader unavailable; disabled")
             return
@@ -69,9 +69,9 @@ class GatewayKanbanWatchersMixin:
                 "kanban notifier: disabled via config kanban.dispatch_in_gateway=false"
             )
             return
-        from gateway.config import Platform as _Platform
+        from hermes_agent.gateway.config import Platform as _Platform
         try:
-            from hermes_cli import kanban_db as _kb
+            from hermes_agent.hermes_cli import kanban_db as _kb
         except Exception:
             logger.warning("kanban notifier: kanban_db not importable; notifier disabled")
             return
@@ -396,7 +396,7 @@ class GatewayKanbanWatchersMixin:
         ``board`` scopes the DB connection to the board that owns this
         subscription. Unsub cursors in one board can't touch another's.
         """
-        from hermes_cli import kanban_db as _kb
+        from hermes_agent.hermes_cli import kanban_db as _kb
         conn = _kb.connect(board=board)
         try:
             _kb.advance_notify_cursor(
@@ -411,7 +411,7 @@ class GatewayKanbanWatchersMixin:
             conn.close()
 
     def _kanban_unsub(self, sub: dict, board: Optional[str] = None) -> None:
-        from hermes_cli import kanban_db as _kb
+        from hermes_agent.hermes_cli import kanban_db as _kb
         conn = _kb.connect(board=board)
         try:
             _kb.remove_notify_sub(
@@ -432,7 +432,7 @@ class GatewayKanbanWatchersMixin:
         board: Optional[str] = None,
     ) -> None:
         """Sync helper: undo a claimed notification cursor after send failure."""
-        from hermes_cli import kanban_db as _kb
+        from hermes_agent.hermes_cli import kanban_db as _kb
         conn = _kb.connect(board=board)
         try:
             _kb.rewind_notify_cursor(
@@ -513,7 +513,7 @@ class GatewayKanbanWatchersMixin:
         if not candidates:
             return
 
-        from gateway.platforms.base import BasePlatformAdapter
+        from hermes_agent.gateway.platforms.base import BasePlatformAdapter
         candidates = BasePlatformAdapter.filter_local_delivery_paths(candidates)
         if not candidates:
             return
@@ -579,7 +579,7 @@ class GatewayKanbanWatchersMixin:
         # watcher here. Honours HERMES_KANBAN_DISPATCH_IN_GATEWAY env var
         # as an escape hatch (false-y value disables without editing YAML).
         try:
-            from hermes_cli.config import load_config as _load_config
+            from hermes_agent.hermes_cli.config import load_config as _load_config
         except Exception:
             logger.warning("kanban dispatcher: config loader unavailable; disabled")
             return
@@ -601,7 +601,7 @@ class GatewayKanbanWatchersMixin:
             return
 
         try:
-            from hermes_cli import kanban_db as _kb
+            from hermes_agent.hermes_cli import kanban_db as _kb
         except Exception:
             logger.warning("kanban dispatcher: kanban_db not importable; dispatcher disabled")
             return
@@ -924,7 +924,7 @@ class GatewayKanbanWatchersMixin:
             successfully decomposed or specified this tick.
             """
             try:
-                from hermes_cli import kanban_decompose as _decomp
+                from hermes_agent.hermes_cli import kanban_decompose as _decomp
             except Exception as exc:  # pragma: no cover
                 logger.warning(
                     "kanban auto-decompose: import failed (%s); skipping", exc,

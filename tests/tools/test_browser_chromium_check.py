@@ -10,7 +10,7 @@ import os
 
 import pytest
 
-from tools import browser_tool as bt
+from hermes_agent.tools import browser_tool as bt
 
 
 @pytest.fixture(autouse=True)

@@ -63,9 +63,9 @@ def _write_config(home: str, text: str) -> None:
 def _fresh_modules():
     """Drop cached hermes modules so each test reloads against current env."""
     for mod in list(sys.modules.keys()):
-        if mod.startswith(("agent.auxiliary_client", "agent.image_routing",
-                           "tools.vision_tools", "tools.browser_tool",
-                           "hermes_cli.config")):
+        if mod.startswith(("hermes_agent.agent.auxiliary_client", "hermes_agent.agent.image_routing",
+                           "hermes_agent.tools.vision_tools", "hermes_agent.tools.browser_tool",
+                           "hermes_agent.hermes_cli.config")):
             del sys.modules[mod]
 
 
@@ -87,7 +87,7 @@ auxiliary:
         monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
         _fresh_modules()
 
-        from agent.auxiliary_client import _resolve_task_provider_model
+        from hermes_agent.agent.auxiliary_client import _resolve_task_provider_model
         provider, model, base_url, _key, _mode = _resolve_task_provider_model("vision")
         assert provider == "custom"
         assert model == "gpt-4o-mini"
@@ -108,7 +108,7 @@ auxiliary:
         monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
         _fresh_modules()
 
-        from agent.auxiliary_client import _resolve_task_provider_model
+        from hermes_agent.agent.auxiliary_client import _resolve_task_provider_model
         provider, _model, base_url, _key, _mode = _resolve_task_provider_model("vision")
         assert provider == "custom"
         assert base_url == "https://my-proxy.example.com/v1"
@@ -124,7 +124,7 @@ auxiliary:
         monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
         _fresh_modules()
 
-        from agent.auxiliary_client import resolve_vision_provider_client
+        from hermes_agent.agent.auxiliary_client import resolve_vision_provider_client
         from urllib.parse import urlparse
         provider, client, model = resolve_vision_provider_client()
         assert client is not None, "openai alias should produce a usable client"
@@ -157,7 +157,7 @@ model:
         monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
         _fresh_modules()
 
-        from agent.auxiliary_client import resolve_vision_provider_client
+        from hermes_agent.agent.auxiliary_client import resolve_vision_provider_client
         provider, client, _model = resolve_vision_provider_client(provider="auto")
         assert client is None, (
             f"Vision auto-detect must skip text-only main {provider!r} when "
@@ -175,7 +175,7 @@ model:
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
         _fresh_modules()
 
-        from agent.auxiliary_client import resolve_vision_provider_client
+        from hermes_agent.agent.auxiliary_client import resolve_vision_provider_client
         provider, client, _model = resolve_vision_provider_client(provider="auto")
         assert client is not None
         assert provider == "anthropic"
@@ -187,7 +187,7 @@ model:
         cataloged as text-only are skipped.
         """
         _fresh_modules()
-        from agent.auxiliary_client import _main_model_supports_vision
+        from hermes_agent.agent.auxiliary_client import _main_model_supports_vision
         # Bogus provider/model — capability lookup returns None → permissive.
         assert _main_model_supports_vision("nonexistent-provider", "nonexistent-model") is True
 
@@ -212,7 +212,7 @@ auxiliary:
         monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
         _fresh_modules()
 
-        from tools.vision_tools import check_vision_requirements
+        from hermes_agent.tools.vision_tools import check_vision_requirements
         assert check_vision_requirements() is True
 
     def test_check_vision_falls_back_to_auto(self, isolated_home, monkeypatch):
@@ -231,7 +231,7 @@ auxiliary:
         monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test")
         _fresh_modules()
 
-        from tools.vision_tools import check_vision_requirements
+        from hermes_agent.tools.vision_tools import check_vision_requirements
         assert check_vision_requirements() is True
 
     def test_check_vision_false_with_text_only_main_and_no_aggregator(
@@ -245,7 +245,7 @@ model:
         monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
         _fresh_modules()
 
-        from tools.vision_tools import check_vision_requirements
+        from hermes_agent.tools.vision_tools import check_vision_requirements
         assert check_vision_requirements() is False
 
     def test_browser_vision_requires_both_browser_and_vision(self, isolated_home, monkeypatch):
@@ -260,7 +260,7 @@ model:
         monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
         _fresh_modules()
 
-        import tools.browser_tool
+        import hermes_agent.tools.browser_tool
         # Force the browser side to True so we exercise the vision-gating part.
         with patch.object(tools.browser_tool, "check_browser_requirements", return_value=True):
             assert tools.browser_tool.check_browser_vision_requirements() is False
@@ -276,7 +276,7 @@ model:
         monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test")
         _fresh_modules()
 
-        import tools.browser_tool
+        import hermes_agent.tools.browser_tool
         with patch.object(tools.browser_tool, "check_browser_requirements", return_value=False):
             # Vision available but browser missing → still False.
             assert tools.browser_tool.check_browser_vision_requirements() is False
@@ -292,6 +292,6 @@ model:
         monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test")
         _fresh_modules()
 
-        import tools.browser_tool
+        import hermes_agent.tools.browser_tool
         with patch.object(tools.browser_tool, "check_browser_requirements", return_value=True):
             assert tools.browser_tool.check_browser_vision_requirements() is True

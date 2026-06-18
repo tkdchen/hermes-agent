@@ -7,7 +7,7 @@ import sys
 
 import pytest
 
-from agent.prompt_builder import (
+from hermes_agent.agent.prompt_builder import (
     _scan_context_content,
     _truncate_content,
     _parse_skill_file,
@@ -32,7 +32,7 @@ from agent.prompt_builder import (
     PLATFORM_HINTS,
     WSL_ENVIRONMENT_HINT,
 )
-from hermes_cli.nous_subscription import NousFeatureState, NousSubscriptionFeatures
+from hermes_agent.hermes_cli.nous_subscription import NousFeatureState, NousSubscriptionFeatures
 
 
 # =========================================================================
@@ -124,7 +124,7 @@ class TestTruncateContent:
         def default_load_config():
             return {}
 
-        monkeypatch.setattr("hermes_cli.config.load_config", default_load_config)
+        monkeypatch.setattr("hermes_agent.hermes_cli.config.load_config", default_load_config)
 
     def test_context_file_max_chars_default_matches_upstream_limit(self):
         assert CONTEXT_FILE_MAX_CHARS == 20_000
@@ -158,7 +158,7 @@ class TestTruncateContent:
         def fake_load_config():
             return {"context_file_max_chars": 120}
 
-        monkeypatch.setattr("hermes_cli.config.load_config", fake_load_config)
+        monkeypatch.setattr("hermes_agent.hermes_cli.config.load_config", fake_load_config)
         content = "HEAD" + "x" * 160 + "TAIL"
 
         result = _truncate_content(content, "config.md")
@@ -173,7 +173,7 @@ class TestTruncateContent:
         def fake_load_config():
             return {"context_file_max_chars": 120}
 
-        monkeypatch.setattr("hermes_cli.config.load_config", fake_load_config)
+        monkeypatch.setattr("hermes_agent.hermes_cli.config.load_config", fake_load_config)
         content = "x" * 180
 
         result = _truncate_content(content, "explicit.md", max_chars=200)
@@ -184,7 +184,7 @@ class TestTruncateContent:
         def fake_load_config():
             return {"context_file_max_chars": 120}
 
-        monkeypatch.setattr("hermes_cli.config.load_config", fake_load_config)
+        monkeypatch.setattr("hermes_agent.hermes_cli.config.load_config", fake_load_config)
 
         _truncate_content("x" * 180, "warning.md")
 
@@ -201,7 +201,7 @@ class TestTruncateContent:
         def fake_load_config():
             return {"context_file_max_chars": 120}
 
-        monkeypatch.setattr("hermes_cli.config.load_config", fake_load_config)
+        monkeypatch.setattr("hermes_agent.hermes_cli.config.load_config", fake_load_config)
 
         # Generate a warning in a fresh child context, then assert it did NOT
         # leak into the parent context's accumulator.
@@ -229,7 +229,7 @@ class TestDynamicContextFileCap:
     @pytest.fixture(autouse=True)
     def _no_explicit_config(self, monkeypatch):
         # No explicit context_file_max_chars → dynamic path is eligible.
-        monkeypatch.setattr("hermes_cli.config.load_config", lambda: {})
+        monkeypatch.setattr("hermes_agent.hermes_cli.config.load_config", lambda: {})
 
     def test_dynamic_floor_for_small_window(self):
         # A small context window never drops below the historical 20K floor.
@@ -258,7 +258,7 @@ class TestDynamicContextFileCap:
     def test_explicit_config_beats_dynamic(self, monkeypatch):
         # An explicit value always wins, even when a big window is available.
         monkeypatch.setattr(
-            "hermes_cli.config.load_config",
+            "hermes_agent.hermes_cli.config.load_config",
             lambda: {"context_file_max_chars": 1_000},
         )
         assert _get_context_file_max_chars(200_000) == 1_000
@@ -331,7 +331,7 @@ class TestParseSkillFile:
             raise OSError("read exploded")
 
         monkeypatch.setattr(type(skill_file), "read_text", boom)
-        with caplog.at_level(logging.DEBUG, logger="agent.prompt_builder"):
+        with caplog.at_level(logging.DEBUG, logger="hermes_agent.agent.prompt_builder"):
             is_compat, frontmatter, desc = _parse_skill_file(skill_file)
 
         assert is_compat is True
@@ -347,7 +347,7 @@ class TestParseSkillFile:
         )
         from unittest.mock import patch
 
-        with patch("agent.skill_utils.sys") as mock_sys:
+        with patch("hermes_agent.agent.skill_utils.sys") as mock_sys:
             mock_sys.platform = "linux"
             is_compat, _, _ = _parse_skill_file(skill_file)
         assert is_compat is False
@@ -368,16 +368,16 @@ class TestPromptBuilderImports:
         original_import = builtins.__import__
 
         def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
-            if name == "tools.skills_tool" or (
+            if name == "hermes_agent.tools.skills_tool" or (
                 name == "tools" and fromlist and "skills_tool" in fromlist
             ):
                 raise ModuleNotFoundError("simulated optional tool import failure")
             return original_import(name, globals, locals, fromlist, level)
 
-        monkeypatch.delitem(sys.modules, "agent.prompt_builder", raising=False)
+        monkeypatch.delitem(sys.modules, "hermes_agent.agent.prompt_builder", raising=False)
         monkeypatch.setattr(builtins, "__import__", guarded_import)
 
-        module = importlib.import_module("agent.prompt_builder")
+        module = importlib.import_module("hermes_agent.agent.prompt_builder")
 
         assert hasattr(module, "build_skills_system_prompt")
 
@@ -391,7 +391,7 @@ class TestBuildSkillsSystemPrompt:
     @pytest.fixture(autouse=True)
     def _clear_skills_cache(self):
         """Ensure the in-process skills prompt cache doesn't leak between tests."""
-        from agent.prompt_builder import clear_skills_system_prompt_cache
+        from hermes_agent.agent.prompt_builder import clear_skills_system_prompt_cache
         clear_skills_system_prompt_cache(clear_snapshot=True)
         yield
         clear_skills_system_prompt_cache(clear_snapshot=True)
@@ -494,7 +494,7 @@ class TestBuildSkillsSystemPrompt:
 
         from unittest.mock import patch
 
-        with patch("agent.skill_utils.sys") as mock_sys:
+        with patch("hermes_agent.agent.skill_utils.sys") as mock_sys:
             mock_sys.platform = "linux"
             result = build_skills_system_prompt()
 
@@ -513,7 +513,7 @@ class TestBuildSkillsSystemPrompt:
 
         from unittest.mock import patch
 
-        with patch("agent.skill_utils.sys") as mock_sys:
+        with patch("hermes_agent.agent.skill_utils.sys") as mock_sys:
             mock_sys.platform = "darwin"
             result = build_skills_system_prompt()
 
@@ -541,7 +541,7 @@ class TestBuildSkillsSystemPrompt:
         from unittest.mock import patch
 
         with patch(
-            "agent.prompt_builder.get_disabled_skill_names",
+            "hermes_agent.agent.prompt_builder.get_disabled_skill_names",
             return_value={"old-tool"},
         ):
             result = build_skills_system_prompt()
@@ -626,9 +626,9 @@ class TestBuildSkillsSystemPrompt:
 
 class TestBuildNousSubscriptionPrompt:
     def test_includes_active_subscription_features(self, monkeypatch):
-        monkeypatch.setattr("tools.tool_backend_helpers.managed_nous_tools_enabled", lambda: True)
+        monkeypatch.setattr("hermes_agent.tools.tool_backend_helpers.managed_nous_tools_enabled", lambda: True)
         monkeypatch.setattr(
-            "hermes_cli.nous_subscription.get_nous_subscription_features",
+            "hermes_agent.hermes_cli.nous_subscription.get_nous_subscription_features",
             lambda config=None: NousSubscriptionFeatures(
                 subscribed=True,
                 nous_auth_present=True,
@@ -652,9 +652,9 @@ class TestBuildNousSubscriptionPrompt:
         assert "do not ask the user for Firecrawl, FAL, OpenAI TTS, OpenAI Whisper, or Browser-Use API keys" in prompt
 
     def test_non_subscriber_prompt_includes_relevant_upgrade_guidance(self, monkeypatch):
-        monkeypatch.setattr("tools.tool_backend_helpers.managed_nous_tools_enabled", lambda: True)
+        monkeypatch.setattr("hermes_agent.tools.tool_backend_helpers.managed_nous_tools_enabled", lambda: True)
         monkeypatch.setattr(
-            "hermes_cli.nous_subscription.get_nous_subscription_features",
+            "hermes_agent.hermes_cli.nous_subscription.get_nous_subscription_features",
             lambda config=None: NousSubscriptionFeatures(
                 subscribed=False,
                 nous_auth_present=False,
@@ -677,7 +677,7 @@ class TestBuildNousSubscriptionPrompt:
         assert "Do not mention subscription unless" in prompt
 
     def test_feature_flag_off_returns_empty_prompt(self, monkeypatch):
-        monkeypatch.setattr("tools.tool_backend_helpers.managed_nous_tools_enabled", lambda: False)
+        monkeypatch.setattr("hermes_agent.tools.tool_backend_helpers.managed_nous_tools_enabled", lambda: False)
 
         prompt = build_nous_subscription_prompt({"web_search"})
 
@@ -1078,7 +1078,7 @@ class TestEnvironmentHints:
         assert "WSL" in WSL_ENVIRONMENT_HINT
 
     def test_build_environment_hints_on_wsl(self, monkeypatch):
-        import agent.prompt_builder as _pb
+        import hermes_agent.agent.prompt_builder as _pb
         monkeypatch.setattr(_pb, "is_wsl", lambda: True)
         monkeypatch.delenv("TERMINAL_ENV", raising=False)
         _pb._clear_backend_probe_cache()
@@ -1089,7 +1089,7 @@ class TestEnvironmentHints:
         assert "User home directory:" in result
 
     def test_build_environment_hints_on_linux_local(self, monkeypatch):
-        import agent.prompt_builder as _pb
+        import hermes_agent.agent.prompt_builder as _pb
         import sys, platform
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
         monkeypatch.setattr(sys, "platform", "linux")
@@ -1109,7 +1109,7 @@ class TestEnvironmentHints:
         assert "WSL" not in result
 
     def test_build_environment_hints_on_windows_local(self, monkeypatch):
-        import agent.prompt_builder as _pb
+        import hermes_agent.agent.prompt_builder as _pb
         import sys
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
         monkeypatch.setattr(sys, "platform", "win32")
@@ -1126,7 +1126,7 @@ class TestEnvironmentHints:
         assert "PowerShell" in result
 
     def test_build_environment_hints_on_macos_local(self, monkeypatch):
-        import agent.prompt_builder as _pb
+        import hermes_agent.agent.prompt_builder as _pb
         import sys
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
         monkeypatch.setattr(sys, "platform", "darwin")
@@ -1141,7 +1141,7 @@ class TestEnvironmentHints:
 
     def test_build_environment_hints_suppresses_host_on_docker_backend(self, monkeypatch):
         """Docker/remote backends must hide host info — the agent can only touch the backend."""
-        import agent.prompt_builder as _pb
+        import hermes_agent.agent.prompt_builder as _pb
         import sys
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
         monkeypatch.setattr(sys, "platform", "win32")
@@ -1162,7 +1162,7 @@ class TestEnvironmentHints:
     def test_build_environment_hints_uses_terminal_cwd_over_launch_dir(self, monkeypatch, tmp_path):
         """THE BUG: gateway/cron set TERMINAL_CWD but the prompt emitted os.getcwd()
         (the daemon launch dir). Regression for #24882/#24969/#27383/#29265."""
-        import agent.prompt_builder as _pb
+        import hermes_agent.agent.prompt_builder as _pb
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
         monkeypatch.delenv("TERMINAL_ENV", raising=False)
         configured = tmp_path / "workspace"
@@ -1174,7 +1174,7 @@ class TestEnvironmentHints:
 
     def test_build_environment_hints_falls_back_to_launch_dir(self, monkeypatch, tmp_path):
         """The #19242 local-CLI contract: no TERMINAL_CWD → the launch dir."""
-        import agent.prompt_builder as _pb
+        import hermes_agent.agent.prompt_builder as _pb
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
         monkeypatch.delenv("TERMINAL_ENV", raising=False)
         monkeypatch.delenv("TERMINAL_CWD", raising=False)
@@ -1184,7 +1184,7 @@ class TestEnvironmentHints:
 
     def test_build_environment_hints_uses_live_probe_when_available(self, monkeypatch):
         """When the probe succeeds, its output must appear in the hint block."""
-        import agent.prompt_builder as _pb
+        import hermes_agent.agent.prompt_builder as _pb
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
         monkeypatch.setenv("TERMINAL_ENV", "modal")
         fake_probe_output = "  OS: Linux 6.8.0\n  User: root\n  Home: /root\n  Working directory: /workspace"
@@ -1197,7 +1197,7 @@ class TestEnvironmentHints:
 
     def test_remote_backend_list_covers_known_sandboxes(self):
         """Regression guard: if someone adds a remote backend, they must list it here."""
-        import agent.prompt_builder as _pb
+        import hermes_agent.agent.prompt_builder as _pb
         for backend in ("docker", "singularity", "modal", "daytona", "ssh"):
             assert backend in _pb._REMOTE_TERMINAL_BACKENDS, (
                 f"{backend!r} must be in _REMOTE_TERMINAL_BACKENDS so its host "
@@ -1206,7 +1206,7 @@ class TestEnvironmentHints:
 
     def test_environment_hint_from_env_var_is_appended(self, monkeypatch):
         """HERMES_ENVIRONMENT_HINT lets an embedder describe the runtime env."""
-        import agent.prompt_builder as _pb
+        import hermes_agent.agent.prompt_builder as _pb
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
         monkeypatch.delenv("TERMINAL_ENV", raising=False)
         monkeypatch.setenv("HERMES_ENVIRONMENT_HINT", "Running inside an OpenShell sandbox.")
@@ -1218,12 +1218,12 @@ class TestEnvironmentHints:
 
     def test_environment_hint_env_var_overrides_config(self, monkeypatch):
         """Env var wins over config.yaml agent.environment_hint."""
-        import agent.prompt_builder as _pb
+        import hermes_agent.agent.prompt_builder as _pb
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
         monkeypatch.delenv("TERMINAL_ENV", raising=False)
         monkeypatch.setenv("HERMES_ENVIRONMENT_HINT", "ENV-WINS")
         monkeypatch.setattr(
-            "hermes_cli.config.load_config",
+            "hermes_agent.hermes_cli.config.load_config",
             lambda: {"agent": {"environment_hint": "CONFIG-VALUE"}},
         )
         _pb._clear_backend_probe_cache()
@@ -1233,12 +1233,12 @@ class TestEnvironmentHints:
 
     def test_environment_hint_falls_back_to_config(self, monkeypatch):
         """With no env var, the config.yaml value is used."""
-        import agent.prompt_builder as _pb
+        import hermes_agent.agent.prompt_builder as _pb
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
         monkeypatch.delenv("TERMINAL_ENV", raising=False)
         monkeypatch.delenv("HERMES_ENVIRONMENT_HINT", raising=False)
         monkeypatch.setattr(
-            "hermes_cli.config.load_config",
+            "hermes_agent.hermes_cli.config.load_config",
             lambda: {"agent": {"environment_hint": "CONFIG-VALUE"}},
         )
         _pb._clear_backend_probe_cache()
@@ -1247,11 +1247,11 @@ class TestEnvironmentHints:
 
     def test_environment_hint_empty_by_default(self, monkeypatch):
         """No hint configured anywhere → no embedder text, host block intact."""
-        import agent.prompt_builder as _pb
+        import hermes_agent.agent.prompt_builder as _pb
         monkeypatch.setattr(_pb, "is_wsl", lambda: False)
         monkeypatch.delenv("TERMINAL_ENV", raising=False)
         monkeypatch.delenv("HERMES_ENVIRONMENT_HINT", raising=False)
-        monkeypatch.setattr("hermes_cli.config.load_config", lambda: {"agent": {}})
+        monkeypatch.setattr("hermes_agent.hermes_cli.config.load_config", lambda: {"agent": {}})
         _pb._clear_backend_probe_cache()
         result = _pb.build_environment_hints()
         assert "Host:" in result
@@ -1316,7 +1316,7 @@ class TestSkillShouldShow:
 class TestBuildSkillsSystemPromptConditional:
     @pytest.fixture(autouse=True)
     def _clear_skills_cache(self):
-        from agent.prompt_builder import clear_skills_system_prompt_cache
+        from hermes_agent.agent.prompt_builder import clear_skills_system_prompt_cache
         clear_skills_system_prompt_cache(clear_snapshot=True)
         yield
         clear_skills_system_prompt_cache(clear_snapshot=True)

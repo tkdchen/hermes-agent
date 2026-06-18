@@ -21,7 +21,7 @@ class TestCustomProvidersVisionOverride:
 
     def test_custom_providers_supports_vision_true(self):
         """custom_providers entry with supports_vision=true → native routing."""
-        from agent.image_routing import _supports_vision_override
+        from hermes_agent.agent.image_routing import _supports_vision_override
         cfg = {
             "custom_providers": [
                 {
@@ -41,7 +41,7 @@ class TestCustomProvidersVisionOverride:
 
     def test_custom_providers_supports_vision_false(self):
         """custom_providers entry with supports_vision=False → explicit false."""
-        from agent.image_routing import _supports_vision_override
+        from hermes_agent.agent.image_routing import _supports_vision_override
         cfg = {
             "custom_providers": [
                 {
@@ -59,7 +59,7 @@ class TestCustomProvidersVisionOverride:
 
     def test_custom_providers_custom_prefix(self):
         """Provider name at runtime may be 'custom:<name>'."""
-        from agent.image_routing import _supports_vision_override
+        from hermes_agent.agent.image_routing import _supports_vision_override
         cfg = {
             "custom_providers": [
                 {
@@ -80,7 +80,7 @@ class TestCustomProvidersVisionOverride:
 
     def test_custom_providers_no_match_returns_none(self):
         """No matching custom_providers entry → falls through (returns None)."""
-        from agent.image_routing import _supports_vision_override
+        from hermes_agent.agent.image_routing import _supports_vision_override
         cfg = {
             "custom_providers": [
                 {
@@ -100,7 +100,7 @@ class TestCustomProvidersVisionOverride:
 
     def test_custom_providers_model_not_listed(self):
         """Entry exists but model is not listed → falls through."""
-        from agent.image_routing import _supports_vision_override
+        from hermes_agent.agent.image_routing import _supports_vision_override
         cfg = {
             "custom_providers": [
                 {
@@ -120,7 +120,7 @@ class TestCustomProvidersVisionOverride:
 
     def test_custom_providers_ignores_non_dict_entries(self):
         """Non-dict entries in custom_providers list are skipped."""
-        from agent.image_routing import _supports_vision_override
+        from hermes_agent.agent.image_routing import _supports_vision_override
         cfg = {
             "custom_providers": [
                 "not-a-dict",
@@ -143,14 +143,14 @@ class TestCustomProvidersVisionOverride:
 
     def test_custom_providers_empty_list(self):
         """Empty custom_providers list → no override."""
-        from agent.image_routing import _supports_vision_override
+        from hermes_agent.agent.image_routing import _supports_vision_override
         cfg = {"custom_providers": []}
         result = _supports_vision_override(cfg, "any", "any")
         assert result is None
 
     def test_custom_providers_no_models_key(self):
         """Entry without models key → skipped gracefully."""
-        from agent.image_routing import _supports_vision_override
+        from hermes_agent.agent.image_routing import _supports_vision_override
         cfg = {
             "custom_providers": [
                 {"name": "my-provider"}  # no models key
@@ -163,7 +163,7 @@ class TestCustomProvidersVisionOverride:
 
     def test_custom_providers_empty_name(self):
         """Entry with empty name → skipped."""
-        from agent.image_routing import _supports_vision_override
+        from hermes_agent.agent.image_routing import _supports_vision_override
         cfg = {
             "custom_providers": [
                 {
@@ -185,7 +185,7 @@ class TestDecideImageInputMode:
     """End-to-end: custom_providers overrides should produce 'native' mode."""
 
     def test_custom_providers_true_returns_native(self):
-        from agent.image_routing import decide_image_input_mode
+        from hermes_agent.agent.image_routing import decide_image_input_mode
         cfg = {
             "custom_providers": [
                 {
@@ -204,7 +204,7 @@ class TestDecideImageInputMode:
         assert result == "native"
 
     def test_custom_providers_false_returns_text(self):
-        from agent.image_routing import decide_image_input_mode
+        from hermes_agent.agent.image_routing import decide_image_input_mode
         cfg = {
             "custom_providers": [
                 {
@@ -222,7 +222,7 @@ class TestDecideImageInputMode:
 
     def test_top_level_supports_vision_takes_precedence(self):
         """Top-level model.supports_vision still wins over custom_providers."""
-        from agent.image_routing import decide_image_input_mode
+        from hermes_agent.agent.image_routing import decide_image_input_mode
         cfg = {
             "model": {"supports_vision": False},
             "custom_providers": [
@@ -240,8 +240,8 @@ class TestDecideImageInputMode:
         assert result == "text"
 
     def test_providers_dict_takes_precedence(self):
-        """providers.<name>.models takes precedence over custom_providers."""
-        from agent.image_routing import decide_image_input_mode
+        """hermes_agent.providers.<name>.models takes precedence over custom_providers."""
+        from hermes_agent.agent.image_routing import decide_image_input_mode
         cfg = {
             "providers": {
                 "my-provider": {

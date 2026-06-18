@@ -15,7 +15,7 @@ from prompt_toolkit.keys import Keys
 
 
 ROOT = Path(__file__).resolve().parents[2]
-CLI_PATH = ROOT / "cli.py"
+CLI_PATH = ROOT / "hermes_agent.cli.py"
 
 
 def _load_production_patch_helper():
@@ -38,7 +38,7 @@ def _load_production_patch_helper():
         None,
     )
     assert helper_node is not None, (
-        "cli.py must define _apply_bracketed_paste_timeout_patch()"
+        "hermes_agent.cli.py must define _apply_bracketed_paste_timeout_patch()"
     )
     helper_source = ast.get_source_segment(source, helper_node)
     namespace = {"time": time, "logger": logging.getLogger("test.cli")}

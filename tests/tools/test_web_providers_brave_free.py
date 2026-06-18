@@ -28,26 +28,26 @@ from tests.tools.conftest import register_all_web_providers
 class TestBraveFreeProviderIsConfigured:
     def test_configured_when_key_set(self, monkeypatch):
         monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "BSAkey123")
-        from plugins.web.brave_free.provider import BraveFreeWebSearchProvider
+        from hermes_agent.plugins.web.brave_free.provider import BraveFreeWebSearchProvider
         assert BraveFreeWebSearchProvider().is_available() is True
 
     def test_not_configured_when_key_missing(self, monkeypatch):
         monkeypatch.delenv("BRAVE_SEARCH_API_KEY", raising=False)
-        from plugins.web.brave_free.provider import BraveFreeWebSearchProvider
+        from hermes_agent.plugins.web.brave_free.provider import BraveFreeWebSearchProvider
         assert BraveFreeWebSearchProvider().is_available() is False
 
     def test_not_configured_when_key_whitespace(self, monkeypatch):
         monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "   ")
-        from plugins.web.brave_free.provider import BraveFreeWebSearchProvider
+        from hermes_agent.plugins.web.brave_free.provider import BraveFreeWebSearchProvider
         assert BraveFreeWebSearchProvider().is_available() is False
 
     def test_provider_name(self):
-        from plugins.web.brave_free.provider import BraveFreeWebSearchProvider
+        from hermes_agent.plugins.web.brave_free.provider import BraveFreeWebSearchProvider
         assert BraveFreeWebSearchProvider().name == "brave-free"
 
     def test_implements_web_search_provider(self):
-        from agent.web_search_provider import WebSearchProvider
-        from plugins.web.brave_free.provider import BraveFreeWebSearchProvider
+        from hermes_agent.agent.web_search_provider import WebSearchProvider
+        from hermes_agent.plugins.web.brave_free.provider import BraveFreeWebSearchProvider
         assert issubclass(BraveFreeWebSearchProvider, WebSearchProvider)
 
 
@@ -72,7 +72,7 @@ class TestBraveFreeProviderSearch:
 
     def test_happy_path_normalizes_results(self, monkeypatch):
         monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "BSAkey123")
-        from plugins.web.brave_free.provider import BraveFreeWebSearchProvider
+        from hermes_agent.plugins.web.brave_free.provider import BraveFreeWebSearchProvider
 
         with patch("httpx.get", return_value=self._mock_resp(self._SAMPLE_RESPONSE)):
             result = BraveFreeWebSearchProvider().search("test query", limit=5)
@@ -86,7 +86,7 @@ class TestBraveFreeProviderSearch:
     def test_sends_subscription_token_header_and_count(self, monkeypatch):
         """Brave uses X-Subscription-Token; count maps from limit."""
         monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "BSAkey123")
-        from plugins.web.brave_free.provider import BraveFreeWebSearchProvider
+        from hermes_agent.plugins.web.brave_free.provider import BraveFreeWebSearchProvider
 
         captured = {}
 
@@ -107,7 +107,7 @@ class TestBraveFreeProviderSearch:
     def test_count_is_capped_at_20(self, monkeypatch):
         """Brave caps count at 20 — limit above that clamps."""
         monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "BSAkey123")
-        from plugins.web.brave_free.provider import BraveFreeWebSearchProvider
+        from hermes_agent.plugins.web.brave_free.provider import BraveFreeWebSearchProvider
 
         captured = {}
 
@@ -122,7 +122,7 @@ class TestBraveFreeProviderSearch:
 
     def test_limit_is_respected_client_side(self, monkeypatch):
         monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "BSAkey123")
-        from plugins.web.brave_free.provider import BraveFreeWebSearchProvider
+        from hermes_agent.plugins.web.brave_free.provider import BraveFreeWebSearchProvider
 
         with patch("httpx.get", return_value=self._mock_resp(self._SAMPLE_RESPONSE)):
             result = BraveFreeWebSearchProvider().search("q", limit=2)
@@ -132,7 +132,7 @@ class TestBraveFreeProviderSearch:
 
     def test_empty_results(self, monkeypatch):
         monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "BSAkey123")
-        from plugins.web.brave_free.provider import BraveFreeWebSearchProvider
+        from hermes_agent.plugins.web.brave_free.provider import BraveFreeWebSearchProvider
 
         with patch("httpx.get", return_value=self._mock_resp({"web": {"results": []}})):
             result = BraveFreeWebSearchProvider().search("nothing", limit=5)
@@ -143,7 +143,7 @@ class TestBraveFreeProviderSearch:
     def test_missing_web_key_returns_empty(self, monkeypatch):
         """Responses without a ``web`` block should produce an empty result set, not crash."""
         monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "BSAkey123")
-        from plugins.web.brave_free.provider import BraveFreeWebSearchProvider
+        from hermes_agent.plugins.web.brave_free.provider import BraveFreeWebSearchProvider
 
         with patch("httpx.get", return_value=self._mock_resp({})):
             result = BraveFreeWebSearchProvider().search("q", limit=5)
@@ -154,7 +154,7 @@ class TestBraveFreeProviderSearch:
     def test_http_error_returns_failure(self, monkeypatch):
         import httpx
         monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "BSAkey123")
-        from plugins.web.brave_free.provider import BraveFreeWebSearchProvider
+        from hermes_agent.plugins.web.brave_free.provider import BraveFreeWebSearchProvider
 
         bad = MagicMock()
         bad.status_code = 429
@@ -169,7 +169,7 @@ class TestBraveFreeProviderSearch:
     def test_request_error_returns_failure(self, monkeypatch):
         import httpx
         monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "BSAkey123")
-        from plugins.web.brave_free.provider import BraveFreeWebSearchProvider
+        from hermes_agent.plugins.web.brave_free.provider import BraveFreeWebSearchProvider
 
         with patch("httpx.get", side_effect=httpx.RequestError("boom")):
             result = BraveFreeWebSearchProvider().search("q", limit=5)
@@ -179,7 +179,7 @@ class TestBraveFreeProviderSearch:
 
     def test_missing_key_returns_failure(self, monkeypatch):
         monkeypatch.delenv("BRAVE_SEARCH_API_KEY", raising=False)
-        from plugins.web.brave_free.provider import BraveFreeWebSearchProvider
+        from hermes_agent.plugins.web.brave_free.provider import BraveFreeWebSearchProvider
 
         result = BraveFreeWebSearchProvider().search("q", limit=5)
         assert result["success"] is False
@@ -194,22 +194,22 @@ class TestBraveFreeProviderSearch:
 class TestBraveFreeBackendWiring:
     def test_is_backend_available_true_when_key_set(self, monkeypatch):
         monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "BSAkey123")
-        from tools.web_tools import _is_backend_available
+        from hermes_agent.tools.web_tools import _is_backend_available
         assert _is_backend_available("brave-free") is True
 
     def test_is_backend_available_false_when_key_missing(self, monkeypatch):
         monkeypatch.delenv("BRAVE_SEARCH_API_KEY", raising=False)
-        from tools.web_tools import _is_backend_available
+        from hermes_agent.tools.web_tools import _is_backend_available
         assert _is_backend_available("brave-free") is False
 
     def test_configured_backend_accepted(self, monkeypatch):
-        from tools import web_tools
+        from hermes_agent.tools import web_tools
         monkeypatch.setattr(web_tools, "_load_web_config", lambda: {"backend": "brave-free"})
         monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "BSAkey123")
         assert web_tools._get_backend() == "brave-free"
 
     def test_auto_detect_picks_brave_free_when_only_key_set(self, monkeypatch):
-        from tools import web_tools
+        from hermes_agent.tools import web_tools
         monkeypatch.setattr(web_tools, "_load_web_config", lambda: {})
         for key in ("FIRECRAWL_API_KEY", "FIRECRAWL_API_URL", "PARALLEL_API_KEY",
                     "TAVILY_API_KEY", "EXA_API_KEY", "SEARXNG_URL"):
@@ -221,7 +221,7 @@ class TestBraveFreeBackendWiring:
 
     def test_brave_free_does_not_override_paid_provider(self, monkeypatch):
         """Tavily (higher priority) should win in auto-detect."""
-        from tools import web_tools
+        from hermes_agent.tools import web_tools
         monkeypatch.setattr(web_tools, "_load_web_config", lambda: {})
         for key in ("FIRECRAWL_API_KEY", "FIRECRAWL_API_URL", "PARALLEL_API_KEY", "EXA_API_KEY", "SEARXNG_URL"):
             monkeypatch.delenv(key, raising=False)
@@ -231,7 +231,7 @@ class TestBraveFreeBackendWiring:
         assert web_tools._get_backend() == "tavily"
 
     def test_check_web_api_key_true_when_brave_free_configured(self, monkeypatch):
-        from tools import web_tools
+        from hermes_agent.tools import web_tools
         monkeypatch.setattr(web_tools, "_load_web_config", lambda: {"backend": "brave-free"})
         monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "BSAkey123")
         assert web_tools.check_web_api_key() is True
@@ -249,12 +249,12 @@ class TestBraveFreeSearchOnlyErrors:
     def _populate_web_registry(self):
         self._register_providers()
         yield
-        from agent.web_search_registry import _reset_for_tests
+        from hermes_agent.agent.web_search_registry import _reset_for_tests
         _reset_for_tests()
 
     def test_web_extract_returns_search_only_error(self, monkeypatch):
         import asyncio
-        from tools import web_tools
+        from hermes_agent.tools import web_tools
 
         monkeypatch.setattr(web_tools, "_load_web_config", lambda: {"backend": "brave-free"})
         monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "BSAkey123")
@@ -263,7 +263,7 @@ class TestBraveFreeSearchOnlyErrors:
             return True
 
         monkeypatch.setattr(web_tools, "async_is_safe_url", _allow_ssrf)
-        monkeypatch.setattr("tools.interrupt.is_interrupted", lambda: False, raising=False)
+        monkeypatch.setattr("hermes_agent.tools.interrupt.is_interrupted", lambda: False, raising=False)
 
         result_str = asyncio.get_event_loop().run_until_complete(
             web_tools.web_extract_tool(["https://example.com"])

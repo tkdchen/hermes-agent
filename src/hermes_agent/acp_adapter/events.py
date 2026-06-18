@@ -91,7 +91,7 @@ def _send_update(
     update: Any,
 ) -> None:
     """Fire-and-forget an ACP session update from a worker thread."""
-    from agent.async_utils import safe_schedule_threadsafe
+    from hermes_agent.agent.async_utils import safe_schedule_threadsafe
 
     future = safe_schedule_threadsafe(
         conn.session_update(session_id, update),
@@ -156,7 +156,7 @@ def make_tool_progress_cb(
         snapshot = None
         if name in {"write_file", "patch", "skill_manage"}:
             try:
-                from agent.display import capture_local_edit_snapshot
+                from hermes_agent.agent.display import capture_local_edit_snapshot
 
                 snapshot = capture_local_edit_snapshot(name, args)
             except Exception:
@@ -166,7 +166,7 @@ def make_tool_progress_cb(
         edit_diff = None
         if name in {"write_file", "patch"} and edit_approval_policy_getter is not None:
             try:
-                from acp_adapter.edit_approval import build_edit_proposal, should_auto_approve_edit
+                from hermes_agent.acp_adapter.edit_approval import build_edit_proposal, should_auto_approve_edit
 
                 proposal = build_edit_proposal(name, args)
                 if proposal is not None:

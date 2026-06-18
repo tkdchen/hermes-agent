@@ -21,7 +21,7 @@ import time
 
 import pytest
 
-from cron import jobs
+from hermes_agent.cron import jobs
 
 
 # Repo root (parent of the ``cron`` package) so the child process can import it.
@@ -46,7 +46,7 @@ def test_jobs_lock_excludes_another_process(tmp_path, monkeypatch):
             f"""
             import sys, time, pathlib
             sys.path.insert(0, {_REPO_ROOT!r})
-            from cron import jobs
+            from hermes_agent.cron import jobs
 
             jobs.CRON_DIR = pathlib.Path({str(cron_dir)!r})
             jobs.JOBS_FILE = jobs.CRON_DIR / "jobs.json"
@@ -70,7 +70,7 @@ def test_jobs_lock_excludes_another_process(tmp_path, monkeypatch):
             f"""
             import sys, pathlib
             sys.path.insert(0, {_REPO_ROOT!r})
-            from cron import jobs
+            from hermes_agent.cron import jobs
 
             jobs.CRON_DIR = pathlib.Path({str(cron_dir)!r})
             jobs.JOBS_FILE = jobs.CRON_DIR / "jobs.json"

@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from tools.vision_tools import (
+from hermes_agent.tools.vision_tools import (
     _validate_image_url,
     _handle_vision_analyze,
     _determine_mime_type,
@@ -34,26 +34,26 @@ class TestValidateImageUrl:
     """Tests for URL validation, including urlparse-based netloc check."""
 
     def test_valid_https_url(self):
-        with patch("tools.url_safety.socket.getaddrinfo", return_value=[
+        with patch("hermes_agent.tools.url_safety.socket.getaddrinfo", return_value=[
             (2, 1, 6, "", ("93.184.216.34", 0)),
         ]):
             assert _validate_image_url("https://example.com/image.jpg") is True
 
     def test_valid_http_url(self):
-        with patch("tools.url_safety.socket.getaddrinfo", return_value=[
+        with patch("hermes_agent.tools.url_safety.socket.getaddrinfo", return_value=[
             (2, 1, 6, "", ("93.184.216.34", 0)),
         ]):
             assert _validate_image_url("http://cdn.example.org/photo.png") is True
 
     def test_valid_url_without_extension(self):
         """CDN endpoints that redirect to images should still pass."""
-        with patch("tools.url_safety.socket.getaddrinfo", return_value=[
+        with patch("hermes_agent.tools.url_safety.socket.getaddrinfo", return_value=[
             (2, 1, 6, "", ("93.184.216.34", 0)),
         ]):
             assert _validate_image_url("https://cdn.example.com/abcdef123") is True
 
     def test_valid_url_with_query_params(self):
-        with patch("tools.url_safety.socket.getaddrinfo", return_value=[
+        with patch("hermes_agent.tools.url_safety.socket.getaddrinfo", return_value=[
             (2, 1, 6, "", ("93.184.216.34", 0)),
         ]):
             assert _validate_image_url("https://img.example.com/pic?w=200&h=200") is True
@@ -63,13 +63,13 @@ class TestValidateImageUrl:
         assert _validate_image_url("http://localhost:8080/image.png") is False
 
     def test_valid_url_with_port(self):
-        with patch("tools.url_safety.socket.getaddrinfo", return_value=[
+        with patch("hermes_agent.tools.url_safety.socket.getaddrinfo", return_value=[
             (2, 1, 6, "", ("93.184.216.34", 0)),
         ]):
             assert _validate_image_url("http://example.com:8080/image.png") is True
 
     def test_valid_url_with_path_only(self):
-        with patch("tools.url_safety.socket.getaddrinfo", return_value=[
+        with patch("hermes_agent.tools.url_safety.socket.getaddrinfo", return_value=[
             (2, 1, 6, "", ("93.184.216.34", 0)),
         ]):
             assert _validate_image_url("https://example.com/") is True
@@ -177,7 +177,7 @@ class TestHandleVisionAnalyze:
     def test_returns_awaitable(self):
         """The handler must return an Awaitable (coroutine) since it's registered as async."""
         with patch(
-            "tools.vision_tools.vision_analyze_tool", new_callable=AsyncMock
+            "hermes_agent.tools.vision_tools.vision_analyze_tool", new_callable=AsyncMock
         ) as mock_tool:
             mock_tool.return_value = json.dumps({"result": "ok"})
             result = _handle_vision_analyze(
@@ -194,7 +194,7 @@ class TestHandleVisionAnalyze:
     def test_prompt_contains_question(self):
         """The full prompt should incorporate the user's question."""
         with patch(
-            "tools.vision_tools.vision_analyze_tool", new_callable=AsyncMock
+            "hermes_agent.tools.vision_tools.vision_analyze_tool", new_callable=AsyncMock
         ) as mock_tool:
             mock_tool.return_value = json.dumps({"result": "ok"})
             coro = _handle_vision_analyze(
@@ -214,7 +214,7 @@ class TestHandleVisionAnalyze:
         """AUXILIARY_VISION_MODEL env var should override DEFAULT_VISION_MODEL."""
         with (
             patch(
-                "tools.vision_tools.vision_analyze_tool", new_callable=AsyncMock
+                "hermes_agent.tools.vision_tools.vision_analyze_tool", new_callable=AsyncMock
             ) as mock_tool,
             patch.dict(os.environ, {"AUXILIARY_VISION_MODEL": "custom/model-v1"}),
         ):
@@ -231,7 +231,7 @@ class TestHandleVisionAnalyze:
         """Without AUXILIARY_VISION_MODEL, model should be None (let call_llm resolve default)."""
         with (
             patch(
-                "tools.vision_tools.vision_analyze_tool", new_callable=AsyncMock
+                "hermes_agent.tools.vision_tools.vision_analyze_tool", new_callable=AsyncMock
             ) as mock_tool,
             patch.dict(os.environ, {}, clear=False),
         ):
@@ -251,7 +251,7 @@ class TestHandleVisionAnalyze:
     def test_empty_args_graceful(self):
         """Missing keys should default to empty strings, not raise."""
         with patch(
-            "tools.vision_tools.vision_analyze_tool", new_callable=AsyncMock
+            "hermes_agent.tools.vision_tools.vision_analyze_tool", new_callable=AsyncMock
         ) as mock_tool:
             mock_tool.return_value = json.dumps({"result": "ok"})
             result = _handle_vision_analyze({})
@@ -270,9 +270,9 @@ class TestErrorLoggingExcInfo:
     @pytest.mark.asyncio
     async def test_download_failure_logs_exc_info(self, tmp_path, caplog):
         """After max retries, the download error should include exc_info."""
-        from tools.vision_tools import _download_image
+        from hermes_agent.tools.vision_tools import _download_image
 
-        with patch("tools.vision_tools.httpx.AsyncClient") as mock_client_cls:
+        with patch("hermes_agent.tools.vision_tools.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=False)
@@ -281,7 +281,7 @@ class TestErrorLoggingExcInfo:
 
             dest = tmp_path / "image.jpg"
             with (
-                caplog.at_level(logging.ERROR, logger="tools.vision_tools"),
+                caplog.at_level(logging.ERROR, logger="hermes_agent.tools.vision_tools"),
                 pytest.raises(ConnectionError),
             ):
                 await _download_image(
@@ -297,13 +297,13 @@ class TestErrorLoggingExcInfo:
     async def test_analysis_error_logs_exc_info(self, caplog):
         """When vision_analyze_tool encounters an error, it should log with exc_info."""
         with (
-            patch("tools.vision_tools._validate_image_url_async", new_callable=AsyncMock, return_value=True),
+            patch("hermes_agent.tools.vision_tools._validate_image_url_async", new_callable=AsyncMock, return_value=True),
             patch(
-                "tools.vision_tools._download_image",
+                "hermes_agent.tools.vision_tools._download_image",
                 new_callable=AsyncMock,
                 side_effect=Exception("download boom"),
             ),
-            caplog.at_level(logging.ERROR, logger="tools.vision_tools"),
+            caplog.at_level(logging.ERROR, logger="hermes_agent.tools.vision_tools"),
         ):
             result = await vision_analyze_tool(
                 "https://example.com/img.jpg", "describe this", "test/model"
@@ -329,13 +329,13 @@ class TestErrorLoggingExcInfo:
             return dest
 
         with (
-            patch("tools.vision_tools._validate_image_url_async", new_callable=AsyncMock, return_value=True),
-            patch("tools.vision_tools._download_image", side_effect=fake_download),
+            patch("hermes_agent.tools.vision_tools._validate_image_url_async", new_callable=AsyncMock, return_value=True),
+            patch("hermes_agent.tools.vision_tools._download_image", side_effect=fake_download),
             patch(
-                "tools.vision_tools._image_to_base64_data_url",
+                "hermes_agent.tools.vision_tools._image_to_base64_data_url",
                 return_value="data:image/jpeg;base64,abc",
             ),
-            caplog.at_level(logging.WARNING, logger="tools.vision_tools"),
+            caplog.at_level(logging.WARNING, logger="hermes_agent.tools.vision_tools"),
         ):
             # Mock the async_call_llm function to return a mock response
             mock_response = MagicMock()
@@ -344,7 +344,7 @@ class TestErrorLoggingExcInfo:
             mock_response.choices = [mock_choice]
 
             with (
-                patch("tools.vision_tools.async_call_llm", new_callable=AsyncMock, return_value=mock_response),
+                patch("hermes_agent.tools.vision_tools.async_call_llm", new_callable=AsyncMock, return_value=mock_response),
             ):
                 # Make unlink fail to trigger cleanup warning
                 original_unlink = Path.unlink
@@ -379,15 +379,15 @@ class TestVisionConfig:
         mock_response.choices = [mock_choice]
 
         with (
-            patch("hermes_cli.config.load_config", return_value={
+            patch("hermes_agent.hermes_cli.config.load_config", return_value={
                 "auxiliary": {"vision": {"temperature": 1, "timeout": 77}}
             }),
             patch(
-                "tools.vision_tools._image_to_base64_data_url",
+                "hermes_agent.tools.vision_tools._image_to_base64_data_url",
                 return_value="data:image/png;base64,abc",
             ),
             patch(
-                "tools.vision_tools.async_call_llm",
+                "hermes_agent.tools.vision_tools.async_call_llm",
                 new_callable=AsyncMock,
                 return_value=mock_response,
             ) as mock_llm,
@@ -409,13 +409,13 @@ class TestVisionConfig:
         mock_response.choices = [mock_choice]
 
         with (
-            patch("hermes_cli.config.load_config", return_value={"auxiliary": {"vision": {}}}),
+            patch("hermes_agent.hermes_cli.config.load_config", return_value={"auxiliary": {"vision": {}}}),
             patch(
-                "tools.vision_tools._image_to_base64_data_url",
+                "hermes_agent.tools.vision_tools._image_to_base64_data_url",
                 return_value="data:image/png;base64,abc",
             ),
             patch(
-                "tools.vision_tools.async_call_llm",
+                "hermes_agent.tools.vision_tools.async_call_llm",
                 new_callable=AsyncMock,
                 return_value=mock_response,
             ) as mock_llm,
@@ -433,7 +433,7 @@ class TestVisionSafetyGuards:
         secret = tmp_path / "secret.txt"
         secret.write_text("TOP-SECRET=1\n", encoding="utf-8")
 
-        with patch("tools.vision_tools.async_call_llm", new_callable=AsyncMock) as mock_llm:
+        with patch("hermes_agent.tools.vision_tools.async_call_llm", new_callable=AsyncMock) as mock_llm:
             result = json.loads(await vision_analyze_tool(str(secret), "extract text"))
 
         assert result["success"] is False
@@ -450,9 +450,9 @@ class TestVisionSafetyGuards:
         }
 
         with (
-            patch("tools.vision_tools.check_website_access", return_value=blocked),
-            patch("tools.vision_tools._validate_image_url_async", new_callable=AsyncMock, return_value=True),
-            patch("tools.vision_tools._download_image", new_callable=AsyncMock) as mock_download,
+            patch("hermes_agent.tools.vision_tools.check_website_access", return_value=blocked),
+            patch("hermes_agent.tools.vision_tools._validate_image_url_async", new_callable=AsyncMock, return_value=True),
+            patch("hermes_agent.tools.vision_tools._download_image", new_callable=AsyncMock) as mock_download,
         ):
             result = json.loads(await vision_analyze_tool("https://blocked.test/cat.png", "describe"))
 
@@ -462,7 +462,7 @@ class TestVisionSafetyGuards:
 
     @pytest.mark.asyncio
     async def test_download_blocks_redirected_final_url(self, tmp_path):
-        from tools.vision_tools import _download_image
+        from hermes_agent.tools.vision_tools import _download_image
 
         def fake_check(url):
             if url == "https://allowed.test/cat.png":
@@ -485,8 +485,8 @@ class TestVisionSafetyGuards:
                 return None
 
         with (
-            patch("tools.vision_tools.check_website_access", side_effect=fake_check),
-            patch("tools.vision_tools.httpx.AsyncClient") as mock_client_cls,
+            patch("hermes_agent.tools.vision_tools.check_website_access", side_effect=fake_check),
+            patch("hermes_agent.tools.vision_tools.httpx.AsyncClient") as mock_client_cls,
             pytest.raises(PermissionError, match="Blocked by website policy"),
         ):
             mock_client = AsyncMock()
@@ -560,11 +560,11 @@ class TestTildeExpansion:
 
         with (
             patch(
-                "tools.vision_tools._image_to_base64_data_url",
+                "hermes_agent.tools.vision_tools._image_to_base64_data_url",
                 return_value="data:image/png;base64,abc",
             ),
             patch(
-                "tools.vision_tools.async_call_llm",
+                "hermes_agent.tools.vision_tools.async_call_llm",
                 new_callable=AsyncMock,
                 return_value=mock_response,
             ),
@@ -612,11 +612,11 @@ class TestFileUriSupport:
 
         with (
             patch(
-                "tools.vision_tools._image_to_base64_data_url",
+                "hermes_agent.tools.vision_tools._image_to_base64_data_url",
                 return_value="data:image/png;base64,abc",
             ),
             patch(
-                "tools.vision_tools.async_call_llm",
+                "hermes_agent.tools.vision_tools.async_call_llm",
                 new_callable=AsyncMock,
                 return_value=mock_response,
             ),
@@ -652,8 +652,8 @@ class TestBase64SizeLimit:
         img.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * (4 * 1024 * 1024))
 
         # Patch the hard limit to a small value so the test runs fast.
-        with patch("tools.vision_tools._MAX_BASE64_BYTES", 1000), \
-             patch("tools.vision_tools.async_call_llm", new_callable=AsyncMock) as mock_llm:
+        with patch("hermes_agent.tools.vision_tools._MAX_BASE64_BYTES", 1000), \
+             patch("hermes_agent.tools.vision_tools.async_call_llm", new_callable=AsyncMock) as mock_llm:
             result = json.loads(await vision_analyze_tool(str(img), "describe this"))
 
         assert result["success"] is False
@@ -673,7 +673,7 @@ class TestBase64SizeLimit:
 
         with (
             patch(
-                "tools.vision_tools.async_call_llm",
+                "hermes_agent.tools.vision_tools.async_call_llm",
                 new_callable=AsyncMock,
                 return_value=mock_response,
             ),
@@ -704,11 +704,11 @@ class TestErrorClassification:
 
         with (
             patch(
-                "tools.vision_tools._image_to_base64_data_url",
+                "hermes_agent.tools.vision_tools._image_to_base64_data_url",
                 return_value="data:image/png;base64,abc",
             ),
             patch(
-                "tools.vision_tools.async_call_llm",
+                "hermes_agent.tools.vision_tools.async_call_llm",
                 new_callable=AsyncMock,
                 side_effect=api_error,
             ),
@@ -722,7 +722,7 @@ class TestErrorClassification:
 
 class TestVisionRegistration:
     def test_vision_analyze_registered(self):
-        from tools.registry import registry
+        from hermes_agent.tools.registry import registry
 
         entry = registry._tools.get("vision_analyze")
         assert entry is not None
@@ -730,7 +730,7 @@ class TestVisionRegistration:
         assert entry.is_async is True
 
     def test_schema_has_required_fields(self):
-        from tools.registry import registry
+        from hermes_agent.tools.registry import registry
 
         entry = registry._tools.get("vision_analyze")
         schema = entry.schema
@@ -741,7 +741,7 @@ class TestVisionRegistration:
         assert "question" in props
 
     def test_handler_is_callable(self):
-        from tools.registry import registry
+        from hermes_agent.tools.registry import registry
 
         entry = registry._tools.get("vision_analyze")
         assert callable(entry.handler)
@@ -885,7 +885,7 @@ class TestResizeImageForVision:
         # Write enough bytes to exceed a tiny limit
         path.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 1000)
 
-        with patch("tools.vision_tools._image_to_base64_data_url") as mock_b64:
+        with patch("hermes_agent.tools.vision_tools._image_to_base64_data_url") as mock_b64:
             # Simulate a large base64 result
             mock_b64.return_value = "data:image/png;base64," + "A" * 200
             with patch.dict("sys.modules", {"PIL": None, "PIL.Image": None}):
@@ -1016,7 +1016,7 @@ class TestDownloadRetryClassification:
         return mock_client
 
     def test_is_retryable_classification(self):
-        from tools.vision_tools import _is_retryable_download_error
+        from hermes_agent.tools.vision_tools import _is_retryable_download_error
 
         # Non-retryable client errors
         for code in (400, 403, 404, 410):
@@ -1034,12 +1034,12 @@ class TestDownloadRetryClassification:
     async def test_404_fails_fast_without_retry(self, tmp_path):
         """A 404 must raise on the first attempt — no backoff sleep, no extra GETs."""
         import httpx
-        from tools.vision_tools import _download_image
+        from hermes_agent.tools.vision_tools import _download_image
 
         mock_client = self._make_client_raising_status(404)
         with (
-            patch("tools.vision_tools.httpx.AsyncClient", return_value=mock_client),
-            patch("tools.vision_tools.check_website_access", return_value=None),
+            patch("hermes_agent.tools.vision_tools.httpx.AsyncClient", return_value=mock_client),
+            patch("hermes_agent.tools.vision_tools.check_website_access", return_value=None),
             patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
             pytest.raises(httpx.HTTPStatusError),
         ):
@@ -1054,12 +1054,12 @@ class TestDownloadRetryClassification:
     async def test_503_retries_then_raises(self, tmp_path):
         """A 5xx is retried up to max_retries, sleeping between attempts."""
         import httpx
-        from tools.vision_tools import _download_image
+        from hermes_agent.tools.vision_tools import _download_image
 
         mock_client = self._make_client_raising_status(503)
         with (
-            patch("tools.vision_tools.httpx.AsyncClient", return_value=mock_client),
-            patch("tools.vision_tools.check_website_access", return_value=None),
+            patch("hermes_agent.tools.vision_tools.httpx.AsyncClient", return_value=mock_client),
+            patch("hermes_agent.tools.vision_tools.check_website_access", return_value=None),
             patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
             pytest.raises(httpx.HTTPStatusError),
         ):

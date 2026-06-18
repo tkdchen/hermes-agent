@@ -20,7 +20,7 @@ import uuid
 from abc import ABC, abstractmethod
 from urllib.parse import urlsplit
 
-from utils import normalize_proxy_url
+from hermes_agent.utils import normalize_proxy_url
 
 logger = logging.getLogger(__name__)
 
@@ -490,9 +490,9 @@ from enum import Enum
 from pathlib import Path as _Path
 sys.path.insert(0, str(_Path(__file__).resolve().parents[2]))
 
-from gateway.config import Platform, PlatformConfig
-from gateway.session import SessionSource, build_session_key
-from hermes_constants import get_default_hermes_root, get_hermes_dir, get_hermes_home
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.session import SessionSource, build_session_key
+from hermes_agent.hermes_constants import get_default_hermes_root, get_hermes_dir, get_hermes_home
 
 
 GATEWAY_SECRET_CAPTURE_UNSUPPORTED_MESSAGE = (
@@ -548,7 +548,7 @@ async def _ssrf_redirect_guard(response):
     """
     if response.is_redirect and response.next_request:
         redirect_url = str(response.next_request.url)
-        from tools.url_safety import is_safe_url
+        from hermes_agent.tools.url_safety import is_safe_url
         if not is_safe_url(redirect_url):
             raise ValueError(
                 f"Blocked redirect to private/internal address: {safe_url_for_log(redirect_url)}"
@@ -637,7 +637,7 @@ async def cache_image_from_url(url: str, ext: str = ".jpg", retries: int = 2) ->
     Raises:
         ValueError: If the URL targets a private/internal network (SSRF protection).
     """
-    from tools.url_safety import is_safe_url
+    from hermes_agent.tools.url_safety import is_safe_url
     if not is_safe_url(url):
         raise ValueError(f"Blocked unsafe URL (SSRF protection): {safe_url_for_log(url)}")
 
@@ -751,7 +751,7 @@ async def cache_audio_from_url(url: str, ext: str = ".ogg", retries: int = 2) ->
     Raises:
         ValueError: If the URL targets a private/internal network (SSRF protection).
     """
-    from tools.url_safety import is_safe_url
+    from hermes_agent.tools.url_safety import is_safe_url
     if not is_safe_url(url):
         raise ValueError(f"Blocked unsafe URL (SSRF protection): {safe_url_for_log(url)}")
 
@@ -1357,7 +1357,7 @@ def cache_media_bytes(
     caller can record an "unsupported" note. Images that fail validation
     (``cache_image_from_bytes`` raises ValueError) also return None.
     """
-    from tools.credential_files import to_agent_visible_cache_path
+    from hermes_agent.tools.credential_files import to_agent_visible_cache_path
 
     ext = _resolve_media_ext(filename, mime_type)
     mime = (mime_type or "").lower()
@@ -2048,7 +2048,7 @@ class BasePlatformAdapter(ABC):
         Default: map onto the stream consumer's existing primitives, preserving
         today's behavior 1:1.  ``sink`` is a GatewayStreamConsumer.
         """
-        from gateway.stream_events import MessageChunk, MessageStop, Commentary
+        from hermes_agent.gateway.stream_events import MessageChunk, MessageStop, Commentary
 
         if isinstance(event, MessageChunk):
             if event.text:
@@ -2077,11 +2077,11 @@ class BasePlatformAdapter(ABC):
         ``preview_max_len`` mirrors the ``tool_preview_length`` config (0 means
         "no cap" in verbose mode).
         """
-        from gateway.stream_events import ToolCallChunk
+        from hermes_agent.gateway.stream_events import ToolCallChunk
         if not isinstance(event, ToolCallChunk):
             return None
 
-        from agent.display import get_tool_emoji
+        from hermes_agent.agent.display import get_tool_emoji
         emoji = get_tool_emoji(event.tool_name, default="⚙️")
 
         if mode == "verbose":
@@ -2169,7 +2169,7 @@ class BasePlatformAdapter(ABC):
         downgrades subsequent failures to debug.
         """
         try:
-            from gateway.status import write_runtime_status
+            from hermes_agent.gateway.status import write_runtime_status
             write_runtime_status(platform=self.platform.value, **kwargs)
         except Exception as exc:
             # Use getattr so object.__new__(...) test harnesses that skip __init__
@@ -2201,7 +2201,7 @@ class BasePlatformAdapter(ABC):
 
     def _acquire_platform_lock(self, scope: str, identity: str, resource_desc: str) -> bool:
         """Acquire a scoped lock for this adapter. Returns True on success."""
-        from gateway.status import acquire_scoped_lock
+        from hermes_agent.gateway.status import acquire_scoped_lock
         self._platform_lock_scope = scope
         self._platform_lock_identity = identity
         acquired, existing = acquire_scoped_lock(
@@ -2224,7 +2224,7 @@ class BasePlatformAdapter(ABC):
         identity = getattr(self, '_platform_lock_identity', None)
         if not identity:
             return
-        from gateway.status import release_scoped_lock
+        from hermes_agent.gateway.status import release_scoped_lock
         release_scoped_lock(self._platform_lock_scope, identity)
         self._platform_lock_identity = None
 
@@ -2424,7 +2424,7 @@ class BasePlatformAdapter(ABC):
         auto-deletion.  Non-fatal if config is unreadable.
         """
         try:
-            from hermes_cli.config import load_config as _load_config
+            from hermes_agent.hermes_cli.config import load_config as _load_config
         except Exception:
             return 0
         try:
@@ -2556,7 +2556,7 @@ class BasePlatformAdapter(ABC):
             text = "\n".join(lines)
             # Text fallback: enable text-capture so the gateway intercept
             # picks up the user's typed reply (e.g. "2" or choice text).
-            from tools.clarify_gateway import mark_awaiting_text
+            from hermes_agent.tools.clarify_gateway import mark_awaiting_text
             mark_awaiting_text(clarify_id)
         else:
             text = f"❓ {question}"
@@ -3968,7 +3968,7 @@ class BasePlatformAdapter(ABC):
             # session lifecycle and its cleanup races with the running task
             # (see PR #4926).
             cmd = event.get_command()
-            from hermes_cli.commands import should_bypass_active_session
+            from hermes_agent.hermes_cli.commands import should_bypass_active_session
 
             if should_bypass_active_session(cmd):
                 # /stop, /new, /reset must cancel the in-flight adapter task
@@ -4029,7 +4029,7 @@ class BasePlatformAdapter(ABC):
             # reach the resolver before being treated as a new turn."
             if not cmd:
                 try:
-                    from tools import clarify_gateway as _clarify_mod
+                    from hermes_agent.tools import clarify_gateway as _clarify_mod
                     _has_text_clarify = (
                         _clarify_mod.get_pending_for_session(session_key) is not None
                     )
@@ -4291,7 +4291,7 @@ class BasePlatformAdapter(ABC):
                         and text_content
                         and not media_files):
                     try:
-                        from tools.tts_tool import text_to_speech_tool, check_tts_requirements
+                        from hermes_agent.tools.tts_tool import text_to_speech_tool, check_tts_requirements
                         if check_tts_requirements():
                             import json as _json
                             speech_text = self.prepare_tts_text(text_content)

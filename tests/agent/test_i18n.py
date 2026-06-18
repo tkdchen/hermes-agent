@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from agent import i18n
+from hermes_agent.agent import i18n
 
 
 LOCALES_DIR = Path(__file__).resolve().parents[2] / "locales"
@@ -137,7 +137,7 @@ def test_t_explicit_lang():
 
 
 def test_t_formats_placeholders():
-    msg = i18n.t("gateway.draining", lang="en", count=3)
+    msg = i18n.t("hermes_agent.gateway.draining", lang="en", count=3)
     assert "3" in msg
 
 
@@ -225,5 +225,5 @@ def test_t_resolves_real_string_in_source_checkout():
     """Sanity: in the test environment (a source checkout) t() must return a
     human string, never the bare key path. Guards against catalog-load
     regressions independent of packaging."""
-    assert i18n.t("gateway.reset.header_default", lang="en") != "gateway.reset.header_default"
-    assert i18n.t("gateway.status.header", lang="en") != "gateway.status.header"
+    assert i18n.t("hermes_agent.gateway.reset.header_default", lang="en") != "hermes_agent.gateway.reset.header_default"
+    assert i18n.t("hermes_agent.gateway.status.header", lang="en") != "hermes_agent.gateway.status.header"

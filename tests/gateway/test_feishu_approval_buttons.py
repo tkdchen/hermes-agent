@@ -37,9 +37,9 @@ def _ensure_feishu_mocks():
 
 _ensure_feishu_mocks()
 
-from gateway.config import PlatformConfig
-import gateway.platforms.feishu as feishu_module
-from gateway.platforms.feishu import FeishuAdapter
+from hermes_agent.gateway.config import PlatformConfig
+import hermes_agent.gateway.platforms.feishu as feishu_module
+from hermes_agent.gateway.platforms.feishu import FeishuAdapter
 
 
 # ---------------------------------------------------------------------------
@@ -319,7 +319,7 @@ class TestResolveApproval:
             "chat_id": "oc_12345",
         }
 
-        with patch("tools.approval.resolve_gateway_approval", return_value=1) as mock_resolve:
+        with patch("hermes_agent.tools.approval.resolve_gateway_approval", return_value=1) as mock_resolve:
             await adapter._resolve_approval(1, "once", "Norbert", open_id="ou_user1", chat_id="oc_12345")
 
         mock_resolve.assert_called_once_with("agent:main:feishu:group:oc_12345", "once")
@@ -334,7 +334,7 @@ class TestResolveApproval:
             "chat_id": "oc_12345",
         }
 
-        with patch("tools.approval.resolve_gateway_approval", return_value=1) as mock_resolve:
+        with patch("hermes_agent.tools.approval.resolve_gateway_approval", return_value=1) as mock_resolve:
             await adapter._resolve_approval(2, "deny", "Alice", open_id="ou_user1", chat_id="oc_12345")
 
         mock_resolve.assert_called_once_with("some-session", "deny")
@@ -348,7 +348,7 @@ class TestResolveApproval:
             "chat_id": "oc_99",
         }
 
-        with patch("tools.approval.resolve_gateway_approval", return_value=1) as mock_resolve:
+        with patch("hermes_agent.tools.approval.resolve_gateway_approval", return_value=1) as mock_resolve:
             await adapter._resolve_approval(3, "session", "Bob", open_id="ou_user1", chat_id="oc_99")
 
         mock_resolve.assert_called_once_with("sess-3", "session")
@@ -362,7 +362,7 @@ class TestResolveApproval:
             "chat_id": "oc_55",
         }
 
-        with patch("tools.approval.resolve_gateway_approval", return_value=1) as mock_resolve:
+        with patch("hermes_agent.tools.approval.resolve_gateway_approval", return_value=1) as mock_resolve:
             await adapter._resolve_approval(4, "always", "Carol", open_id="ou_user1", chat_id="oc_55")
 
         mock_resolve.assert_called_once_with("sess-4", "always")
@@ -371,7 +371,7 @@ class TestResolveApproval:
     async def test_already_resolved_drops_silently(self):
         adapter = _make_adapter()
 
-        with patch("tools.approval.resolve_gateway_approval") as mock_resolve:
+        with patch("hermes_agent.tools.approval.resolve_gateway_approval") as mock_resolve:
             await adapter._resolve_approval(99, "once", "Nobody", open_id="ou_user1", chat_id="oc_12345")
 
         mock_resolve.assert_not_called()
@@ -386,7 +386,7 @@ class TestResolveApproval:
             "chat_id": "oc_12345",
         }
 
-        with patch("tools.approval.resolve_gateway_approval") as mock_resolve:
+        with patch("hermes_agent.tools.approval.resolve_gateway_approval") as mock_resolve:
             await adapter._resolve_approval(5, "once", "Mallory", open_id="ou_intruder", chat_id="oc_12345")
 
         mock_resolve.assert_not_called()
@@ -401,7 +401,7 @@ class TestResolveApproval:
             "chat_id": "oc_expected",
         }
 
-        with patch("tools.approval.resolve_gateway_approval") as mock_resolve:
+        with patch("hermes_agent.tools.approval.resolve_gateway_approval") as mock_resolve:
             await adapter._resolve_approval(6, "session", "Norbert", open_id="ou_user1", chat_id="oc_wrong")
 
         mock_resolve.assert_not_called()

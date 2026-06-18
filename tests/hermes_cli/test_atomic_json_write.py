@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from utils import atomic_json_write
+from hermes_agent.utils import atomic_json_write
 
 
 class TestAtomicJsonWrite:
@@ -76,7 +76,7 @@ class TestAtomicJsonWrite:
         original = {"preserved": True}
         target.write_text(json.dumps(original), encoding="utf-8")
 
-        with patch("utils.json.dump", side_effect=SimulatedAbort):
+        with patch("hermes_agent.utils.json.dump", side_effect=SimulatedAbort):
             with pytest.raises(SimulatedAbort):
                 atomic_json_write(target, {"new": True})
 
@@ -141,7 +141,7 @@ class TestAtomicJsonWrite:
         Previously this crashed in `hermes memory setup` while saving the
         Hindsight config with mode=0o600 (GitHub: Windows setup traceback).
         """
-        import utils
+        import hermes_agent.utils as utils
 
         target = tmp_path / "secret.json"
         no_fchmod = {k: getattr(os, k) for k in dir(os) if k != "fchmod"}

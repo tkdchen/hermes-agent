@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, patch
 import pytest
 import yaml
 
-from gateway.config import GatewayConfig, Platform, load_gateway_config
-from gateway.platforms.base import MessageEvent, MessageType
-from gateway.session import SessionSource
+from hermes_agent.gateway.config import GatewayConfig, Platform, load_gateway_config
+from hermes_agent.gateway.platforms.base import MessageEvent, MessageType
+from hermes_agent.gateway.session import SessionSource
 
 
 def test_gateway_config_stt_disabled_from_dict_nested():
@@ -34,17 +34,17 @@ def test_load_gateway_config_bridges_stt_enabled_from_config_yaml(tmp_path, monk
 
 @pytest.mark.asyncio
 async def test_enrich_message_with_transcription_surfaces_path_when_stt_disabled():
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = GatewayRunner.__new__(GatewayRunner)
     runner.config = GatewayConfig(stt_enabled=False)
     runner._has_setup_skill = lambda: True  # Should NOT be consulted in disabled branch.
 
     with patch(
-        "tools.transcription_tools.transcribe_audio",
+        "hermes_agent.tools.transcription_tools.transcribe_audio",
         side_effect=AssertionError("transcribe_audio should not be called when STT is disabled"),
     ), patch(
-        "gateway.run._probe_audio_duration",
+        "hermes_agent.gateway.run._probe_audio_duration",
         new=AsyncMock(return_value="0:12"),
     ):
         result, transcripts = await runner._enrich_message_with_transcription(
@@ -61,13 +61,13 @@ async def test_enrich_message_with_transcription_surfaces_path_when_stt_disabled
 
 @pytest.mark.asyncio
 async def test_enrich_message_with_transcription_omits_duration_on_probe_failure():
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = GatewayRunner.__new__(GatewayRunner)
     runner.config = GatewayConfig(stt_enabled=False)
 
     with patch(
-        "gateway.run._probe_audio_duration",
+        "hermes_agent.gateway.run._probe_audio_duration",
         new=AsyncMock(return_value=None),
     ):
         result, transcripts = await runner._enrich_message_with_transcription(
@@ -82,13 +82,13 @@ async def test_enrich_message_with_transcription_omits_duration_on_probe_failure
 
 @pytest.mark.asyncio
 async def test_enrich_message_with_transcription_avoids_bogus_no_provider_message_for_backend_key_errors():
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = GatewayRunner.__new__(GatewayRunner)
     runner.config = GatewayConfig(stt_enabled=True)
 
     with patch(
-        "tools.transcription_tools.transcribe_audio",
+        "hermes_agent.tools.transcription_tools.transcribe_audio",
         return_value={"success": False, "error": "VOICE_TOOLS_OPENAI_KEY not set"},
     ):
         result, transcripts = await runner._enrich_message_with_transcription(
@@ -115,14 +115,14 @@ async def test_enrich_message_with_transcription_returns_tuple_for_empty_content
     string here raised ``ValueError: too many values to unpack`` and dropped the
     whole voice message on the floor.
     """
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = GatewayRunner.__new__(GatewayRunner)
     runner.config = GatewayConfig(stt_enabled=True)
     runner._has_setup_skill = lambda: False
 
     with patch(
-        "tools.transcription_tools.transcribe_audio",
+        "hermes_agent.tools.transcription_tools.transcribe_audio",
         return_value={
             "success": True,
             "transcript": "hello from a captionless voice note",
@@ -143,7 +143,7 @@ async def test_enrich_message_with_transcription_returns_tuple_for_empty_content
 
 @pytest.mark.asyncio
 async def test_prepare_inbound_message_text_transcribes_queued_voice_event():
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = GatewayRunner.__new__(GatewayRunner)
     runner.config = GatewayConfig(stt_enabled=True)
@@ -166,7 +166,7 @@ async def test_prepare_inbound_message_text_transcribes_queued_voice_event():
     )
 
     with patch(
-        "tools.transcription_tools.transcribe_audio",
+        "hermes_agent.tools.transcription_tools.transcribe_audio",
         return_value={
             "success": True,
             "transcript": "queued voice transcript",

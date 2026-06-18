@@ -82,7 +82,7 @@ def http_server(tmp_path, monkeypatch):
     # Force the constants/image cache helpers to re-read HERMES_HOME.
     import sys
     for mod in list(sys.modules):
-        if mod.startswith("hermes_constants") or mod.startswith("agent.image_gen_provider"):
+        if mod.startswith("hermes_constants") or mod.startswith("hermes_agent.agent.image_gen_provider"):
             sys.modules.pop(mod, None)
 
     httpd = socketserver.TCPServer(("127.0.0.1", 0), _TinyImageHandler)
@@ -96,7 +96,7 @@ def http_server(tmp_path, monkeypatch):
 class TestSaveUrlImage:
     def test_writes_real_bytes_to_hermes_home_cache(self, http_server):
         base, _ = http_server
-        from agent.image_gen_provider import save_url_image
+        from hermes_agent.agent.image_gen_provider import save_url_image
 
         path = save_url_image(f"{base}/image.png", prefix="xai_test")
 
@@ -109,7 +109,7 @@ class TestSaveUrlImage:
 
     def test_extension_inferred_from_content_type(self, http_server):
         base, _ = http_server
-        from agent.image_gen_provider import save_url_image
+        from hermes_agent.agent.image_gen_provider import save_url_image
 
         path = save_url_image(f"{base}/image.jpg", prefix="xai_test")
         assert path.suffix == ".jpg", "image/jpeg → .jpg"
@@ -117,14 +117,14 @@ class TestSaveUrlImage:
     def test_extension_falls_back_to_url_suffix(self, http_server):
         """Some CDNs send ``application/octet-stream`` — the URL suffix wins then."""
         base, _ = http_server
-        from agent.image_gen_provider import save_url_image
+        from hermes_agent.agent.image_gen_provider import save_url_image
 
         path = save_url_image(f"{base}/no-type-with-url-ext.jpg", prefix="xai_test")
         assert path.suffix == ".jpg"
 
     def test_extension_defaults_to_png_when_unknowable(self, http_server):
         base, _ = http_server
-        from agent.image_gen_provider import save_url_image
+        from hermes_agent.agent.image_gen_provider import save_url_image
 
         path = save_url_image(f"{base}/no-type-no-ext", prefix="xai_test")
         assert path.suffix == ".png"
@@ -132,7 +132,7 @@ class TestSaveUrlImage:
     def test_404_raises(self, http_server):
         """HTTP errors must propagate — caller decides whether to fall back."""
         base, _ = http_server
-        from agent.image_gen_provider import save_url_image
+        from hermes_agent.agent.image_gen_provider import save_url_image
         import requests as req_lib
 
         with pytest.raises(req_lib.HTTPError):
@@ -141,7 +141,7 @@ class TestSaveUrlImage:
     def test_empty_body_raises_without_writing_file(self, http_server):
         """0-byte responses are not images — refuse to cache."""
         base, _ = http_server
-        from agent.image_gen_provider import save_url_image
+        from hermes_agent.agent.image_gen_provider import save_url_image
 
         with pytest.raises(ValueError, match="0 bytes"):
             save_url_image(f"{base}/empty")
@@ -149,7 +149,7 @@ class TestSaveUrlImage:
     def test_oversize_raises_and_cleans_up(self, http_server, tmp_path):
         """Oversize downloads must NOT leak a partial file into the cache."""
         base, _ = http_server
-        from agent.image_gen_provider import save_url_image, _images_cache_dir
+        from hermes_agent.agent.image_gen_provider import save_url_image, _images_cache_dir
 
         cache_dir = _images_cache_dir()
         before = set(cache_dir.glob("*"))
@@ -161,7 +161,7 @@ class TestSaveUrlImage:
     def test_unique_filenames_avoid_collision(self, http_server):
         """Two back-to-back saves of the same URL must produce different paths."""
         base, _ = http_server
-        from agent.image_gen_provider import save_url_image
+        from hermes_agent.agent.image_gen_provider import save_url_image
 
         path1 = save_url_image(f"{base}/image.png", prefix="xai_collision")
         path2 = save_url_image(f"{base}/image.png", prefix="xai_collision")

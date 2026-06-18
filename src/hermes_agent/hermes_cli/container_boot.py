@@ -42,7 +42,7 @@ _AUTOSTART_STATES = frozenset({"running"})
 # all hold container-namespaced state (PIDs, process tables) that's
 # garbage post-restart — a numerically-equal PID in the new container
 # is a different process. See the Risk Register in the plan.
-_STALE_RUNTIME_FILES = ("gateway.pid", "processes.json")
+_STALE_RUNTIME_FILES = ("hermes_agent.gateway.pid", "processes.json")
 
 ReconcileActionLabel = Literal["started", "registered", "skipped"]
 
@@ -310,7 +310,7 @@ def _register_service(scandir: Path, profile: str, *, start: bool) -> None:
     """
     import shutil
 
-    from hermes_cli.service_manager import (
+    from hermes_agent.hermes_cli.service_manager import (
         S6ServiceManager,
         _seed_supervise_skeleton,
         validate_profile_name,

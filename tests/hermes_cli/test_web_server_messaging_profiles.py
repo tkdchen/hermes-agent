@@ -14,8 +14,8 @@ import yaml
 @pytest.fixture
 def isolated_profiles(tmp_path, monkeypatch, _isolate_hermes_home):
     """Isolated default home + one named profile, each with its own .env."""
-    from hermes_constants import get_hermes_home
-    from hermes_cli import profiles
+    from hermes_agent.hermes_constants import get_hermes_home
+    from hermes_agent.hermes_cli import profiles
 
     default_home = get_hermes_home()
     profiles_root = default_home / "profiles"
@@ -41,9 +41,9 @@ def client(monkeypatch, isolated_profiles):
     except ImportError:
         pytest.skip("fastapi/starlette not installed")
 
-    import hermes_state
-    from hermes_constants import get_hermes_home
-    from hermes_cli.web_server import app, _SESSION_HEADER_NAME, _SESSION_TOKEN
+    import hermes_agent.hermes_state as hermes_state
+    from hermes_agent.hermes_constants import get_hermes_home
+    from hermes_agent.hermes_cli.web_server import app, _SESSION_HEADER_NAME, _SESSION_TOKEN
 
     monkeypatch.setattr(hermes_state, "DEFAULT_DB_PATH", get_hermes_home() / "state.db")
     # The dashboard process's os.environ may carry root-install credentials;
@@ -94,7 +94,7 @@ class TestProfileScopedMessagingReads:
     def test_scoped_read_returns_profile_path_command_and_startup_failure(
         self, client, isolated_profiles, monkeypatch
     ):
-        import hermes_cli.web_server as web_server
+        import hermes_agent.hermes_cli.web_server as web_server
 
         worker_home = isolated_profiles["worker_alpha"]
         (worker_home / ".env").write_text(

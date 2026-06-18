@@ -463,7 +463,7 @@ def _query_codex_plugins(
     servers and permissions still write through.
     """
     try:
-        from agent.transports.codex_app_server import CodexAppServerClient
+        from hermes_agent.agent.transports.codex_app_server import CodexAppServerClient
     except Exception as exc:
         return [], f"transport unavailable: {exc}"
 
@@ -595,7 +595,7 @@ def _build_hermes_tools_mcp_entry() -> dict:
 
     out: dict[str, Any] = {
         "command": sys.executable,
-        "args": ["-m", "agent.transports.hermes_tools_mcp_server"],
+        "args": ["-m", "hermes_agent.agent.transports.hermes_tools_mcp_server"],
     }
     if env:
         out["env"] = env

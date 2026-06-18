@@ -3,8 +3,8 @@
 import json
 import pytest
 
-from gateway.config import PlatformConfig
-from gateway.platforms.webhook import (
+from hermes_agent.gateway.config import PlatformConfig
+from hermes_agent.gateway.platforms.webhook import (
     WebhookAdapter,
     _DYNAMIC_ROUTES_FILENAME,
     _INSECURE_NO_AUTH,
@@ -156,7 +156,7 @@ class TestDynamicRouteSecretValidation:
             json.dumps({"silent": {"secret": "", "prompt": "x"}})
         )
         adapter = _make_adapter()
-        with caplog.at_level(logging.WARNING, logger="gateway.platforms.webhook"):
+        with caplog.at_level(logging.WARNING, logger="hermes_agent.gateway.platforms.webhook"):
             adapter._reload_dynamic_routes()
         assert any("silent" in rec.message for rec in caplog.records)
 

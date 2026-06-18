@@ -40,7 +40,7 @@ import logging
 import threading
 from typing import Dict, List, Optional
 
-from agent.browser_provider import BrowserProvider
+from hermes_agent.agent.browser_provider import BrowserProvider
 
 logger = logging.getLogger(__name__)
 

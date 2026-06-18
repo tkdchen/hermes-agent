@@ -16,12 +16,12 @@ import tempfile
 import unittest
 import zipfile
 
-from tools.read_extract import (
+from hermes_agent.tools.read_extract import (
     ExtractionError,
     extract_document_text,
     is_extractable_document,
 )
-from tools.file_tools import read_file_tool
+from hermes_agent.tools.file_tools import read_file_tool
 
 
 # ---------------------------------------------------------------------------

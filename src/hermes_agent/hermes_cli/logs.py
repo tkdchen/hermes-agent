@@ -26,13 +26,13 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Sequence
 
-from hermes_constants import get_hermes_home, display_hermes_home
+from hermes_agent.hermes_constants import get_hermes_home, display_hermes_home
 
 # Known log files (name → filename)
 LOG_FILES = {
-    "agent": "agent.log",
+    "agent": "hermes_agent.agent.log",
     "errors": "errors.log",
-    "gateway": "gateway.log",
+    "gateway": "hermes_agent.gateway.log",
     "gui": "gui.log",
     "desktop": "desktop.log",
 }
@@ -195,7 +195,7 @@ def tail_log(
     # Resolve component to logger name prefixes
     component_prefixes = None
     if component:
-        from hermes_logging import COMPONENT_PREFIXES
+        from hermes_agent.hermes_logging import COMPONENT_PREFIXES
         component_lower = component.lower()
         if component_lower not in COMPONENT_PREFIXES:
             available = ", ".join(sorted(COMPONENT_PREFIXES))

@@ -4,11 +4,11 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
-from tools.mcp_tool import MCPServerTask, _format_connect_error, _resolve_stdio_command, _MCP_AVAILABLE
+from hermes_agent.tools.mcp_tool import MCPServerTask, _format_connect_error, _resolve_stdio_command, _MCP_AVAILABLE
 
 # Ensure the mcp module symbols exist for patching even when the SDK isn't installed
 if not _MCP_AVAILABLE:
-    import tools.mcp_tool as _mcp_mod
+    import hermes_agent.tools.mcp_tool as _mcp_mod
     if not hasattr(_mcp_mod, "StdioServerParameters"):
         _mcp_mod.StdioServerParameters = MagicMock
     if not hasattr(_mcp_mod, "stdio_client"):
@@ -24,7 +24,7 @@ def test_resolve_stdio_command_falls_back_to_hermes_node_bin(tmp_path):
     npx_path.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
     npx_path.chmod(0o755)
 
-    with patch("tools.mcp_tool.shutil.which", return_value=None), \
+    with patch("hermes_agent.tools.mcp_tool.shutil.which", return_value=None), \
          patch.dict("os.environ", {"HERMES_HOME": str(tmp_path)}, clear=False):
         command, env = _resolve_stdio_command("npx", {"PATH": "/usr/bin"})
 
@@ -54,9 +54,9 @@ def test_resolve_stdio_command_falls_back_to_usr_local_bin():
     def _fake_access(path, _mode):
         return path == target
 
-    with patch("tools.mcp_tool.shutil.which", return_value=None), \
-         patch("tools.mcp_tool.os.path.isfile", side_effect=_fake_isfile), \
-         patch("tools.mcp_tool.os.access", side_effect=_fake_access):
+    with patch("hermes_agent.tools.mcp_tool.shutil.which", return_value=None), \
+         patch("hermes_agent.tools.mcp_tool.os.path.isfile", side_effect=_fake_isfile), \
+         patch("hermes_agent.tools.mcp_tool.os.access", side_effect=_fake_access):
         command, env = _resolve_stdio_command("npx", {"PATH": "/opt/data/bin:/usr/bin:/bin"})
 
     assert command == target
@@ -72,7 +72,7 @@ def test_resolve_stdio_command_respects_explicit_empty_path():
         seen_paths.append(path)
         return None
 
-    with patch("tools.mcp_tool.shutil.which", side_effect=_fake_which):
+    with patch("hermes_agent.tools.mcp_tool.shutil.which", side_effect=_fake_which):
         command, env = _resolve_stdio_command("python", {"PATH": ""})
 
     assert command == "python"
@@ -111,11 +111,11 @@ def test_run_stdio_uses_resolved_command_and_prepended_path(tmp_path):
     mock_session_cm.__aexit__ = AsyncMock(return_value=False)
 
     async def _test():
-        with patch("tools.mcp_tool.shutil.which", return_value=None), \
+        with patch("hermes_agent.tools.mcp_tool.shutil.which", return_value=None), \
              patch.dict("os.environ", {"HERMES_HOME": str(tmp_path), "PATH": "/usr/bin", "HOME": str(tmp_path)}, clear=False), \
-             patch("tools.mcp_tool.StdioServerParameters") as mock_params, \
-             patch("tools.mcp_tool.stdio_client", return_value=mock_stdio_cm), \
-             patch("tools.mcp_tool.ClientSession", return_value=mock_session_cm):
+             patch("hermes_agent.tools.mcp_tool.StdioServerParameters") as mock_params, \
+             patch("hermes_agent.tools.mcp_tool.stdio_client", return_value=mock_stdio_cm), \
+             patch("hermes_agent.tools.mcp_tool.ClientSession", return_value=mock_session_cm):
             server = MCPServerTask("srv")
             await server.start({"command": "npx", "args": ["-y", "pkg"], "env": {"PATH": "/usr/bin"}})
 

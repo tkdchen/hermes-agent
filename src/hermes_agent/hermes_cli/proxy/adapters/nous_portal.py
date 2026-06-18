@@ -11,7 +11,7 @@ import logging
 import threading
 from typing import Any, Dict, FrozenSet, Optional
 
-from hermes_cli.auth import (
+from hermes_agent.hermes_cli.auth import (
     AuthError,
     DEFAULT_NOUS_INFERENCE_URL,
     _load_auth_store,
@@ -24,7 +24,7 @@ from hermes_cli.auth import (
     _write_shared_nous_state,
     resolve_nous_runtime_credentials,
 )
-from hermes_cli.proxy.adapters.base import UpstreamAdapter, UpstreamCredential
+from hermes_agent.hermes_cli.proxy.adapters.base import UpstreamAdapter, UpstreamCredential
 
 logger = logging.getLogger(__name__)
 

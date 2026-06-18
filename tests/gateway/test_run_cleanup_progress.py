@@ -19,9 +19,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import BasePlatformAdapter, SendResult
-from gateway.session import SessionSource
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import BasePlatformAdapter, SendResult
+from hermes_agent.gateway.session import SessionSource
 
 
 # ---------------------------------------------------------------------------
@@ -132,7 +132,7 @@ class FailingAgent:
 
 
 def _make_runner(adapter):
-    gateway_run = importlib.import_module("gateway.run")
+    gateway_run = importlib.import_module("hermes_agent.gateway.run")
     GatewayRunner = gateway_run.GatewayRunner
     runner = object.__new__(GatewayRunner)
     runner.adapters = {adapter.platform: adapter}
@@ -162,12 +162,12 @@ def _install_fakes(monkeypatch, agent_cls, *, cleanup_on: bool):
     fake_dotenv.load_dotenv = lambda *a, **k: None
     monkeypatch.setitem(sys.modules, "dotenv", fake_dotenv)
 
-    fake_run_agent = types.ModuleType("run_agent")
+    fake_run_agent = types.ModuleType("hermes_agent.run_agent")
     fake_run_agent.AIAgent = agent_cls
-    monkeypatch.setitem(sys.modules, "run_agent", fake_run_agent)
-    import tools.terminal_tool  # noqa: F401 — register tool emoji
+    monkeypatch.setitem(sys.modules, "hermes_agent.run_agent", fake_run_agent)
+    import hermes_agent.tools.terminal_tool  # noqa: F401 — register tool emoji
 
-    gateway_run = importlib.import_module("gateway.run")
+    gateway_run = importlib.import_module("hermes_agent.gateway.run")
     monkeypatch.setattr(gateway_run, "_resolve_runtime_agent_kwargs", lambda: {"api_key": "fake"})
 
     # Wire the per-platform cleanup_progress flag via the config loader the

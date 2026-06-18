@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import inspect
 
-from gateway.kanban_watchers import GatewayKanbanWatchersMixin
+from hermes_agent.gateway.kanban_watchers import GatewayKanbanWatchersMixin
 
 KANBAN_METHODS = [
     "_kanban_notifier_watcher",
@@ -28,7 +28,7 @@ def test_mixin_defines_kanban_methods():
 
 def test_gateway_runner_inherits_mixin():
     # Import here so a heavy gateway import only happens if the first test passed.
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     assert issubclass(GatewayRunner, GatewayKanbanWatchersMixin)
     # Each kanban method resolves to the mixin's implementation via the MRO.

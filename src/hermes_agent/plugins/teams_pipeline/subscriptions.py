@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from plugins.teams_pipeline.models import GraphSubscription
-from plugins.teams_pipeline.store import TeamsPipelineStore, resolve_teams_pipeline_store_path
-from tools.microsoft_graph_auth import MicrosoftGraphTokenProvider
-from tools.microsoft_graph_client import MicrosoftGraphClient
+from hermes_agent.plugins.teams_pipeline.models import GraphSubscription
+from hermes_agent.plugins.teams_pipeline.store import TeamsPipelineStore, resolve_teams_pipeline_store_path
+from hermes_agent.tools.microsoft_graph_auth import MicrosoftGraphTokenProvider
+from hermes_agent.tools.microsoft_graph_client import MicrosoftGraphClient
 
 
 def build_graph_client() -> MicrosoftGraphClient:

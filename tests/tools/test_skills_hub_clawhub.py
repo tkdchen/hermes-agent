@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import patch
 
-from tools.skills_hub import ClawHubSource, SkillMeta
+from hermes_agent.tools.skills_hub import ClawHubSource, SkillMeta
 
 
 class _MockResponse:
@@ -20,8 +20,8 @@ class _MockResponse:
 class TestClawHubSource(unittest.TestCase):
     def setUp(self):
         self.src = ClawHubSource()
-        self._safe_patcher = patch("tools.skills_hub.is_safe_url", return_value=True)
-        self._policy_patcher = patch("tools.skills_hub.check_website_access", return_value=None)
+        self._safe_patcher = patch("hermes_agent.tools.skills_hub.is_safe_url", return_value=True)
+        self._policy_patcher = patch("hermes_agent.tools.skills_hub.check_website_access", return_value=None)
         self._safe_patcher.start()
         self._policy_patcher.start()
 
@@ -29,10 +29,10 @@ class TestClawHubSource(unittest.TestCase):
         self._policy_patcher.stop()
         self._safe_patcher.stop()
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
     @patch.object(ClawHubSource, "_load_catalog_index", return_value=[])
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_search_uses_listing_endpoint_as_fallback(
         self, mock_get, _mock_load_catalog, _mock_read_cache, _mock_write_cache
     ):
@@ -69,14 +69,14 @@ class TestClawHubSource(unittest.TestCase):
         self.assertTrue(args[0].endswith("/skills"))
         self.assertEqual(kwargs["params"], {"search": "caldav", "limit": 5})
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
     @patch.object(
         ClawHubSource,
         "_load_catalog_index",
         return_value=[],
     )
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_search_falls_back_to_exact_slug_when_search_results_are_irrelevant(
         self, mock_get, _mock_load_catalog, _mock_read_cache, _mock_write_cache
     ):
@@ -118,7 +118,7 @@ class TestClawHubSource(unittest.TestCase):
         self.assertEqual(results[0].name, "self-improving-agent")
         self.assertIn("continuous improvement", results[0].description)
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_search_repairs_poisoned_cache_with_exact_slug_lookup(self, mock_get):
         mock_get.return_value = _MockResponse(
             status_code=200,
@@ -170,7 +170,7 @@ class TestClawHubSource(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].identifier, "self-improving-agent")
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_inspect_maps_display_name_and_summary(self, mock_get):
         mock_get.return_value = _MockResponse(
             status_code=200,
@@ -189,7 +189,7 @@ class TestClawHubSource(unittest.TestCase):
         self.assertEqual(meta.description, "Calendar integration")
         self.assertEqual(meta.identifier, "caldav-calendar")
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_inspect_handles_nested_skill_payload(self, mock_get):
         mock_get.return_value = _MockResponse(
             status_code=200,
@@ -212,7 +212,7 @@ class TestClawHubSource(unittest.TestCase):
         self.assertEqual(meta.identifier, "self-improving-agent")
         self.assertEqual(meta.tags, ["automation"])
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_fetch_resolves_latest_version_and_downloads_raw_files(self, mock_get):
         def side_effect(url, *args, **kwargs):
             if url.endswith("/skills/caldav-calendar"):
@@ -247,7 +247,7 @@ class TestClawHubSource(unittest.TestCase):
         self.assertEqual(bundle.files["SKILL.md"], "# Skill")
         self.assertEqual(bundle.files["README.md"], "hello")
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_fetch_falls_back_to_versions_list(self, mock_get):
         def side_effect(url, *args, **kwargs):
             if url.endswith("/skills/caldav-calendar"):
@@ -264,9 +264,9 @@ class TestClawHubSource(unittest.TestCase):
         self.assertIsNotNone(bundle)
         self.assertEqual(bundle.files["SKILL.md"], "# Skill")
 
-    @patch("tools.skills_hub.check_website_access", return_value=None)
-    @patch("tools.skills_hub.is_safe_url")
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.check_website_access", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.is_safe_url")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_fetch_blocks_private_raw_url(self, mock_get, mock_safe, _mock_policy):
         def side_effect(url, *args, **kwargs):
             if url.endswith("/skills/caldav-calendar"):
@@ -298,9 +298,9 @@ class TestClawHubSource(unittest.TestCase):
         self.assertIsNone(bundle)
         self.assertEqual(mock_get.call_count, 3)
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_search_empty_query_paginates_full_catalog(
         self, mock_get, _mock_read_cache, _mock_write_cache
     ):
@@ -350,9 +350,9 @@ class TestClawHubSource(unittest.TestCase):
         self.assertIn("b-skill-199", identifiers)
         self.assertIn("c-skill-49", identifiers)
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_catalog_walk_aborts_on_budget_and_does_not_poison_cache(
         self, mock_get, _mock_read_cache, mock_write_cache
     ):
@@ -393,9 +393,9 @@ class TestClawHubSource(unittest.TestCase):
         # Whatever was gathered is still returned to the caller.
         self.assertIsInstance(results, list)
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_catalog_walk_caches_when_terminating_naturally_within_budget(
         self, mock_get, _mock_read_cache, mock_write_cache
     ):
@@ -431,8 +431,8 @@ class TestClawHubCatalogWalkBounded(unittest.TestCase):
 
     def setUp(self):
         self.src = ClawHubSource()
-        self._safe_patcher = patch("tools.skills_hub.is_safe_url", return_value=True)
-        self._policy_patcher = patch("tools.skills_hub.check_website_access", return_value=None)
+        self._safe_patcher = patch("hermes_agent.tools.skills_hub.is_safe_url", return_value=True)
+        self._policy_patcher = patch("hermes_agent.tools.skills_hub.check_website_access", return_value=None)
         self._safe_patcher.start()
         self._policy_patcher.start()
 
@@ -461,9 +461,9 @@ class TestClawHubCatalogWalkBounded(unittest.TestCase):
 
         return side_effect
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_max_items_stops_walk_early_and_does_not_cache(
         self, mock_get, _mock_read_cache, mock_write_cache
     ):
@@ -481,9 +481,9 @@ class TestClawHubCatalogWalkBounded(unittest.TestCase):
         # Partial (bounded) walk must not be cached.
         mock_write_cache.assert_not_called()
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_max_items_zero_ignores_wall_clock_budget(
         self, mock_get, _mock_read_cache, _mock_write_cache
     ):
@@ -498,9 +498,9 @@ class TestClawHubCatalogWalkBounded(unittest.TestCase):
         self.assertEqual(page_calls["n"], 750)
         self.assertEqual(len(results), 750)
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_max_items_zero_is_unbounded_and_caches(
         self, mock_get, _mock_read_cache, mock_write_cache
     ):
@@ -529,9 +529,9 @@ class TestClawHubCatalogWalkBounded(unittest.TestCase):
         self.assertEqual(len(results), 3)
         mock_write_cache.assert_called_once()
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_empty_query_browse_bounds_walk_to_limit(
         self, mock_get, _mock_read_cache, _mock_write_cache
     ):

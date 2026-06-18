@@ -18,7 +18,7 @@ import logging
 
 import pytest
 
-from gateway.run import (
+from hermes_agent.gateway.run import (
     _gateway_loop_exception_handler,
     _is_transient_network_error,
 )
@@ -122,7 +122,7 @@ def test_handler_swallows_transient_error_and_logs_warning(caplog):
     """Transient errors are logged at WARNING but not re-raised."""
     loop = asyncio.new_event_loop()
     try:
-        with caplog.at_level(logging.WARNING, logger="gateway.run"):
+        with caplog.at_level(logging.WARNING, logger="hermes_agent.gateway.run"):
             _gateway_loop_exception_handler(
                 loop,
                 {

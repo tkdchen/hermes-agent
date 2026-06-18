@@ -130,8 +130,8 @@ class TestVoiceMixerCore:
 # =====================================================================
 
 def _make_adapter(fx_cfg=None):
-    from plugins.platforms.discord.adapter import DiscordAdapter
-    from gateway.config import Platform, PlatformConfig
+    from hermes_agent.plugins.platforms.discord.adapter import DiscordAdapter
+    from hermes_agent.gateway.config import Platform, PlatformConfig
     config = PlatformConfig(enabled=True, extra={})
     config.token = "fake-token"
     adapter = object.__new__(DiscordAdapter)
@@ -167,8 +167,8 @@ class TestVoiceMixerActive:
 
     def test_false_when_attr_missing(self):
         # Defensive getattr path (object.__new__ helper that forgot the attr).
-        from plugins.platforms.discord.adapter import DiscordAdapter
-        from gateway.config import Platform
+        from hermes_agent.plugins.platforms.discord.adapter import DiscordAdapter
+        from hermes_agent.gateway.config import Platform
         bare = object.__new__(DiscordAdapter)
         bare.platform = Platform.DISCORD
         assert bare.voice_mixer_active(111) is False
@@ -218,7 +218,7 @@ class TestPlayInVoiceChannelMixerPath:
         adapter._voice_receivers[111] = MagicMock()
 
         with patch.object(vm, "decode_to_pcm", return_value=None), \
-                patch("plugins.platforms.discord.adapter.discord") as mock_discord:
+                patch("hermes_agent.plugins.platforms.discord.adapter.discord") as mock_discord:
             mock_discord.FFmpegPCMAudio.return_value = MagicMock()
             mock_discord.PCMVolumeTransformer.return_value = MagicMock()
 
@@ -256,7 +256,7 @@ class TestPlayAckInVoice:
         ack_file = tmp_path / "ack.mp3"
         ack_file.write_bytes(b"id3")
         import json as _json
-        with patch("tools.tts_tool.text_to_speech_tool",
+        with patch("hermes_agent.tools.tts_tool.text_to_speech_tool",
                    return_value=_json.dumps({"success": True, "file_path": str(ack_file)})), \
                 patch.object(vm, "decode_to_pcm", return_value=b"\x00" * vm.FRAME_SIZE):
             ok = await adapter.play_ack_in_voice(111, phrase="Testing one two.")

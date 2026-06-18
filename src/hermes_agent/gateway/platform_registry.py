@@ -11,7 +11,7 @@ the legacy code path.
 
 Usage (plugin side):
 
-    from gateway.platform_registry import platform_registry, PlatformEntry
+    from hermes_agent.gateway.platform_registry import platform_registry, PlatformEntry
 
     platform_registry.register(PlatformEntry(
         name="irc",

@@ -32,9 +32,9 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional
 
-from agent.memory_provider import MemoryProvider
-from agent.skill_commands import extract_user_instruction_from_skill_message
-from tools.registry import tool_error
+from hermes_agent.agent.memory_provider import MemoryProvider
+from hermes_agent.agent.skill_commands import extract_user_instruction_from_skill_message
+from hermes_agent.tools.registry import tool_error
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ def memory_provider_tools_enabled(enabled_toolsets: Optional[List[str]]) -> bool
         return True
 
     try:
-        from toolsets import resolve_toolset
+        from hermes_agent.toolsets import resolve_toolset
 
         return any("memory" in resolve_toolset(name) for name in enabled_toolsets)
     except Exception:
@@ -364,7 +364,7 @@ class MemoryManager:
         # (#40466). Reject it here, at the door, so it never enters the routing
         # table at all — matching the built-ins-always-win invariant used by
         # the TTS/browser/search provider registries.
-        from toolsets import _HERMES_CORE_TOOLS
+        from hermes_agent.toolsets import _HERMES_CORE_TOOLS
 
         _core_tool_names = set(_HERMES_CORE_TOOLS)
 
@@ -650,7 +650,7 @@ class MemoryManager:
         :meth:`add_provider`, so the manager must not advertise a schema it
         will never route. Built-ins always win (#40466).
         """
-        from toolsets import _HERMES_CORE_TOOLS
+        from hermes_agent.toolsets import _HERMES_CORE_TOOLS
 
         _core_tool_names = set(_HERMES_CORE_TOOLS)
         schemas = []
@@ -936,7 +936,7 @@ class MemoryManager:
         ``get_hermes_home()`` themselves.
         """
         if "hermes_home" not in kwargs:
-            from hermes_constants import get_hermes_home
+            from hermes_agent.hermes_constants import get_hermes_home
             kwargs["hermes_home"] = str(get_hermes_home())
         for provider in self._providers:
             try:

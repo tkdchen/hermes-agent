@@ -21,7 +21,7 @@ import pytest
 @pytest.fixture(autouse=True)
 def _disable_camofox(monkeypatch):
     """Force the non-camofox path so our supervisor branch is reached."""
-    import tools.browser_tool as bt
+    import hermes_agent.tools.browser_tool as bt
 
     monkeypatch.setattr(bt, "_is_camofox_mode", lambda: False)
     monkeypatch.setattr(bt, "_last_session_key", lambda task_id: "test-task")
@@ -29,7 +29,7 @@ def _disable_camofox(monkeypatch):
 
 def _patch_supervisor(monkeypatch, supervisor):
     """Wire SUPERVISOR_REGISTRY.get to return ``supervisor`` for any task_id."""
-    import tools.browser_supervisor as bs
+    import hermes_agent.tools.browser_supervisor as bs
 
     registry = MagicMock()
     registry.get.return_value = supervisor
@@ -41,7 +41,7 @@ class TestBrowserEvalSupervisorPath:
     """The supervisor fast path replaces the agent-browser subprocess hop."""
 
     def test_primitive_result_routes_through_supervisor(self, monkeypatch):
-        import tools.browser_tool as bt
+        import hermes_agent.tools.browser_tool as bt
 
         sup = MagicMock()
         sup.evaluate_runtime.return_value = {
@@ -64,7 +64,7 @@ class TestBrowserEvalSupervisorPath:
 
     def test_json_string_result_is_parsed(self, monkeypatch):
         """Match agent-browser semantics: JSON-string results get parsed."""
-        import tools.browser_tool as bt
+        import hermes_agent.tools.browser_tool as bt
 
         sup = MagicMock()
         sup.evaluate_runtime.return_value = {
@@ -85,7 +85,7 @@ class TestBrowserEvalSupervisorPath:
         assert out["result_type"] == "dict"
 
     def test_non_json_string_result_kept_as_string(self, monkeypatch):
-        import tools.browser_tool as bt
+        import hermes_agent.tools.browser_tool as bt
 
         sup = MagicMock()
         sup.evaluate_runtime.return_value = {
@@ -102,7 +102,7 @@ class TestBrowserEvalSupervisorPath:
 
     def test_js_exception_surfaces_without_subprocess_fallthrough(self, monkeypatch):
         """A JS-side error must NOT trigger a (slow + redundant) subprocess retry."""
-        import tools.browser_tool as bt
+        import hermes_agent.tools.browser_tool as bt
 
         sup = MagicMock()
         sup.evaluate_runtime.return_value = {
@@ -126,7 +126,7 @@ class TestBrowserEvalSupervisorPath:
 
     def test_supervisor_loop_down_falls_through_to_subprocess(self, monkeypatch):
         """When the supervisor itself is unavailable, fall back to the subprocess."""
-        import tools.browser_tool as bt
+        import hermes_agent.tools.browser_tool as bt
 
         sup = MagicMock()
         sup.evaluate_runtime.return_value = {
@@ -153,7 +153,7 @@ class TestBrowserEvalSupervisorPath:
 
     def test_no_active_supervisor_falls_through_to_subprocess(self, monkeypatch):
         """When SUPERVISOR_REGISTRY.get returns None, subprocess path runs."""
-        import tools.browser_tool as bt
+        import hermes_agent.tools.browser_tool as bt
 
         _patch_supervisor(monkeypatch, None)
         called = {"subprocess": False}
@@ -171,7 +171,7 @@ class TestBrowserEvalSupervisorPath:
 
     def test_supervisor_no_session_falls_through(self, monkeypatch):
         """A supervisor without an attached page session must fall through cleanly."""
-        import tools.browser_tool as bt
+        import hermes_agent.tools.browser_tool as bt
 
         sup = MagicMock()
         sup.evaluate_runtime.return_value = {
@@ -193,7 +193,7 @@ class TestBrowserEvalSupervisorPath:
         """The CLI subprocess can't retry with returnByValue=False, so the
         cryptic 'Object reference chain is too long' CDP error must be turned
         into actionable guidance instead of surfaced raw."""
-        import tools.browser_tool as bt
+        import hermes_agent.tools.browser_tool as bt
 
         # No supervisor → subprocess path runs.
         _patch_supervisor(monkeypatch, None)
@@ -230,7 +230,7 @@ def _make_supervisor_with_cdp(cdp_response):
     import asyncio
     import threading
 
-    from tools.browser_supervisor import CDPSupervisor
+    from hermes_agent.tools.browser_supervisor import CDPSupervisor
 
     sup = object.__new__(CDPSupervisor)
     sup._state_lock = threading.Lock()
@@ -349,7 +349,7 @@ class TestEvaluateRuntimeResponseShaping:
     def test_inactive_supervisor_returns_error_without_dispatch(self):
         """Inactive supervisor short-circuits before even touching the loop."""
         import threading
-        from tools.browser_supervisor import CDPSupervisor
+        from hermes_agent.tools.browser_supervisor import CDPSupervisor
 
         sup = object.__new__(CDPSupervisor)
         sup._state_lock = threading.Lock()
@@ -366,7 +366,7 @@ class TestEvaluateRuntimeResponseShaping:
     def test_no_session_attached_returns_error(self):
         import asyncio
         import threading
-        from tools.browser_supervisor import CDPSupervisor
+        from hermes_agent.tools.browser_supervisor import CDPSupervisor
 
         sup = object.__new__(CDPSupervisor)
         sup._state_lock = threading.Lock()
@@ -396,7 +396,7 @@ def _make_supervisor_with_cdp_fn(cdp_fn):
     import asyncio
     import threading
 
-    from tools.browser_supervisor import CDPSupervisor
+    from hermes_agent.tools.browser_supervisor import CDPSupervisor
 
     sup = object.__new__(CDPSupervisor)
     sup._state_lock = threading.Lock()

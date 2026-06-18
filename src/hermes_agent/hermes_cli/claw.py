@@ -18,9 +18,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from hermes_cli.config import get_hermes_home, get_config_path, load_config, save_config
-from hermes_constants import get_optional_skills_dir
-from hermes_cli.setup import (
+from hermes_agent.hermes_cli.config import get_hermes_home, get_config_path, load_config, save_config
+from hermes_agent.hermes_constants import get_optional_skills_dir
+from hermes_agent.hermes_cli.setup import (
     Colors,
     color,
     print_header,
@@ -155,7 +155,7 @@ def _warn_if_gateway_running(auto_yes: bool) -> None:
     (e.g. Telegram 409 "terminated by other getUpdates request"). Warn the
     user and let them decide whether to continue.
     """
-    from gateway.status import get_running_pid, read_runtime_status
+    from hermes_agent.gateway.status import get_running_pid, read_runtime_status
 
     if not get_running_pid():
         return
@@ -508,7 +508,7 @@ def _cmd_migrate(args):
     backup_archive: Optional[Path] = None
     if not no_backup:
         try:
-            from hermes_cli.backup import create_pre_migration_backup, _format_size
+            from hermes_agent.hermes_cli.backup import create_pre_migration_backup, _format_size
             backup_archive = create_pre_migration_backup(hermes_home=hermes_home)
             if backup_archive:
                 size_str = _format_size(backup_archive.stat().st_size)

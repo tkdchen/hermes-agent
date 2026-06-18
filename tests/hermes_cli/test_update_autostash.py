@@ -5,8 +5,8 @@ from unittest.mock import patch
 
 import pytest
 
-from hermes_cli import config as hermes_config
-from hermes_cli import main as hermes_main
+from hermes_agent.hermes_cli import config as hermes_config
+from hermes_agent.hermes_cli import main as hermes_main
 
 
 # ---------------------------------------------------------------------------
@@ -34,9 +34,9 @@ def _patch_managed_uv(request):
     def _fake_update_managed_uv():
         return None  # never actually self-update in tests
 
-    with patch("hermes_cli.managed_uv.resolve_uv", side_effect=_fake_resolve_uv), \
-         patch("hermes_cli.managed_uv.ensure_uv", side_effect=_fake_ensure_uv), \
-         patch("hermes_cli.managed_uv.update_managed_uv", side_effect=_fake_update_managed_uv):
+    with patch("hermes_agent.hermes_cli.managed_uv.resolve_uv", side_effect=_fake_resolve_uv), \
+         patch("hermes_agent.hermes_cli.managed_uv.ensure_uv", side_effect=_fake_ensure_uv), \
+         patch("hermes_agent.hermes_cli.managed_uv.update_managed_uv", side_effect=_fake_update_managed_uv):
         yield
 
 def test_stash_local_changes_if_needed_returns_none_when_tree_clean(monkeypatch, tmp_path):
@@ -288,7 +288,7 @@ def test_restore_stashed_changes_auto_resets_non_interactive(monkeypatch, tmp_pa
         if cmd[1:3] == ["stash", "apply"]:
             return SimpleNamespace(stdout="applied\n", stderr="", returncode=0)
         if cmd[1:3] == ["diff", "--name-only"]:
-            return SimpleNamespace(stdout="cli.py\n", stderr="", returncode=0)
+            return SimpleNamespace(stdout="hermes_agent.cli.py\n", stderr="", returncode=0)
         if cmd[1:3] == ["reset", "--hard"]:
             return SimpleNamespace(stdout="", stderr="", returncode=0)
         raise AssertionError(f"unexpected command: {cmd}")

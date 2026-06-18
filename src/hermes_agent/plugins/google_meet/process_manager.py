@@ -20,7 +20,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from hermes_constants import get_hermes_home
+from hermes_agent.hermes_constants import get_hermes_home
 
 # File + directory layout (under $HERMES_HOME):
 #
@@ -73,7 +73,7 @@ def _pid_alive(pid: int) -> bool:
     # ``os.kill(pid, 0)`` is NOT a no-op on Windows (bpo-14484) — it
     # routes through GenerateConsoleCtrlEvent and can kill the target.
     # Use the cross-platform existence check.
-    from gateway.status import _pid_exists
+    from hermes_agent.gateway.status import _pid_exists
     return _pid_exists(pid)
 
 
@@ -103,7 +103,7 @@ def start(
 
     Returns a dict summarizing the started bot.
     """
-    from plugins.google_meet.meet_bot import _is_safe_meet_url, _meeting_id_from_url
+    from hermes_agent.plugins.google_meet.meet_bot import _is_safe_meet_url, _meeting_id_from_url
 
     if not _is_safe_meet_url(url):
         return {
@@ -161,7 +161,7 @@ def start(
     log_fh = open(log_path, "ab", buffering=0)
     try:
         proc = subprocess.Popen(
-            [sys.executable, "-m", "plugins.google_meet.meet_bot"],
+            [sys.executable, "-m", "hermes_agent.plugins.google_meet.meet_bot"],
             stdin=subprocess.DEVNULL,
             stdout=log_fh,
             stderr=subprocess.STDOUT,

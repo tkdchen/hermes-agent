@@ -15,9 +15,9 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 
-from agent.context_compressor import SUMMARY_PREFIX
-from run_agent import AIAgent
-import run_agent
+from hermes_agent.agent.context_compressor import SUMMARY_PREFIX
+from hermes_agent.run_agent import AIAgent
+import hermes_agent.run_agent as run_agent
 
 
 # ---------------------------------------------------------------------------
@@ -79,9 +79,9 @@ def _make_413_error(*, use_status_code=True, message="Request entity too large")
 @pytest.fixture()
 def agent():
     with (
-        patch("run_agent.get_tool_definitions", return_value=_make_tool_defs("web_search")),
-        patch("run_agent.check_toolset_requirements", return_value={}),
-        patch("run_agent.OpenAI"),
+        patch("hermes_agent.run_agent.get_tool_definitions", return_value=_make_tool_defs("web_search")),
+        patch("hermes_agent.run_agent.check_toolset_requirements", return_value={}),
+        patch("hermes_agent.run_agent.OpenAI"),
     ):
         a = AIAgent(
             api_key="test-key-1234567890",
@@ -463,7 +463,7 @@ class TestPreflightCompression:
         with (
             patch.object(agent.context_compressor, "compress", side_effect=_fake_compress),
             patch.object(agent, "_build_system_prompt", return_value="new system prompt"),
-            patch("run_agent.estimate_request_tokens_rough", return_value=42),
+            patch("hermes_agent.run_agent.estimate_request_tokens_rough", return_value=42),
         ):
             compressed, new_system_prompt = agent._compress_context(
                 [{"role": "user", "content": "hello"}],
@@ -553,8 +553,8 @@ class TestPreflightCompression:
         agent.status_callback = lambda ev, msg: status_messages.append((ev, msg))
 
         with (
-            patch("agent.turn_context.estimate_request_tokens_rough", return_value=114_000),
-            patch("agent.conversation_loop.estimate_request_tokens_rough", return_value=114_000),
+            patch("hermes_agent.agent.turn_context.estimate_request_tokens_rough", return_value=114_000),
+            patch("hermes_agent.agent.conversation_loop.estimate_request_tokens_rough", return_value=114_000),
             patch.object(agent, "_compress_context") as mock_compress,
             patch.object(agent, "_persist_session"),
             patch.object(agent, "_save_trajectory"),
@@ -605,8 +605,8 @@ class TestPreflightCompression:
             return 125_000 if _rough_calls["n"] == 1 else 40_000
 
         with (
-            patch("agent.turn_context.estimate_request_tokens_rough", side_effect=_rough_estimate),
-            patch("agent.conversation_loop.estimate_request_tokens_rough", side_effect=_rough_estimate),
+            patch("hermes_agent.agent.turn_context.estimate_request_tokens_rough", side_effect=_rough_estimate),
+            patch("hermes_agent.agent.conversation_loop.estimate_request_tokens_rough", side_effect=_rough_estimate),
             patch.object(agent, "_compress_context") as mock_compress,
             patch.object(agent, "_persist_session"),
             patch.object(agent, "_save_trajectory"),
@@ -730,8 +730,8 @@ class TestPreflightCompression:
         agent.client.chat.completions.create.side_effect = [ok_resp]
 
         with (
-            patch("agent.turn_context.estimate_request_tokens_rough", return_value=144_669),
-            patch("agent.conversation_loop.estimate_request_tokens_rough", return_value=144_669),
+            patch("hermes_agent.agent.turn_context.estimate_request_tokens_rough", return_value=144_669),
+            patch("hermes_agent.agent.conversation_loop.estimate_request_tokens_rough", return_value=144_669),
             # Compression no-ops (returns input unchanged) — mirrors an aux
             # summary-model timeout where the messages can't be reduced.
             patch.object(agent, "_compress_context", side_effect=lambda msgs, *a, **k: (msgs, agent._cached_system_prompt)),
@@ -763,8 +763,8 @@ class TestPreflightCompression:
         agent.client.chat.completions.create.side_effect = [ok_resp]
 
         with (
-            patch("agent.turn_context.estimate_request_tokens_rough", return_value=144_669),
-            patch("agent.conversation_loop.estimate_request_tokens_rough", return_value=144_669),
+            patch("hermes_agent.agent.turn_context.estimate_request_tokens_rough", return_value=144_669),
+            patch("hermes_agent.agent.conversation_loop.estimate_request_tokens_rough", return_value=144_669),
             patch.object(agent, "_compress_context", side_effect=lambda msgs, *a, **k: (msgs, agent._cached_system_prompt)),
             patch.object(agent, "_persist_session"),
             patch.object(agent, "_save_trajectory"),
@@ -803,7 +803,7 @@ class TestToolResultPreflightCompression:
         large_result = "x" * 100_000
 
         with (
-            patch("run_agent.handle_function_call", return_value=large_result),
+            patch("hermes_agent.run_agent.handle_function_call", return_value=large_result),
             patch.object(agent, "_compress_context") as mock_compress,
             patch.object(agent, "_persist_session"),
             patch.object(agent, "_save_trajectory"),

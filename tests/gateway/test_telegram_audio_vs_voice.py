@@ -16,13 +16,13 @@ from unittest.mock import patch
 
 import pytest
 
-from gateway.config import GatewayConfig, Platform
-from gateway.platforms.base import MessageEvent, MessageType
-from gateway.session import SessionSource
+from hermes_agent.gateway.config import GatewayConfig, Platform
+from hermes_agent.gateway.platforms.base import MessageEvent, MessageType
+from hermes_agent.gateway.session import SessionSource
 
 
 def _make_runner(stt_enabled: bool = True) -> "GatewayRunner":  # type: ignore[name-defined]
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = GatewayRunner.__new__(GatewayRunner)
     runner.config = GatewayConfig(stt_enabled=stt_enabled)
@@ -65,7 +65,7 @@ async def test_voice_message_still_transcribed():
     event = _voice_event("/tmp/voice.ogg")
 
     with patch(
-        "tools.transcription_tools.transcribe_audio",
+        "hermes_agent.tools.transcription_tools.transcribe_audio",
         return_value={"success": True, "transcript": "hello world", "provider": "whisper"},
     ) as mock_transcribe:
         result = await runner._prepare_inbound_message_text(
@@ -91,11 +91,11 @@ async def test_audio_attachment_skips_stt():
     event = _audio_event("/tmp/song.mp3")
 
     with patch(
-        "tools.transcription_tools.transcribe_audio",
+        "hermes_agent.tools.transcription_tools.transcribe_audio",
         side_effect=AssertionError("transcribe_audio must NOT be called for audio file attachments"),
     ):
         with patch(
-            "tools.credential_files.to_agent_visible_cache_path",
+            "hermes_agent.tools.credential_files.to_agent_visible_cache_path",
             side_effect=lambda p: p,
         ):
             result = await runner._prepare_inbound_message_text(
@@ -117,11 +117,11 @@ async def test_audio_attachment_context_note_format():
     event = _audio_event("/tmp/cache_12345_my_song.mp3")
 
     with patch(
-        "tools.transcription_tools.transcribe_audio",
+        "hermes_agent.tools.transcription_tools.transcribe_audio",
         side_effect=AssertionError("must not be called"),
     ):
         with patch(
-            "tools.credential_files.to_agent_visible_cache_path",
+            "hermes_agent.tools.credential_files.to_agent_visible_cache_path",
             side_effect=lambda p: p,
         ):
             result = await runner._prepare_inbound_message_text(
@@ -152,11 +152,11 @@ async def test_audio_attachment_skips_stt_when_stt_disabled():
     event = _audio_event("/tmp/podcast.m4a")
 
     with patch(
-        "tools.transcription_tools.transcribe_audio",
+        "hermes_agent.tools.transcription_tools.transcribe_audio",
         side_effect=AssertionError("must not be called"),
     ):
         with patch(
-            "tools.credential_files.to_agent_visible_cache_path",
+            "hermes_agent.tools.credential_files.to_agent_visible_cache_path",
             side_effect=lambda p: p,
         ):
             result = await runner._prepare_inbound_message_text(
@@ -177,7 +177,7 @@ async def test_audio_attachment_skips_stt_when_stt_disabled():
 
 def test_telegram_media_type_detection_audio_vs_voice():
     """The Telegram platform must set MessageType.AUDIO for msg.audio, VOICE for msg.voice."""
-    from gateway.platforms.base import MessageType
+    from hermes_agent.gateway.platforms.base import MessageType
 
     # The Telegram adapter's _build_media_type already returns correct values
     # via MessageType.AUDIO for .audio and MessageType.VOICE for .voice.

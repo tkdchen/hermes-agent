@@ -9,7 +9,7 @@ no messages, no title, and no child sessions.
 
 import pytest
 
-from hermes_state import SessionDB
+from hermes_agent.hermes_state import SessionDB
 
 
 @pytest.fixture()
@@ -109,7 +109,7 @@ class TestCLIDiscardSessionIfEmpty:
     """Wiring tests for HermesCLI._discard_session_if_empty."""
 
     def _make_cli(self, db):
-        from cli import HermesCLI
+        from hermes_agent.cli import HermesCLI
 
         cli = HermesCLI.__new__(HermesCLI)
         cli._session_db = db

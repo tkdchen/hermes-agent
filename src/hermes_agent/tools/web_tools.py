@@ -50,8 +50,8 @@ import httpx  # noqa: F401 — kept at module top so tests can patch tools.web_t
 # surface stays stable.
 if TYPE_CHECKING:
     from firecrawl import Firecrawl  # noqa: F401 — type hints only
-from plugins.web.firecrawl.provider import (
-    Firecrawl,  # noqa: F401  # re-exported for tests that mock.patch("tools.web_tools.Firecrawl")
+from hermes_agent.plugins.web.firecrawl.provider import (
+    Firecrawl,  # noqa: F401  # re-exported for tests that mock.patch("hermes_agent.tools.web_tools.Firecrawl")
     _firecrawl_backend_help_suffix,
     _get_firecrawl_client,  # noqa: F401  # re-exported for tests that `from tools.web_tools import _get_firecrawl_client`
     _get_firecrawl_gateway_url,
@@ -60,7 +60,7 @@ from plugins.web.firecrawl.provider import (
 )
 # Tavily helpers re-exported for backward-compat with existing unit tests
 # (tests/tools/test_web_tools_tavily.py imports these names directly).
-from plugins.web.tavily.provider import (  # noqa: F401 — backward-compat names
+from hermes_agent.plugins.web.tavily.provider import (  # noqa: F401 — backward-compat names
     _normalize_tavily_documents,
     _normalize_tavily_search_results,
     _tavily_request,
@@ -68,11 +68,11 @@ from plugins.web.tavily.provider import (  # noqa: F401 — backward-compat name
 # Parallel + Exa clients re-exported for backward-compat with existing
 # unit tests (tests/tools/test_web_tools_config.py imports _get_parallel_client
 # / _get_async_parallel_client / _get_exa_client directly).
-from plugins.web.parallel.provider import (  # noqa: F401 — backward-compat names
+from hermes_agent.plugins.web.parallel.provider import (  # noqa: F401 — backward-compat names
     _get_async_parallel_client,
     _get_parallel_client,
 )
-from plugins.web.exa.provider import _get_exa_client  # noqa: F401
+from hermes_agent.plugins.web.exa.provider import _get_exa_client  # noqa: F401
 
 # Module-level cache slots for the per-vendor clients. The plugins read/write
 # these via tools.web_tools so unit tests that reset
@@ -83,26 +83,26 @@ _parallel_client: Optional[Any] = None
 _async_parallel_client: Optional[Any] = None
 _exa_client: Optional[Any] = None
 
-from agent.auxiliary_client import (
+from hermes_agent.agent.auxiliary_client import (
     async_call_llm,
     extract_content_or_reasoning,
     get_async_text_auxiliary_client,
 )
-from tools.debug_helpers import DebugSession
+from hermes_agent.tools.debug_helpers import DebugSession
 # Imported solely so unit tests can monkeypatch these names on
 # tools.web_tools (the firecrawl plugin reads them via its own import chain).
-from tools.managed_tool_gateway import (  # noqa: F401 — backward-compat names for tests
+from hermes_agent.tools.managed_tool_gateway import (  # noqa: F401 — backward-compat names for tests
     build_vendor_gateway_url,
     peek_nous_access_token as _peek_nous_access_token,
     read_nous_access_token as _read_nous_access_token,
     resolve_managed_tool_gateway,
 )
-from tools.tool_backend_helpers import (  # noqa: F401
+from hermes_agent.tools.tool_backend_helpers import (  # noqa: F401
     managed_nous_tools_enabled,
     nous_tool_gateway_unavailable_message,
     prefers_gateway,
 )
-from tools.url_safety import async_is_safe_url, normalize_url_for_request
+from hermes_agent.tools.url_safety import async_is_safe_url, normalize_url_for_request
 import sys
 
 logger = logging.getLogger(__name__)
@@ -120,7 +120,7 @@ def _env_value(name: str) -> str:
     auto-detect cascade and ``check_web_api_key()`` blind to it. See #34290.
     """
     try:
-        from hermes_cli.config import get_env_value
+        from hermes_agent.hermes_cli.config import get_env_value
 
         val = get_env_value(name)
     except Exception:
@@ -136,7 +136,7 @@ def _has_env(name: str) -> bool:
 def _load_web_config() -> dict:
     """Load the ``web:`` section from ~/.hermes/config.yaml."""
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         return load_config().get("web", {})
     except (ImportError, Exception):
         return {}
@@ -236,7 +236,7 @@ def _is_backend_available(backend: str) -> bool:
         # can trigger a network token refresh, and _is_backend_available
         # runs on every web_search dispatch + every `hermes tools` repaint.
         try:
-            from tools.xai_http import has_xai_credentials
+            from hermes_agent.tools.xai_http import has_xai_credentials
             return has_xai_credentials()
         except Exception:
             return False
@@ -324,8 +324,8 @@ def _resolve_web_extract_auxiliary(model: Optional[str] = None) -> tuple[Optiona
 
     extra_body: Dict[str, Any] = {}
     if client is not None and _is_nous_auxiliary_client(client):
-        from agent.auxiliary_client import get_auxiliary_extra_body
-        from agent.portal_tags import nous_portal_tags
+        from hermes_agent.agent.auxiliary_client import get_auxiliary_extra_body
+        from hermes_agent.agent.portal_tags import nous_portal_tags
         extra_body = get_auxiliary_extra_body() or {"tags": nous_portal_tags()}
 
     return client, effective_model, extra_body
@@ -773,7 +773,7 @@ def _ensure_web_plugins_loaded() -> None:
     invocations.
     """
     try:
-        from hermes_cli.plugins import _ensure_plugins_discovered
+        from hermes_agent.hermes_cli.plugins import _ensure_plugins_discovered
 
         _ensure_plugins_discovered()
     except Exception as exc:  # noqa: BLE001
@@ -836,7 +836,7 @@ def web_search_tool(query: str, limit: int = 5) -> str:
     }
     
     try:
-        from tools.interrupt import is_interrupted
+        from hermes_agent.tools.interrupt import is_interrupted
         if is_interrupted():
             return tool_error("Interrupted", success=False)
 
@@ -845,7 +845,7 @@ def web_search_tool(query: str, limit: int = 5) -> str:
         # now live as plugins; the dispatcher is just a registry lookup +
         # delegation. Sync only — every provider's search() is sync.
         _ensure_web_plugins_loaded()
-        from agent.web_search_registry import (
+        from hermes_agent.agent.web_search_registry import (
             get_active_search_provider,
             get_provider as _wsp_get_provider,
         )
@@ -922,7 +922,7 @@ async def web_extract_tool(
     """
     # Block URLs containing embedded secrets (exfiltration prevention).
     # URL-decode first so percent-encoded secrets (%73k- = sk-) are caught.
-    from agent.redact import _PREFIX_RE
+    from hermes_agent.agent.redact import _PREFIX_RE
     from urllib.parse import unquote
     normalized_urls: List[str] = []
     for _url in urls:
@@ -986,7 +986,7 @@ async def web_extract_tool(
             # inline (the policy gate, SSRF re-check, etc. live inside the
             # provider itself for the firecrawl per-URL loop).
             _ensure_web_plugins_loaded()
-            from agent.web_search_registry import (
+            from hermes_agent.agent.web_search_registry import (
                 get_active_extract_provider,
                 get_provider as _wsp_get_provider,
             )
@@ -1312,7 +1312,7 @@ if __name__ == "__main__":
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
-from tools.registry import registry, tool_error
+from hermes_agent.tools.registry import registry, tool_error
 
 WEB_SEARCH_SCHEMA = {
     "name": "web_search",

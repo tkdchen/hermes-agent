@@ -210,7 +210,7 @@ def _resolve_trust_policy(plugin_id: str) -> _TrustPolicy:
         return _TrustPolicy(plugin_id="")
 
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         config = load_config() or {}
     except Exception:  # pragma: no cover — config IO failure
         return _TrustPolicy(plugin_id=plugin_id)
@@ -570,7 +570,7 @@ def _resolve_attribution(
         provider = provider_override
     else:
         try:
-            from agent.auxiliary_client import _read_main_provider
+            from hermes_agent.agent.auxiliary_client import _read_main_provider
             provider = (_read_main_provider() or "").strip() or "auto"
         except Exception:  # pragma: no cover — defensive
             provider = "auto"
@@ -582,7 +582,7 @@ def _resolve_attribution(
         model = model_override
     else:
         try:
-            from agent.auxiliary_client import _read_main_model
+            from hermes_agent.agent.auxiliary_client import _read_main_model
             model = (_read_main_model() or "").strip() or "default"
         except Exception:  # pragma: no cover — defensive
             model = "default"
@@ -942,7 +942,7 @@ class PluginLlm:
                 timeout=timeout,
                 extra_body=extra_body,
             )
-        from agent.auxiliary_client import call_llm
+        from hermes_agent.agent.auxiliary_client import call_llm
         merged_extra = dict(extra_body or {})
         if profile_override:
             merged_extra.setdefault("metadata", {})["auth_profile"] = profile_override
@@ -986,7 +986,7 @@ class PluginLlm:
                 timeout=timeout,
                 extra_body=extra_body,
             )
-        from agent.auxiliary_client import async_call_llm
+        from hermes_agent.agent.auxiliary_client import async_call_llm
         merged_extra = dict(extra_body or {})
         if profile_override:
             merged_extra.setdefault("metadata", {})["auth_profile"] = profile_override

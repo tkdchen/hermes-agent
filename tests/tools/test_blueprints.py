@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 import pytest
 
-from tools.blueprints import (
+from hermes_agent.tools.blueprints import (
     BlueprintError,
     BlueprintSpec,
     create_blueprint_job,
@@ -104,7 +104,7 @@ class TestBlueprintSpecForInstalled:
         rec_dir.mkdir(parents=True)
         (rec_dir / "SKILL.md").write_text(BLUEPRINT_SKILL, encoding="utf-8")
 
-        with patch("tools.skills_hub.SKILLS_DIR", skills_dir):
+        with patch("hermes_agent.tools.skills_hub.SKILLS_DIR", skills_dir):
             spec = blueprint_spec_for_installed("morning-brief")
         assert spec is not None
         assert spec.schedule == "0 8 * * *"
@@ -112,7 +112,7 @@ class TestBlueprintSpecForInstalled:
     def test_missing_skill_returns_none(self, tmp_path):
         skills_dir = tmp_path / "skills"
         skills_dir.mkdir()
-        with patch("tools.skills_hub.SKILLS_DIR", skills_dir):
+        with patch("hermes_agent.tools.skills_hub.SKILLS_DIR", skills_dir):
             assert blueprint_spec_for_installed("nope") is None
 
     def test_plain_skill_returns_none(self, tmp_path):
@@ -120,7 +120,7 @@ class TestBlueprintSpecForInstalled:
         d = skills_dir / "misc" / "not-a-blueprint"
         d.mkdir(parents=True)
         (d / "SKILL.md").write_text(PLAIN_SKILL, encoding="utf-8")
-        with patch("tools.skills_hub.SKILLS_DIR", skills_dir):
+        with patch("hermes_agent.tools.skills_hub.SKILLS_DIR", skills_dir):
             assert blueprint_spec_for_installed("not-a-blueprint") is None
 
 
@@ -134,7 +134,7 @@ class TestCreateBlueprintJob:
             captured.update(kwargs)
             return {"id": "abc123", **kwargs}
 
-        with patch("cron.jobs.create_job", fake_create_job):
+        with patch("hermes_agent.cron.jobs.create_job", fake_create_job):
             job = create_blueprint_job(spec, origin={"platform": "telegram"})
 
         assert captured["schedule"] == "0 8 * * *"

@@ -11,8 +11,8 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from hermes_constants import display_hermes_home
-from agent.skill_preprocessing import (
+from hermes_agent.hermes_constants import display_hermes_home
+from hermes_agent.agent.skill_preprocessing import (
     expand_inline_shell as _expand_inline_shell,
     load_skills_config as _load_skills_config,
     substitute_template_vars as _substitute_template_vars,
@@ -125,7 +125,7 @@ def _resolve_skill_commands_platform() -> Optional[str]:
     rollouts, standalone scripts).
     """
     try:
-        from gateway.session_context import get_session_env
+        from hermes_agent.gateway.session_context import get_session_env
 
         resolved_platform = (
             os.getenv("HERMES_PLATFORM")
@@ -142,8 +142,8 @@ def _load_skill_payload(skill_identifier: str, task_id: str | None = None) -> tu
         return None
 
     try:
-        from tools.skills_tool import SKILLS_DIR, skill_view
-        from agent.skill_utils import get_external_skills_dirs
+        from hermes_agent.tools.skills_tool import SKILLS_DIR, skill_view
+        from hermes_agent.agent.skill_utils import get_external_skills_dirs
 
         identifier_path = Path(raw_identifier).expanduser()
         if identifier_path.is_absolute():
@@ -212,7 +212,7 @@ def _inject_skill_config(loaded_skill: dict[str, Any], parts: list[str]) -> None
     without needing to read config.yaml itself.
     """
     try:
-        from agent.skill_utils import (
+        from hermes_agent.agent.skill_utils import (
             extract_skill_config_vars,
             parse_frontmatter,
             resolve_skill_config_values,
@@ -251,7 +251,7 @@ def _build_skill_message(
     session_id: str | None = None,
 ) -> str:
     """Format a loaded skill into a user/system message payload."""
-    from tools.skills_tool import SKILLS_DIR
+    from hermes_agent.tools.skills_tool import SKILLS_DIR
 
     content = str(loaded_skill.get("content") or "")
 
@@ -355,8 +355,8 @@ def scan_skill_commands() -> Dict[str, Dict[str, Any]]:
     _skill_commands_platform = _resolve_skill_commands_platform()
     _skill_commands = {}
     try:
-        from tools.skills_tool import SKILLS_DIR, _parse_frontmatter, skill_matches_platform, skill_matches_environment, _get_disabled_skill_names
-        from agent.skill_utils import get_external_skills_dirs, iter_skill_index_files
+        from hermes_agent.tools.skills_tool import SKILLS_DIR, _parse_frontmatter, skill_matches_platform, skill_matches_environment, _get_disabled_skill_names
+        from hermes_agent.agent.skill_utils import get_external_skills_dirs, iter_skill_index_files
         disabled = _get_disabled_skill_names()
         seen_names: set = set()
 
@@ -542,7 +542,7 @@ def build_skill_invocation_message(
 
     # Track active usage for Curator lifecycle management (#17782)
     try:
-        from tools.skill_usage import bump_use
+        from hermes_agent.tools.skill_usage import bump_use
         bump_use(skill_name)
     except Exception:
         pass  # Non-critical — skill invocation proceeds regardless
@@ -589,7 +589,7 @@ def build_preloaded_skills_prompt(
 
         # Track active usage for Curator lifecycle management (#17782)
         try:
-            from tools.skill_usage import bump_use
+            from hermes_agent.tools.skill_usage import bump_use
             bump_use(skill_name)
         except Exception:
             pass  # Non-critical

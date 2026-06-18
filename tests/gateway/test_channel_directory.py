@@ -6,7 +6,7 @@ import os
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from gateway.channel_directory import (
+from hermes_agent.gateway.channel_directory import (
     build_channel_directory,
     lookup_channel_type,
     resolve_channel_name,
@@ -28,7 +28,7 @@ def _isolate_channel_aliases(tmp_path_factory):
     that exercise aliases patch CHANNEL_ALIASES_PATH themselves inside the
     test body, which takes precedence over this outer patch."""
     missing = tmp_path_factory.mktemp("aliases") / "none.json"
-    with patch("gateway.channel_directory.CHANNEL_ALIASES_PATH", missing):
+    with patch("hermes_agent.gateway.channel_directory.CHANNEL_ALIASES_PATH", missing):
         yield
 
 
@@ -42,7 +42,7 @@ def _write_directory(tmp_path, platforms):
 
 class TestLoadDirectory:
     def test_missing_file(self, tmp_path):
-        with patch("gateway.channel_directory.DIRECTORY_PATH", tmp_path / "nope.json"):
+        with patch("hermes_agent.gateway.channel_directory.DIRECTORY_PATH", tmp_path / "nope.json"):
             result = load_directory()
         assert result["updated_at"] is None
         assert result["platforms"] == {}
@@ -51,14 +51,14 @@ class TestLoadDirectory:
         cache_file = _write_directory(tmp_path, {
             "telegram": [{"id": "123", "name": "John", "type": "dm"}]
         })
-        with patch("gateway.channel_directory.DIRECTORY_PATH", cache_file):
+        with patch("hermes_agent.gateway.channel_directory.DIRECTORY_PATH", cache_file):
             result = load_directory()
         assert result["platforms"]["telegram"][0]["name"] == "John"
 
     def test_corrupt_file(self, tmp_path):
         cache_file = tmp_path / "channel_directory.json"
         cache_file.write_text("{bad json")
-        with patch("gateway.channel_directory.DIRECTORY_PATH", cache_file):
+        with patch("hermes_agent.gateway.channel_directory.DIRECTORY_PATH", cache_file):
             result = load_directory()
         assert result["updated_at"] is None
 
@@ -77,7 +77,7 @@ class TestBuildChannelDirectoryWrites:
 
         monkeypatch.setattr(json, "dump", broken_dump)
 
-        with patch("gateway.channel_directory.DIRECTORY_PATH", cache_file):
+        with patch("hermes_agent.gateway.channel_directory.DIRECTORY_PATH", cache_file):
             asyncio.run(build_channel_directory({}))
             result = load_directory()
 
@@ -87,7 +87,7 @@ class TestBuildChannelDirectoryWrites:
 class TestResolveChannelName:
     def _setup(self, tmp_path, platforms):
         cache_file = _write_directory(tmp_path, platforms)
-        return patch("gateway.channel_directory.DIRECTORY_PATH", cache_file)
+        return patch("hermes_agent.gateway.channel_directory.DIRECTORY_PATH", cache_file)
 
     def test_exact_match(self, tmp_path):
         platforms = {
@@ -283,7 +283,7 @@ class TestBuildFromSessions:
 
 class TestFormatDirectoryForDisplay:
     def test_empty_directory(self, tmp_path):
-        with patch("gateway.channel_directory.DIRECTORY_PATH", tmp_path / "nope.json"):
+        with patch("hermes_agent.gateway.channel_directory.DIRECTORY_PATH", tmp_path / "nope.json"):
             result = format_directory_for_display()
         assert "No messaging platforms" in result
 
@@ -295,7 +295,7 @@ class TestFormatDirectoryForDisplay:
                 {"id": "-1001:17585", "name": "Coaching Chat / topic 17585", "type": "group"},
             ]
         })
-        with patch("gateway.channel_directory.DIRECTORY_PATH", cache_file):
+        with patch("hermes_agent.gateway.channel_directory.DIRECTORY_PATH", cache_file):
             result = format_directory_for_display()
 
         assert "Telegram:" in result
@@ -311,7 +311,7 @@ class TestFormatDirectoryForDisplay:
                 {"id": "3", "name": "chat", "guild": "Server2", "type": "channel"},
             ]
         })
-        with patch("gateway.channel_directory.DIRECTORY_PATH", cache_file):
+        with patch("hermes_agent.gateway.channel_directory.DIRECTORY_PATH", cache_file):
             result = format_directory_for_display()
 
         assert "Discord (Server1):" in result
@@ -322,7 +322,7 @@ class TestFormatDirectoryForDisplay:
 class TestLookupChannelType:
     def _setup(self, tmp_path, platforms):
         cache_file = _write_directory(tmp_path, platforms)
-        return patch("gateway.channel_directory.DIRECTORY_PATH", cache_file)
+        return patch("hermes_agent.gateway.channel_directory.DIRECTORY_PATH", cache_file)
 
     def test_forum_channel(self, tmp_path):
         platforms = {
@@ -504,13 +504,13 @@ class TestChannelAliases:
     def _setup_aliases(self, tmp_path, aliases):
         alias_file = tmp_path / "channel_aliases.json"
         alias_file.write_text(json.dumps(aliases))
-        return patch("gateway.channel_directory.CHANNEL_ALIASES_PATH", alias_file)
+        return patch("hermes_agent.gateway.channel_directory.CHANNEL_ALIASES_PATH", alias_file)
 
     def test_alias_renames_existing_entry_on_load(self, tmp_path):
         cache_file = _write_directory(tmp_path, {
             "whatsapp": [{"id": "120363@g.us", "name": "120363", "type": "group"}]
         })
-        with patch("gateway.channel_directory.DIRECTORY_PATH", cache_file), \
+        with patch("hermes_agent.gateway.channel_directory.DIRECTORY_PATH", cache_file), \
              self._setup_aliases(tmp_path, {"whatsapp": {"120363@g.us": "general"}}):
             result = load_directory()
             assert result["platforms"]["whatsapp"][0]["name"] == "general"
@@ -522,7 +522,7 @@ class TestChannelAliases:
         """A group named in the alias file but not yet seen in any session is
         still addressable by name (pre-naming before first traffic)."""
         cache_file = _write_directory(tmp_path, {"whatsapp": []})
-        with patch("gateway.channel_directory.DIRECTORY_PATH", cache_file), \
+        with patch("hermes_agent.gateway.channel_directory.DIRECTORY_PATH", cache_file), \
              self._setup_aliases(tmp_path, {"whatsapp": {"999@g.us": "marketing"}}):
             assert resolve_channel_name("whatsapp", "marketing") == "999@g.us"
             entries = load_directory()["platforms"]["whatsapp"]
@@ -533,8 +533,8 @@ class TestChannelAliases:
         cache_file = _write_directory(tmp_path, {
             "whatsapp": [{"id": "120363@g.us", "name": "120363", "type": "group"}]
         })
-        with patch("gateway.channel_directory.DIRECTORY_PATH", cache_file), \
-             patch("gateway.channel_directory.CHANNEL_ALIASES_PATH", tmp_path / "nope.json"):
+        with patch("hermes_agent.gateway.channel_directory.DIRECTORY_PATH", cache_file), \
+             patch("hermes_agent.gateway.channel_directory.CHANNEL_ALIASES_PATH", tmp_path / "nope.json"):
             result = load_directory()
             assert result["platforms"]["whatsapp"][0]["name"] == "120363"
 
@@ -544,8 +544,8 @@ class TestChannelAliases:
         })
         bad = tmp_path / "channel_aliases.json"
         bad.write_text("{not json")
-        with patch("gateway.channel_directory.DIRECTORY_PATH", cache_file), \
-             patch("gateway.channel_directory.CHANNEL_ALIASES_PATH", bad):
+        with patch("hermes_agent.gateway.channel_directory.DIRECTORY_PATH", cache_file), \
+             patch("hermes_agent.gateway.channel_directory.CHANNEL_ALIASES_PATH", bad):
             result = load_directory()
             assert result["platforms"]["whatsapp"][0]["name"] == "120363"
 
@@ -553,11 +553,11 @@ class TestChannelAliases:
         """build_channel_directory must bake aliases into the written file so
         they survive the periodic regeneration, not just live reads."""
         cache_file = tmp_path / "channel_directory.json"
-        monkeypatch.setattr("gateway.channel_directory._build_from_sessions",
+        monkeypatch.setattr("hermes_agent.gateway.channel_directory._build_from_sessions",
                             lambda plat: [{"id": "120363@g.us", "name": "120363",
                                            "type": "group", "thread_id": None}]
                             if plat == "whatsapp" else [])
-        with patch("gateway.channel_directory.DIRECTORY_PATH", cache_file), \
+        with patch("hermes_agent.gateway.channel_directory.DIRECTORY_PATH", cache_file), \
              self._setup_aliases(tmp_path, {"whatsapp": {"120363@g.us": "general"}}):
             asyncio.run(build_channel_directory({}))
             on_disk = json.loads(cache_file.read_text())
@@ -568,7 +568,7 @@ class TestChannelAliases:
     def test_apply_aliases_handles_malformed_map(self):
         """Non-dict alias maps and non-string aliases must not raise."""
         platforms = {"whatsapp": [{"id": "1@g.us", "name": "1", "type": "group"}]}
-        with patch("gateway.channel_directory._load_channel_aliases",
+        with patch("hermes_agent.gateway.channel_directory._load_channel_aliases",
                    return_value={
                        "whatsapp": "not-a-dict",
                        "telegram": None,

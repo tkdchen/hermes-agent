@@ -11,14 +11,14 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import MessageEvent, MessageType, SessionSource
-from gateway.session import build_session_key
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import MessageEvent, MessageType, SessionSource
+from hermes_agent.gateway.session import build_session_key
 
 
 def _make_adapter():
     """Create a minimal TelegramAdapter for testing text batching."""
-    from gateway.platforms.telegram import TelegramAdapter
+    from hermes_agent.gateway.platforms.telegram import TelegramAdapter
 
     config = PlatformConfig(enabled=True, token="test-token")
     adapter = object.__new__(TelegramAdapter)

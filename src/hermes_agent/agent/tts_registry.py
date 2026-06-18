@@ -32,7 +32,7 @@ import logging
 import threading
 from typing import Dict, List, Optional
 
-from agent.tts_provider import TTSProvider
+from hermes_agent.agent.tts_provider import TTSProvider
 
 logger = logging.getLogger(__name__)
 

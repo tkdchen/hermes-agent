@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from gateway.platforms.base import (
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     GATEWAY_SECRET_CAPTURE_UNSUPPORTED_MESSAGE,
     MessageEvent,
@@ -568,7 +568,7 @@ class TestMediaExtensionAllowlistParity:
             assert media == [(path, False)], f".{ext} should extract via MEDIA:"
 
     def test_extract_media_and_local_files_share_one_extension_set(self):
-        from gateway.platforms.base import MEDIA_DELIVERY_EXTS
+        from hermes_agent.gateway.platforms.base import MEDIA_DELIVERY_EXTS
         # Both functions reference MEDIA_DELIVERY_EXTS; assert the documents
         # that motivated the bug are present in the shared set.
         for ext in (".md", ".json", ".yaml", ".yml", ".xml", ".html", ".htm"):
@@ -578,7 +578,7 @@ class TestMediaExtensionAllowlistParity:
         """A MEDIA: tag with an unknown extension is NOT stripped from the
         body — it survives so extract_local_files can still see the bare path,
         rather than vanishing entirely (the core of issue #34517)."""
-        from gateway.platforms.base import MEDIA_TAG_CLEANUP_RE
+        from hermes_agent.gateway.platforms.base import MEDIA_TAG_CLEANUP_RE
         text = "Saved to MEDIA:/tmp/data.weirdext done"
         media, _ = BasePlatformAdapter.extract_media(text)
         assert media == []  # unknown extension is not a deliverable MEDIA tag
@@ -586,7 +586,7 @@ class TestMediaExtensionAllowlistParity:
         assert "/tmp/data.weirdext" in stripped  # path preserved, not dropped
 
     def test_known_extension_tag_is_stripped_from_body(self):
-        from gateway.platforms.base import MEDIA_TAG_CLEANUP_RE
+        from hermes_agent.gateway.platforms.base import MEDIA_TAG_CLEANUP_RE
         text = "Here is your report: MEDIA:/tmp/report.md"
         stripped = MEDIA_TAG_CLEANUP_RE.sub("", text).strip()
         assert "MEDIA:" not in stripped
@@ -597,7 +597,7 @@ class TestMediaExtensionAllowlistParity:
 class TestMediaDeliveryPathValidation:
     def _patch_roots(self, monkeypatch, *roots):
         monkeypatch.setattr(
-            "gateway.platforms.base.MEDIA_DELIVERY_SAFE_ROOTS",
+            "hermes_agent.gateway.platforms.base.MEDIA_DELIVERY_SAFE_ROOTS",
             tuple(roots),
         )
         # All tests in this class cover strict-mode behavior (allowlist +
@@ -787,7 +787,7 @@ class TestMediaDeliveryDefaultMode:
         # validate_media_delivery_path in these tests is the
         # default-mode "anything not denied" branch.
         monkeypatch.setattr(
-            "gateway.platforms.base.MEDIA_DELIVERY_SAFE_ROOTS",
+            "hermes_agent.gateway.platforms.base.MEDIA_DELIVERY_SAFE_ROOTS",
             tuple(roots),
         )
         # Pin strict OFF — the public default. Tests that exercise the
@@ -847,7 +847,7 @@ class TestMediaDeliveryDefaultMode:
         secret.write_bytes(b"root:!:0:0::/root:/bin/sh")
 
         monkeypatch.setattr(
-            "gateway.platforms.base._MEDIA_DELIVERY_DENIED_PREFIXES",
+            "hermes_agent.gateway.platforms.base._MEDIA_DELIVERY_DENIED_PREFIXES",
             (str(fake_etc),),
         )
 
@@ -867,7 +867,7 @@ class TestMediaDeliveryDefaultMode:
         env_file.write_text("OPENAI_API_KEY=sk-...")
         monkeypatch.setenv("HOME", str(fake_home))
         monkeypatch.setattr(
-            "gateway.platforms.base._HERMES_HOME",
+            "hermes_agent.gateway.platforms.base._HERMES_HOME",
             hermes_dir,
         )
 
@@ -884,7 +884,7 @@ class TestMediaDeliveryDefaultMode:
         config_file.write_text("model:\n  provider: openai\n")
         monkeypatch.setenv("HOME", str(fake_home))
         monkeypatch.setattr(
-            "gateway.platforms.base._HERMES_HOME",
+            "hermes_agent.gateway.platforms.base._HERMES_HOME",
             hermes_dir,
         )
 
@@ -902,11 +902,11 @@ class TestMediaDeliveryDefaultMode:
         config_file.write_text("profiles:\n  active: work\n")
         monkeypatch.setenv("HOME", str(fake_home))
         monkeypatch.setattr(
-            "gateway.platforms.base._HERMES_HOME",
+            "hermes_agent.gateway.platforms.base._HERMES_HOME",
             profile_home,
         )
         monkeypatch.setattr(
-            "gateway.platforms.base._HERMES_ROOT",
+            "hermes_agent.gateway.platforms.base._HERMES_ROOT",
             hermes_root,
         )
 
@@ -931,7 +931,7 @@ class TestMediaDeliveryDefaultMode:
     def test_strict_mode_truthy_aliases(self, monkeypatch, tmp_path):
         """``HERMES_MEDIA_DELIVERY_STRICT=true|yes|on|1`` all enable strict mode."""
         self._patch_roots(monkeypatch)
-        from gateway.platforms.base import _media_delivery_strict_mode
+        from hermes_agent.gateway.platforms.base import _media_delivery_strict_mode
 
         for raw in ("1", "true", "TRUE", "yes", "on"):
             monkeypatch.setenv("HERMES_MEDIA_DELIVERY_STRICT", raw)
@@ -970,7 +970,7 @@ class TestMediaDeliveryDefaultMode:
         monkeypatch.setenv("HOME", str(fake_home))
         # $HOME is itself on the denied-prefix list, mirroring /root.
         monkeypatch.setattr(
-            "gateway.platforms.base._MEDIA_DELIVERY_DENIED_PREFIXES",
+            "hermes_agent.gateway.platforms.base._MEDIA_DELIVERY_DENIED_PREFIXES",
             (str(fake_home),),
         )
 
@@ -994,7 +994,7 @@ class TestMediaDeliveryDefaultMode:
         key.write_bytes(b"-----BEGIN OPENSSH PRIVATE KEY-----")
         monkeypatch.setenv("HOME", str(fake_home))
         monkeypatch.setattr(
-            "gateway.platforms.base._MEDIA_DELIVERY_DENIED_PREFIXES",
+            "hermes_agent.gateway.platforms.base._MEDIA_DELIVERY_DENIED_PREFIXES",
             (str(fake_home),),
         )
 
@@ -1013,10 +1013,10 @@ class TestMediaDeliveryDefaultMode:
         env_file.write_text("OPENROUTER_API_KEY=sk-...")
         monkeypatch.setenv("HOME", str(fake_home))
         monkeypatch.setattr(
-            "gateway.platforms.base._MEDIA_DELIVERY_DENIED_PREFIXES",
+            "hermes_agent.gateway.platforms.base._MEDIA_DELIVERY_DENIED_PREFIXES",
             (str(fake_home),),
         )
-        monkeypatch.setattr("gateway.platforms.base._HERMES_HOME", hermes_dir)
+        monkeypatch.setattr("hermes_agent.gateway.platforms.base._HERMES_HOME", hermes_dir)
 
         assert BasePlatformAdapter.validate_media_delivery_path(str(env_file)) is None
 
@@ -1037,7 +1037,7 @@ class TestMediaDeliveryDefaultMode:
         # Both my home and the other home are denied prefixes; only my home is
         # the running user's $HOME, so the other home must stay blocked.
         monkeypatch.setattr(
-            "gateway.platforms.base._MEDIA_DELIVERY_DENIED_PREFIXES",
+            "hermes_agent.gateway.platforms.base._MEDIA_DELIVERY_DENIED_PREFIXES",
             (str(my_home), str(other_home)),
         )
 
@@ -1062,7 +1062,7 @@ class TestMediaDeliveryDefaultMode:
         link.symlink_to(key)
         monkeypatch.setenv("HOME", str(fake_home))
         monkeypatch.setattr(
-            "gateway.platforms.base._MEDIA_DELIVERY_DENIED_PREFIXES",
+            "hermes_agent.gateway.platforms.base._MEDIA_DELIVERY_DENIED_PREFIXES",
             (str(fake_home),),
         )
 
@@ -1077,36 +1077,36 @@ class TestShouldSendMediaAsAudio:
     """Audio-routing policy shared by gateway + scheduler + send_message."""
 
     def test_unknown_extension_returns_false(self):
-        from gateway.platforms.base import should_send_media_as_audio
+        from hermes_agent.gateway.platforms.base import should_send_media_as_audio
         assert should_send_media_as_audio(None, ".png") is False
         assert should_send_media_as_audio("telegram", ".pdf") is False
 
     def test_non_telegram_platforms_route_all_audio(self):
-        from gateway.platforms.base import should_send_media_as_audio
+        from hermes_agent.gateway.platforms.base import should_send_media_as_audio
         for ext in (".mp3", ".m4a", ".wav", ".flac", ".ogg", ".opus"):
             assert should_send_media_as_audio("discord", ext) is True
             assert should_send_media_as_audio("slack", ext) is True
 
     def test_telegram_mp3_and_m4a_route_to_audio(self):
-        from gateway.platforms.base import should_send_media_as_audio
+        from hermes_agent.gateway.platforms.base import should_send_media_as_audio
         assert should_send_media_as_audio("telegram", ".mp3") is True
         assert should_send_media_as_audio("telegram", ".m4a") is True
 
     def test_telegram_wav_and_flac_fall_through_to_document(self):
-        from gateway.platforms.base import should_send_media_as_audio
+        from hermes_agent.gateway.platforms.base import should_send_media_as_audio
         assert should_send_media_as_audio("telegram", ".wav") is False
         assert should_send_media_as_audio("telegram", ".flac") is False
 
     def test_telegram_ogg_opus_only_when_voice_flagged(self):
-        from gateway.platforms.base import should_send_media_as_audio
+        from hermes_agent.gateway.platforms.base import should_send_media_as_audio
         assert should_send_media_as_audio("telegram", ".ogg", is_voice=True) is True
         assert should_send_media_as_audio("telegram", ".opus", is_voice=True) is True
         assert should_send_media_as_audio("telegram", ".ogg") is False
         assert should_send_media_as_audio("telegram", ".opus") is False
 
     def test_accepts_platform_enum(self):
-        from gateway.config import Platform
-        from gateway.platforms.base import should_send_media_as_audio
+        from hermes_agent.gateway.config import Platform
+        from hermes_agent.gateway.platforms.base import should_send_media_as_audio
         assert should_send_media_as_audio(Platform.TELEGRAM, ".mp3") is True
         assert should_send_media_as_audio(Platform.TELEGRAM, ".flac") is False
         assert should_send_media_as_audio(Platform.DISCORD, ".flac") is True
@@ -1134,7 +1134,7 @@ class TestTruncateMessage:
             async def get_chat_info(self, *a):
                 return {}
 
-        from gateway.config import Platform, PlatformConfig
+        from hermes_agent.gateway.config import Platform, PlatformConfig
 
         config = PlatformConfig(enabled=True, token="test")
         return StubAdapter(config=config, platform=Platform.TELEGRAM)
@@ -1398,7 +1398,7 @@ class TestProxyKwargsForAiohttp:
     """Verify proxy_kwargs_for_aiohttp routes all schemes through ProxyConnector."""
 
     def test_none_returns_empty(self):
-        from gateway.platforms.base import proxy_kwargs_for_aiohttp
+        from hermes_agent.gateway.platforms.base import proxy_kwargs_for_aiohttp
 
         sess_kw, req_kw = proxy_kwargs_for_aiohttp(None)
         assert sess_kw == {}
@@ -1407,7 +1407,7 @@ class TestProxyKwargsForAiohttp:
     def test_http_proxy_uses_connector_when_aiohttp_socks_available(self):
         pytest.importorskip("aiohttp_socks")
         from unittest.mock import MagicMock
-        from gateway.platforms.base import proxy_kwargs_for_aiohttp
+        from hermes_agent.gateway.platforms.base import proxy_kwargs_for_aiohttp
 
         sentinel = MagicMock(name="ProxyConnector")
         with patch("aiohttp_socks.ProxyConnector.from_url", return_value=sentinel):
@@ -1421,7 +1421,7 @@ class TestProxyKwargsForAiohttp:
     def test_socks_proxy_uses_connector(self):
         pytest.importorskip("aiohttp_socks")
         from unittest.mock import MagicMock
-        from gateway.platforms.base import proxy_kwargs_for_aiohttp
+        from hermes_agent.gateway.platforms.base import proxy_kwargs_for_aiohttp
 
         sentinel = MagicMock(name="ProxyConnector")
         with patch("aiohttp_socks.ProxyConnector.from_url", return_value=sentinel):
@@ -1430,7 +1430,7 @@ class TestProxyKwargsForAiohttp:
         assert req_kw == {}
 
     def test_http_proxy_falls_back_without_aiohttp_socks(self):
-        from gateway.platforms.base import proxy_kwargs_for_aiohttp
+        from hermes_agent.gateway.platforms.base import proxy_kwargs_for_aiohttp
 
         with patch.dict("sys.modules", {"aiohttp_socks": None}):
             sess_kw, req_kw = proxy_kwargs_for_aiohttp("http://proxy:8080")
@@ -1446,7 +1446,7 @@ class TestMediaDeliveryDiagnosability:
         outside.write_bytes(b"OggS")
         with patch.dict(os.environ, {"HERMES_MEDIA_DELIVERY_STRICT": "1",
                                      "HERMES_MEDIA_TRUST_RECENT_FILES": "0"}), \
-                patch("gateway.platforms.base.MEDIA_DELIVERY_SAFE_ROOTS", ()):
+                patch("hermes_agent.gateway.platforms.base.MEDIA_DELIVERY_SAFE_ROOTS", ()):
             with caplog.at_level("WARNING"):
                 out = BasePlatformAdapter.filter_media_delivery_paths([(str(outside), False)])
         assert out == []
@@ -1479,7 +1479,7 @@ class TestMediaDeliveryDiagnosability:
             assert sep not in _log_safe_path(f"/tmp/a{sep}b.png")
 
     def test_canonical_cache_roots_present(self):
-        from gateway.platforms.base import MEDIA_DELIVERY_SAFE_ROOTS
+        from hermes_agent.gateway.platforms.base import MEDIA_DELIVERY_SAFE_ROOTS
         roots = {str(r) for r in MEDIA_DELIVERY_SAFE_ROOTS}
         assert any(r.endswith("cache/images") for r in roots)
         assert any(r.endswith("cache/documents") for r in roots)

@@ -18,14 +18,14 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 def _clear_provider_caches():
     """Force providers/__init__.py to re-discover on next list_providers()."""
-    import providers as _pkg
+    import hermes_agent.providers as _pkg
     _pkg._REGISTRY.clear()
     _pkg._ALIASES.clear()
     _pkg._discovered = False
     # Evict any cached plugin modules so the next import re-executes.
     for mod in list(sys.modules.keys()):
         if (
-            mod.startswith("plugins.model_providers")
+            mod.startswith("hermes_agent.plugins.model_providers")
             or mod.startswith("_hermes_user_provider")
         ):
             del sys.modules[mod]
@@ -52,7 +52,7 @@ def test_all_profiles_register():
     added/removed; that's expected and shouldn't break CI.
     """
     _clear_provider_caches()
-    from providers import list_providers
+    from hermes_agent.providers import list_providers
 
     plugins_dir = REPO_ROOT / "plugins" / "model-providers"
     plugin_dir_count = sum(1 for c in plugins_dir.iterdir() if c.is_dir())
@@ -106,7 +106,7 @@ def test_user_plugin_overrides_bundled(tmp_path, monkeypatch):
     )
 
     _clear_provider_caches()
-    from providers import get_provider_profile
+    from hermes_agent.providers import get_provider_profile
 
     gmi = get_provider_profile("gmi")
     assert gmi is not None
@@ -122,7 +122,7 @@ def test_user_plugin_overrides_bundled(tmp_path, monkeypatch):
 def test_general_plugin_manager_skips_model_provider_kind(tmp_path, monkeypatch):
     """The general PluginManager must NOT import model-provider plugins
     (providers/__init__.py handles them). It records the manifest only."""
-    from hermes_cli import plugins as plugin_mod
+    from hermes_agent.hermes_cli import plugins as plugin_mod
 
     hermes_home = tmp_path / ".hermes"
     hermes_home.mkdir()

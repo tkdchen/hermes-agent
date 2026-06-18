@@ -18,7 +18,7 @@ class TestCLIQuickCommands:
         return str(call_arg)
 
     def _make_cli(self, quick_commands):
-        from cli import HermesCLI
+        from hermes_agent.cli import HermesCLI
         cli = HermesCLI.__new__(HermesCLI)
         cli.config = {"quick_commands": quick_commands}
         cli.console = MagicMock()
@@ -44,7 +44,7 @@ class TestCLIQuickCommands:
         cli._app = object()
         live_console = MagicMock()
 
-        with patch("cli.ChatConsole", return_value=live_console):
+        with patch("hermes_agent.cli.ChatConsole", return_value=live_console):
             result = cli.process_command("/dn")
 
         assert result is True
@@ -106,7 +106,7 @@ class TestCLIQuickCommands:
     def test_quick_command_takes_priority_over_skill_commands(self):
         """Quick commands must be checked before skill slash commands."""
         cli = self._make_cli({"mygif": {"type": "exec", "command": "echo overridden"}})
-        with patch("cli._skill_commands", {"/mygif": {"name": "gif-search"}}):
+        with patch("hermes_agent.cli._skill_commands", {"/mygif": {"name": "gif-search"}}):
             cli.process_command("/mygif")
         cli.console.print.assert_called_once()
         printed = self._printed_plain(cli.console.print.call_args[0][0])
@@ -114,7 +114,7 @@ class TestCLIQuickCommands:
 
     def test_unknown_command_still_shows_error(self):
         cli = self._make_cli({})
-        with patch("cli._cprint") as mock_cprint:
+        with patch("hermes_agent.cli._cprint") as mock_cprint:
             cli.process_command("/nonexistent")
             mock_cprint.assert_called()
             printed = " ".join(str(c) for c in mock_cprint.call_args_list)
@@ -149,7 +149,7 @@ class TestGatewayQuickCommands:
 
     @pytest.mark.asyncio
     async def test_exec_command_returns_output(self):
-        from gateway.run import GatewayRunner
+        from hermes_agent.gateway.run import GatewayRunner
         runner = GatewayRunner.__new__(GatewayRunner)
         runner.config = {"quick_commands": {"limits": {"type": "exec", "command": "echo ok"}}}
         runner._running_agents = {}
@@ -163,7 +163,7 @@ class TestGatewayQuickCommands:
     @pytest.mark.asyncio
     async def test_exec_command_does_not_leak_credentials(self):
         """Quick command exec must sanitize env — API keys must not appear in output."""
-        from gateway.run import GatewayRunner
+        from hermes_agent.gateway.run import GatewayRunner
 
         runner = GatewayRunner.__new__(GatewayRunner)
         runner.config = {"quick_commands": {"leak": {"type": "exec", "command": "env"}}}
@@ -181,12 +181,12 @@ class TestGatewayQuickCommands:
     @pytest.mark.asyncio
     async def test_exec_command_output_is_redacted(self, monkeypatch):
         """Quick command output must redact sensitive patterns before returning."""
-        from gateway.run import GatewayRunner
+        from hermes_agent.gateway.run import GatewayRunner
 
         # Ensure redaction is active regardless of host HERMES_REDACT_SECRETS state
         # or test ordering (the module snapshots env at import time, so other
         # tests in the same xdist worker can flip the flag).
-        monkeypatch.setattr("agent.redact._REDACT_ENABLED", True)
+        monkeypatch.setattr("hermes_agent.agent.redact._REDACT_ENABLED", True)
 
         runner = GatewayRunner.__new__(GatewayRunner)
         runner.config = {"quick_commands": {"token": {"type": "exec", "command": "echo sk-ant-api03-supersecretkey1234567890"}}}
@@ -202,7 +202,7 @@ class TestGatewayQuickCommands:
 
     @pytest.mark.asyncio
     async def test_unsupported_type_returns_error(self):
-        from gateway.run import GatewayRunner
+        from hermes_agent.gateway.run import GatewayRunner
         runner = GatewayRunner.__new__(GatewayRunner)
         runner.config = {"quick_commands": {"bad": {"type": "prompt", "command": "echo hi"}}}
         runner._running_agents = {}
@@ -216,7 +216,7 @@ class TestGatewayQuickCommands:
 
     @pytest.mark.asyncio
     async def test_timeout_returns_error(self):
-        from gateway.run import GatewayRunner
+        from hermes_agent.gateway.run import GatewayRunner
         import asyncio
         runner = GatewayRunner.__new__(GatewayRunner)
         runner.config = {"quick_commands": {"slow": {"type": "exec", "command": "sleep 100"}}}
@@ -232,8 +232,8 @@ class TestGatewayQuickCommands:
 
     @pytest.mark.asyncio
     async def test_gateway_config_object_supports_quick_commands(self):
-        from gateway.config import GatewayConfig
-        from gateway.run import GatewayRunner
+        from hermes_agent.gateway.config import GatewayConfig
+        from hermes_agent.gateway.run import GatewayRunner
 
         runner = GatewayRunner.__new__(GatewayRunner)
         runner.config = GatewayConfig(

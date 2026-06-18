@@ -11,8 +11,8 @@ import time
 
 import pytest
 
-from tools import async_delegation as ad
-from tools.process_registry import process_registry, format_process_notification
+from hermes_agent.tools import async_delegation as ad
+from hermes_agent.tools.process_registry import process_registry, format_process_notification
 
 
 @pytest.fixture(autouse=True)
@@ -229,7 +229,7 @@ def test_delegate_task_background_routes_async_and_does_not_block(monkeypatch):
     """delegate_task(background=True) returns a handle without running the
     child synchronously, and the child completes on the background thread."""
     from unittest.mock import MagicMock, patch
-    import tools.delegate_tool as dt
+    import hermes_agent.tools.delegate_tool as dt
 
     parent = MagicMock()
     parent._delegate_depth = 0
@@ -288,7 +288,7 @@ def test_delegate_task_background_rejects_batch(monkeypatch):
     """background=True with a multi-item tasks batch is rejected (v1: single-task only)."""
     import json
     from unittest.mock import MagicMock
-    import tools.delegate_tool as dt
+    import hermes_agent.tools.delegate_tool as dt
 
     parent = MagicMock()
     parent._delegate_depth = 0
@@ -309,7 +309,7 @@ def test_delegate_task_background_detaches_child_from_parent(monkeypatch):
     otherwise parent-turn interrupts / cache evicts / session close would
     kill the detached subagent mid-run."""
     from unittest.mock import MagicMock, patch
-    import tools.delegate_tool as dt
+    import hermes_agent.tools.delegate_tool as dt
 
     parent = MagicMock()
     parent._delegate_depth = 0
@@ -407,7 +407,7 @@ def _make_async_evt(**over):
 
 
 def test_gateway_enriches_routing_from_session_key():
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = object.__new__(GatewayRunner)
     evt = _make_async_evt()
@@ -418,7 +418,7 @@ def test_gateway_enriches_routing_from_session_key():
 
 
 def test_gateway_formatter_renders_async_block():
-    from gateway.run import _format_gateway_process_notification
+    from hermes_agent.gateway.run import _format_gateway_process_notification
 
     txt = _format_gateway_process_notification(_make_async_evt())
     assert txt is not None
@@ -428,7 +428,7 @@ def test_gateway_formatter_renders_async_block():
 
 
 def test_gateway_watch_drain_requeues_async_without_looping():
-    from gateway.run import _drain_gateway_watch_events
+    from hermes_agent.gateway.run import _drain_gateway_watch_events
 
     q = queue.Queue()
     async_evt = _make_async_evt()
@@ -450,7 +450,7 @@ def test_gateway_watch_drain_requeues_async_without_looping():
 
 
 def test_gateway_builds_routable_source_from_enriched_event():
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = object.__new__(GatewayRunner)
     evt = _make_async_evt()
@@ -463,7 +463,7 @@ def test_gateway_builds_routable_source_from_enriched_event():
 
 def test_gateway_cli_origin_event_left_unrouted():
     """An empty session_key (CLI origin) is left without routing fields."""
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = object.__new__(GatewayRunner)
     evt = _make_async_evt(session_key="")

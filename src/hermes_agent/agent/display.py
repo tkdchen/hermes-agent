@@ -14,8 +14,8 @@ from difflib import unified_diff
 from pathlib import Path
 from typing import Any
 
-from utils import safe_json_loads
-from agent.tool_result_classification import file_mutation_result_landed
+from hermes_agent.utils import safe_json_loads
+from hermes_agent.agent.tool_result_classification import file_mutation_result_landed
 
 # ANSI escape codes for coloring tool failure indicators
 _RED = "\033[31m"
@@ -45,7 +45,7 @@ def _diff_ansi() -> dict[str, str]:
     plus = "\033[38;2;255;255;255;48;2;20;90;20m"
 
     try:
-        from hermes_cli.skin_engine import get_active_skin
+        from hermes_agent.hermes_cli.skin_engine import get_active_skin
         skin = get_active_skin()
 
         def _hex_fg(key: str, fallback_rgb: tuple[int, int, int]) -> str:
@@ -120,7 +120,7 @@ def get_tool_preview_max_len() -> int:
 def _get_skin():
     """Get the active skin config, or None if not available."""
     try:
-        from hermes_cli.skin_engine import get_active_skin
+        from hermes_agent.hermes_cli.skin_engine import get_active_skin
         return get_active_skin()
     except Exception:
         return None
@@ -150,7 +150,7 @@ def get_tool_emoji(tool_name: str, default: str = "⚡") -> str:
             return override
     # 2. Registry default
     try:
-        from tools.registry import registry
+        from hermes_agent.tools.registry import registry
         emoji = registry.get_emoji(tool_name, default="")
         if emoji:
             return emoji
@@ -335,7 +335,7 @@ def _resolve_skill_manage_paths(args: dict) -> list[Path]:
     if not action or not name:
         return []
 
-    from tools.skill_manager_tool import _find_skill, _resolve_skill_dir
+    from hermes_agent.tools.skill_manager_tool import _find_skill, _resolve_skill_dir
 
     if action == "create":
         skill_dir = _resolve_skill_dir(name, args.get("category"))

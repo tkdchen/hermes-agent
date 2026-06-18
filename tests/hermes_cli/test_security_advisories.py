@@ -14,7 +14,7 @@ from typing import Iterator
 
 import pytest
 
-import hermes_cli.security_advisories as adv
+import hermes_agent.hermes_cli.security_advisories as adv
 
 
 # ---------------------------------------------------------------------------
@@ -114,7 +114,7 @@ class TestAck:
     def test_get_acked_ids_empty_when_no_config(self, monkeypatch):
         # load_config raises → returns empty set, doesn't crash.
         monkeypatch.setattr(
-            "hermes_cli.config.load_config",
+            "hermes_agent.hermes_cli.config.load_config",
             lambda: (_ for _ in ()).throw(RuntimeError("boom")),
         )
         assert adv.get_acked_ids() == set()
@@ -144,10 +144,10 @@ class TestAck:
         # don't depend on the full hermes_cli.config bootstrap.
         store: dict = {"security": {}}
         monkeypatch.setattr(
-            "hermes_cli.config.load_config", lambda: store
+            "hermes_agent.hermes_cli.config.load_config", lambda: store
         )
         monkeypatch.setattr(
-            "hermes_cli.config.save_config",
+            "hermes_agent.hermes_cli.config.save_config",
             lambda cfg: store.update(cfg) or None,
         )
         assert adv.ack_advisory("test-advisory-2026-99") is True

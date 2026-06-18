@@ -33,8 +33,8 @@ def _accepts_metadata(method) -> bool:
 @pytest.mark.parametrize(
     "module_name, class_name",
     [
-        ("gateway.platforms.whatsapp", "WhatsAppAdapter"),
-        ("gateway.platforms.email", "EmailAdapter"),
+        ("hermes_agent.gateway.platforms.whatsapp", "WhatsAppAdapter"),
+        ("hermes_agent.gateway.platforms.email", "EmailAdapter"),
     ],
 )
 def test_send_image_accepts_metadata(module_name, class_name):
@@ -49,20 +49,20 @@ def test_send_image_accepts_metadata(module_name, class_name):
 # platform SDK isn't installed are skipped; an adapter that imports but
 # whose override drops metadata is a hard failure.
 _ALL_ADAPTERS = [
-    ("gateway.platforms.bluebubbles", "BlueBubblesAdapter"),
-    ("gateway.platforms.dingtalk", "DingTalkAdapter"),
-    ("gateway.platforms.discord", "DiscordAdapter"),
-    ("gateway.platforms.email", "EmailAdapter"),
-    ("gateway.platforms.feishu", "FeishuAdapter"),
-    ("gateway.platforms.matrix", "MatrixAdapter"),
-    ("gateway.platforms.mattermost", "MattermostAdapter"),
-    ("gateway.platforms.signal", "SignalAdapter"),
-    ("gateway.platforms.slack", "SlackAdapter"),
-    ("gateway.platforms.telegram", "TelegramAdapter"),
-    ("gateway.platforms.wecom", "WeComAdapter"),
-    ("gateway.platforms.weixin", "WeixinAdapter"),
-    ("gateway.platforms.whatsapp", "WhatsAppAdapter"),
-    ("gateway.platforms.yuanbao", "YuanbaoAdapter"),
+    ("hermes_agent.gateway.platforms.bluebubbles", "BlueBubblesAdapter"),
+    ("hermes_agent.gateway.platforms.dingtalk", "DingTalkAdapter"),
+    ("hermes_agent.gateway.platforms.discord", "DiscordAdapter"),
+    ("hermes_agent.gateway.platforms.email", "EmailAdapter"),
+    ("hermes_agent.gateway.platforms.feishu", "FeishuAdapter"),
+    ("hermes_agent.gateway.platforms.matrix", "MatrixAdapter"),
+    ("hermes_agent.gateway.platforms.mattermost", "MattermostAdapter"),
+    ("hermes_agent.gateway.platforms.signal", "SignalAdapter"),
+    ("hermes_agent.gateway.platforms.slack", "SlackAdapter"),
+    ("hermes_agent.gateway.platforms.telegram", "TelegramAdapter"),
+    ("hermes_agent.gateway.platforms.wecom", "WeComAdapter"),
+    ("hermes_agent.gateway.platforms.weixin", "WeixinAdapter"),
+    ("hermes_agent.gateway.platforms.whatsapp", "WhatsAppAdapter"),
+    ("hermes_agent.gateway.platforms.yuanbao", "YuanbaoAdapter"),
 ]
 
 

@@ -13,8 +13,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from gateway.config import GatewayConfig, Platform
-from gateway.run import GatewayRunner, _parse_session_key
+from hermes_agent.gateway.config import GatewayConfig, Platform
+from hermes_agent.gateway.run import GatewayRunner, _parse_session_key
 
 
 # ---------------------------------------------------------------------------
@@ -43,7 +43,7 @@ def _build_runner(monkeypatch, tmp_path, mode: str) -> GatewayRunner:
         encoding="utf-8",
     )
 
-    import gateway.run as gateway_run
+    import hermes_agent.gateway.run as gateway_run
 
     monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
 
@@ -72,7 +72,7 @@ def _watcher_dict(session_id="proc_test", thread_id=""):
 class TestLoadBackgroundNotificationsMode:
 
     def test_defaults_to_all(self, monkeypatch, tmp_path):
-        import gateway.run as gw
+        import hermes_agent.gateway.run as gw
         monkeypatch.setattr(gw, "_hermes_home", tmp_path)
         monkeypatch.delenv("HERMES_BACKGROUND_NOTIFICATIONS", raising=False)
         assert GatewayRunner._load_background_notifications_mode() == "all"
@@ -81,7 +81,7 @@ class TestLoadBackgroundNotificationsMode:
         (tmp_path / "config.yaml").write_text(
             "display:\n  background_process_notifications: error\n"
         )
-        import gateway.run as gw
+        import hermes_agent.gateway.run as gw
         monkeypatch.setattr(gw, "_hermes_home", tmp_path)
         monkeypatch.delenv("HERMES_BACKGROUND_NOTIFICATIONS", raising=False)
         assert GatewayRunner._load_background_notifications_mode() == "error"
@@ -90,7 +90,7 @@ class TestLoadBackgroundNotificationsMode:
         (tmp_path / "config.yaml").write_text(
             "display:\n  background_process_notifications: error\n"
         )
-        import gateway.run as gw
+        import hermes_agent.gateway.run as gw
         monkeypatch.setattr(gw, "_hermes_home", tmp_path)
         monkeypatch.setenv("HERMES_BACKGROUND_NOTIFICATIONS", "off")
         assert GatewayRunner._load_background_notifications_mode() == "off"
@@ -99,7 +99,7 @@ class TestLoadBackgroundNotificationsMode:
         (tmp_path / "config.yaml").write_text(
             "display:\n  background_process_notifications: false\n"
         )
-        import gateway.run as gw
+        import hermes_agent.gateway.run as gw
         monkeypatch.setattr(gw, "_hermes_home", tmp_path)
         monkeypatch.delenv("HERMES_BACKGROUND_NOTIFICATIONS", raising=False)
         assert GatewayRunner._load_background_notifications_mode() == "off"
@@ -108,7 +108,7 @@ class TestLoadBackgroundNotificationsMode:
         (tmp_path / "config.yaml").write_text(
             "display:\n  background_process_notifications: banana\n"
         )
-        import gateway.run as gw
+        import hermes_agent.gateway.run as gw
         monkeypatch.setattr(gw, "_hermes_home", tmp_path)
         monkeypatch.delenv("HERMES_BACKGROUND_NOTIFICATIONS", raising=False)
         assert GatewayRunner._load_background_notifications_mode() == "all"
@@ -182,7 +182,7 @@ class TestLoadBackgroundNotificationsMode:
 async def test_run_process_watcher_respects_notification_mode(
     monkeypatch, tmp_path, mode, sessions, expected_calls, expected_fragment
 ):
-    import tools.process_registry as pr_module
+    import hermes_agent.tools.process_registry as pr_module
 
     monkeypatch.setattr(pr_module, "process_registry", _FakeRegistry(sessions))
 
@@ -207,7 +207,7 @@ async def test_run_process_watcher_respects_notification_mode(
 @pytest.mark.asyncio
 async def test_thread_id_passed_to_send(monkeypatch, tmp_path):
     """thread_id from watcher dict is forwarded as metadata to adapter.send()."""
-    import tools.process_registry as pr_module
+    import hermes_agent.tools.process_registry as pr_module
 
     sessions = [SimpleNamespace(output_buffer="done\n", exited=True, exit_code=0)]
     monkeypatch.setattr(pr_module, "process_registry", _FakeRegistry(sessions))
@@ -229,7 +229,7 @@ async def test_thread_id_passed_to_send(monkeypatch, tmp_path):
 @pytest.mark.asyncio
 async def test_no_thread_id_sends_no_metadata(monkeypatch, tmp_path):
     """When thread_id is empty, metadata should be None (general topic)."""
-    import tools.process_registry as pr_module
+    import hermes_agent.tools.process_registry as pr_module
 
     sessions = [SimpleNamespace(output_buffer="done\n", exited=True, exit_code=0)]
     monkeypatch.setattr(pr_module, "process_registry", _FakeRegistry(sessions))
@@ -250,7 +250,7 @@ async def test_no_thread_id_sends_no_metadata(monkeypatch, tmp_path):
 
 @pytest.mark.asyncio
 async def test_inject_watch_notification_routes_from_session_store_origin(monkeypatch, tmp_path):
-    from gateway.session import SessionSource
+    from hermes_agent.gateway.session import SessionSource
 
     runner = _build_runner(monkeypatch, tmp_path, "all")
     adapter = runner.adapters[Platform.TELEGRAM]
@@ -290,7 +290,7 @@ async def test_agent_notification_carries_message_id_reply_anchor(monkeypatch, t
 
     Without an anchor, Telegram private-chat topic sends fall back to the main
     chat (see _thread_kwargs_for_send / telegram_dm_topic_reply_fallback)."""
-    import tools.process_registry as pr_module
+    import hermes_agent.tools.process_registry as pr_module
 
     sessions = [SimpleNamespace(
         output_buffer="SMOKE_OK\n", exited=True, exit_code=0, command="sleep 1",
@@ -327,7 +327,7 @@ async def test_agent_notification_carries_message_id_reply_anchor(monkeypatch, t
 async def test_agent_notification_no_message_id_is_tolerated(monkeypatch, tmp_path):
     """A watcher dict without message_id (CLI spawn, pre-upgrade checkpoint)
     still injects — message_id is simply None."""
-    import tools.process_registry as pr_module
+    import hermes_agent.tools.process_registry as pr_module
 
     sessions = [SimpleNamespace(
         output_buffer="done\n", exited=True, exit_code=0, command="sleep 1",
@@ -359,7 +359,7 @@ async def test_agent_notification_no_message_id_is_tolerated(monkeypatch, tmp_pa
 
 @pytest.mark.asyncio
 async def test_inject_watch_notification_carries_message_id_reply_anchor(monkeypatch, tmp_path):
-    from gateway.session import SessionSource
+    from hermes_agent.gateway.session import SessionSource
 
     runner = _build_runner(monkeypatch, tmp_path, "all")
     adapter = runner.adapters[Platform.TELEGRAM]
@@ -415,7 +415,7 @@ def test_build_process_event_source_falls_back_to_session_key_chat_type(monkeypa
 def test_build_process_event_source_uses_cached_live_source_before_session_key_parse(
     monkeypatch, tmp_path
 ):
-    from gateway.session import SessionSource
+    from hermes_agent.gateway.session import SessionSource
 
     runner = _build_runner(monkeypatch, tmp_path, "all")
     runner._cache_session_source(
@@ -449,7 +449,7 @@ def test_build_process_event_source_uses_cached_live_source_before_session_key_p
 @pytest.mark.asyncio
 async def test_inject_watch_notification_ignores_foreground_event_source(monkeypatch, tmp_path):
     """Negative test: watch notification must NOT route to the foreground thread."""
-    from gateway.session import SessionSource
+    from hermes_agent.gateway.session import SessionSource
 
     runner = _build_runner(monkeypatch, tmp_path, "all")
     adapter = runner.adapters[Platform.TELEGRAM]

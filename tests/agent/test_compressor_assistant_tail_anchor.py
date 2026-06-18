@@ -52,9 +52,9 @@ import pytest
 def compressor():
     """ContextCompressor with mocked deps and a tight tail budget so
     the helpers' anchor behaviour is observable."""
-    from agent.context_compressor import ContextCompressor
+    from hermes_agent.agent.context_compressor import ContextCompressor
     with patch(
-        "agent.context_compressor.get_model_context_length",
+        "hermes_agent.agent.context_compressor.get_model_context_length",
         return_value=100_000,
     ):
         c = ContextCompressor(
@@ -357,7 +357,7 @@ class TestCompactionRollupReproduction:
     in ``web/src/pages/SessionsPage.tsx``)."""
 
     def test_compress_keeps_visible_reply_text(self, compressor):
-        from agent.context_compressor import SUMMARY_PREFIX
+        from hermes_agent.agent.context_compressor import SUMMARY_PREFIX
         c = compressor
         c.tail_token_budget = 10
         # ``_generate_summary`` normally wraps the LLM body in
@@ -419,7 +419,7 @@ class TestCompactionRollupReproduction:
         as its OWN assistant message — not merged with anything.
         This is the common case; the merge-into-tail path is the
         edge case for double-collision."""
-        from agent.context_compressor import SUMMARY_PREFIX
+        from hermes_agent.agent.context_compressor import SUMMARY_PREFIX
         c = compressor
         c.tail_token_budget = 10
         _mocked = f"{SUMMARY_PREFIX}\nrolled-up middle summary"

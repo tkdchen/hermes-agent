@@ -17,15 +17,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
-from hermes_constants import (
+from hermes_agent.hermes_constants import (
     get_hermes_home,
     get_hermes_home_override,
     reset_hermes_home_override,
     set_hermes_home_override,
 )
-from hermes_cli.env_loader import load_hermes_dotenv
-from utils import is_truthy_value
-from tui_gateway.transport import (
+from hermes_agent.hermes_cli.env_loader import load_hermes_dotenv
+from hermes_agent.utils import is_truthy_value
+from hermes_agent.tui_gateway.transport import (
     StdioTransport,
     Transport,
     bind_transport,
@@ -114,13 +114,13 @@ def _thread_panic_hook(args):
 threading.excepthook = _thread_panic_hook
 
 try:
-    from hermes_cli.banner import prefetch_update_check
+    from hermes_agent.hermes_cli.banner import prefetch_update_check
 
     prefetch_update_check()
 except Exception:
     pass
 
-from tui_gateway.render import make_stream_renderer, render_diff, render_message
+from hermes_agent.tui_gateway.render import make_stream_renderer, render_diff, render_message
 
 _sessions: dict[str, dict] = {}
 _methods: dict[str, callable] = {}
@@ -175,8 +175,8 @@ _DETAIL_MODES = frozenset({"hidden", "collapsed", "expanded"})
 _LONG_HANDLERS = frozenset(
     {
         "browser.manage",
-        "cli.exec",
-        "plugins.manage",
+        "hermes_agent.cli.exec",
+        "hermes_agent.plugins.manage",
         "session.branch",
         "session.compress",
         "session.resume",
@@ -238,7 +238,7 @@ class _SlashWorker:
         argv = [
             sys.executable,
             "-m",
-            "tui_gateway.slash_worker",
+            "hermes_agent.tui_gateway.slash_worker",
             "--session-key",
             session_key,
         ]
@@ -340,7 +340,7 @@ def _load_busy_input_mode() -> str:
 def _notify_session_boundary(event_type: str, session_id: str | None) -> None:
     """Fire session lifecycle hooks with CLI parity."""
     try:
-        from hermes_cli.plugins import invoke_hook as _invoke_hook
+        from hermes_agent.hermes_cli.plugins import invoke_hook as _invoke_hook
 
         _invoke_hook(event_type, session_id=session_id, platform="tui")
     except Exception:
@@ -354,7 +354,7 @@ def _claim_active_session_slot(
     surface: str = "tui",
 ) -> tuple[Any, str | None]:
     try:
-        from hermes_cli.active_sessions import try_acquire_active_session
+        from hermes_agent.hermes_cli.active_sessions import try_acquire_active_session
 
         return try_acquire_active_session(
             session_id=session_key,
@@ -448,7 +448,7 @@ def _teardown_session(session: dict | None, *, end_reason: str = "tui_close") ->
         return
     _finalize_session(session, end_reason=end_reason)
     try:
-        from tools.approval import unregister_gateway_notify
+        from hermes_agent.tools.approval import unregister_gateway_notify
 
         if key := session.get("session_key"):
             unregister_gateway_notify(key)
@@ -646,7 +646,7 @@ _start_idle_reaper()
 def _get_db():
     global _db, _db_error
     if _db is None:
-        from hermes_state import SessionDB
+        from hermes_agent.hermes_state import SessionDB
 
         try:
             _db = SessionDB()
@@ -680,7 +680,7 @@ def _profile_home(profile: str | None) -> Path | None:
     if not name:
         return None
     try:
-        from hermes_cli import profiles as profiles_mod
+        from hermes_agent.hermes_cli import profiles as profiles_mod
 
         home = Path(profiles_mod.get_profile_dir(name))
     except Exception:
@@ -762,7 +762,7 @@ def _status_update(sid: str, kind: str, text: str | None = None):
     # drivers (desktop app) can show an explicit "Summarizing…" indicator —
     # otherwise a mid-turn compaction looks like the transcript reset itself.
     if out_kind == "lifecycle":
-        from agent.conversation_compression import COMPACTION_STATUS_MARKER
+        from hermes_agent.agent.conversation_compression import COMPACTION_STATUS_MARKER
 
         if COMPACTION_STATUS_MARKER in body:
             out_kind = "compacting"
@@ -942,7 +942,7 @@ def _start_agent_build(sid: str, session: dict) -> None:
             if profile_home:
                 home_token = set_hermes_home_override(profile_home)
                 try:
-                    from hermes_state import SessionDB
+                    from hermes_agent.hermes_state import SessionDB
 
                     session_db = SessionDB(db_path=Path(profile_home) / "state.db")
                 except Exception:
@@ -981,7 +981,7 @@ def _start_agent_build(sid: str, session: dict) -> None:
                 pass
 
             try:
-                from tools.approval import (
+                from hermes_agent.tools.approval import (
                     register_gateway_notify,
                     load_permanent_allowlist,
                 )
@@ -999,7 +999,7 @@ def _start_agent_build(sid: str, session: dict) -> None:
             # message), so depletion / usage-band warnings show at "ready". Runs
             # off the build thread, after the notice_callback is wired. Fail-open.
             try:
-                from agent.credits_tracker import seed_credits_at_session_start
+                from hermes_agent.agent.credits_tracker import seed_credits_at_session_start
 
                 seed_credits_at_session_start(agent)
             except Exception:
@@ -1028,7 +1028,7 @@ def _start_agent_build(sid: str, session: dict) -> None:
                 replaced = _sessions.get(sid) is not current
             if replaced and notify_registered:
                 try:
-                    from tools.approval import unregister_gateway_notify
+                    from hermes_agent.tools.approval import unregister_gateway_notify
 
                     unregister_gateway_notify(key)
                 except Exception:
@@ -1146,7 +1146,7 @@ def _register_session_cwd(session: dict | None) -> None:
     if not session:
         return
     try:
-        from tools.terminal_tool import register_task_env_overrides
+        from hermes_agent.tools.terminal_tool import register_task_env_overrides
 
         register_task_env_overrides(
             session["session_key"], {"cwd": _terminal_task_cwd(session)}
@@ -1178,7 +1178,7 @@ def _ensure_session_db_row(session: dict) -> None:
     # unified list mis-tags it, and resume 404s ("session not found").
     profile_home = session.get("profile_home")
     if profile_home:
-        from hermes_state import SessionDB
+        from hermes_agent.hermes_state import SessionDB
 
         try:
             db = SessionDB(db_path=Path(profile_home) / "state.db")
@@ -1247,7 +1247,7 @@ def _session_db(session: dict):
     db, close_db = None, False
     profile_home = session.get("profile_home")
     if profile_home:
-        from hermes_state import SessionDB
+        from hermes_agent.hermes_state import SessionDB
 
         try:
             db, close_db = SessionDB(db_path=Path(profile_home) / "state.db"), True
@@ -1279,7 +1279,7 @@ def _set_session_cwd(session: dict, cwd: str) -> str:
             except Exception:
                 logger.debug("failed to persist session cwd", exc_info=True)
     try:
-        from tools.terminal_tool import cleanup_vm
+        from hermes_agent.tools.terminal_tool import cleanup_vm
 
         cleanup_vm(session["session_key"])
     except Exception:
@@ -1362,7 +1362,7 @@ def _cwd_for_session_key(session_key: str) -> str:
 
 def _set_session_context(session_key: str, cwd: str | None = None) -> list:
     try:
-        from gateway.session_context import set_session_vars
+        from hermes_agent.gateway.session_context import set_session_vars
 
         # Ephemeral task IDs (background, preview) aren't in `_sessions`, so the
         # reverse-map returns "" and would clear the cwd override. Callers that
@@ -1378,7 +1378,7 @@ def _clear_session_context(tokens: list) -> None:
     if not tokens:
         return
     try:
-        from gateway.session_context import clear_session_vars
+        from hermes_agent.gateway.session_context import clear_session_vars
 
         clear_session_vars(tokens)
     except Exception:
@@ -1434,7 +1434,7 @@ def _clear_pending(sid: str | None = None) -> None:
 
 def resolve_skin() -> dict:
     try:
-        from hermes_cli.skin_engine import init_skin_from_config, get_active_skin
+        from hermes_agent.hermes_cli.skin_engine import init_skin_from_config, get_active_skin
 
         init_skin_from_config(_load_cfg())
         skin = get_active_skin()
@@ -1505,7 +1505,7 @@ def _resolve_startup_runtime() -> tuple[str, str | None]:
         return model, None
 
     try:
-        from hermes_cli.models import detect_static_provider_for_model
+        from hermes_agent.hermes_cli.models import detect_static_provider_for_model
 
         cfg = _load_cfg().get("model") or {}
         current_provider = (
@@ -1618,7 +1618,7 @@ def _runtime_model_config(agent, existing: dict | None = None) -> dict:
             # ``custom:<name>`` menu key from the endpoint URL so
             # resolve_runtime_provider() can find the entry again.
             try:
-                from hermes_cli.runtime_provider import (
+                from hermes_agent.hermes_cli.runtime_provider import (
                     find_custom_provider_identity,
                 )
 
@@ -1814,7 +1814,7 @@ def _display_mouse_tracking(display: dict) -> str:
 
 
 def _load_reasoning_config() -> dict | None:
-    from hermes_constants import parse_reasoning_effort
+    from hermes_agent.hermes_constants import parse_reasoning_effort
 
     effort = str(
         (_load_cfg().get("agent") or {}).get("reasoning_effort", "") or ""
@@ -1883,7 +1883,7 @@ def _load_enabled_toolsets() -> list[str] | None:
     # CLI_CONFIG instead, purely to avoid a redundant read).
     if not explicit:
         try:
-            from agent.coding_context import coding_selection
+            from hermes_agent.agent.coding_context import coding_selection
 
             selection = coding_selection(platform="tui")
             if selection is not None:
@@ -1892,7 +1892,7 @@ def _load_enabled_toolsets() -> list[str] | None:
             pass
 
     try:
-        from toolsets import validate_toolset
+        from hermes_agent.toolsets import validate_toolset
     except Exception:
         validate_toolset = None
 
@@ -1902,7 +1902,7 @@ def _load_enabled_toolsets() -> list[str] | None:
 
         if unresolved:
             try:
-                from hermes_cli.plugins import discover_plugins
+                from hermes_agent.hermes_cli.plugins import discover_plugins
 
                 discover_plugins()
                 plugin_valid = [name for name in unresolved if validate_toolset(name)]
@@ -1930,8 +1930,8 @@ def _load_enabled_toolsets() -> list[str] | None:
         mcp_names: set[str] = set()
         mcp_disabled: set[str] = set()
         try:
-            from hermes_cli.config import read_raw_config
-            from hermes_cli.tools_config import _parse_enabled_flag
+            from hermes_agent.hermes_cli.config import read_raw_config
+            from hermes_agent.hermes_cli.tools_config import _parse_enabled_flag
 
             raw_cfg = read_raw_config()
             mcp_servers = (
@@ -1982,8 +1982,8 @@ def _load_enabled_toolsets() -> list[str] | None:
         )
 
     try:
-        from hermes_cli.config import load_config
-        from hermes_cli.tools_config import _get_platform_tools
+        from hermes_agent.hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.tools_config import _get_platform_tools
 
         cfg = cfg if cfg is not None else load_config()
 
@@ -2044,7 +2044,7 @@ def _restart_slash_worker(sid: str, session: dict):
 
 
 def _persist_model_switch(result) -> None:
-    from hermes_cli.config import save_config
+    from hermes_agent.hermes_cli.config import save_config
 
     cfg = _load_cfg()
     model_cfg = cfg.get("model")
@@ -2070,8 +2070,8 @@ def _apply_model_switch(
     pin_session_override: bool = True,
     parsed_flags: tuple[str, str, bool, bool] | None = None,
 ) -> dict:
-    from hermes_cli.model_switch import parse_model_flags, switch_model
-    from hermes_cli.runtime_provider import resolve_runtime_provider
+    from hermes_agent.hermes_cli.model_switch import parse_model_flags, switch_model
+    from hermes_agent.hermes_cli.runtime_provider import resolve_runtime_provider
 
     if parsed_flags is None:
         parsed_flags = parse_model_flags(raw_input)
@@ -2110,7 +2110,7 @@ def _apply_model_switch(
     user_provs = None
     custom_provs = None
     try:
-        from hermes_cli.config import get_compatible_custom_providers, load_config
+        from hermes_agent.hermes_cli.config import get_compatible_custom_providers, load_config
 
         cfg = load_config()
         user_provs = cfg.get("providers")
@@ -2134,7 +2134,7 @@ def _apply_model_switch(
 
     if not confirm_expensive_model:
         try:
-            from hermes_cli.model_cost_guard import expensive_model_warning
+            from hermes_agent.hermes_cli.model_cost_guard import expensive_model_warning
 
             warning = expensive_model_warning(
                 result.new_model,
@@ -2247,7 +2247,7 @@ def _compress_session_history(
     before_messages: list | None = None,
     history_version: int | None = None,
 ) -> tuple[int, dict]:
-    from agent.model_metadata import estimate_request_tokens_rough
+    from hermes_agent.agent.model_metadata import estimate_request_tokens_rough
 
     agent = session["agent"]
     # Snapshot history under the lock so the LLM-bound compression call
@@ -2324,7 +2324,7 @@ def _sync_session_key_after_compress(
         return
 
     try:
-        from tools.approval import (
+        from hermes_agent.tools.approval import (
             disable_session_yolo,
             enable_session_yolo,
             is_session_yolo_enabled,
@@ -2393,7 +2393,7 @@ def _get_usage(agent) -> dict:
             usage["context_percent"] = max(0, min(100, round(ctx_used / ctx_max * 100)))
         usage["compressions"] = getattr(comp, "compression_count", 0) or 0
     try:
-        from agent.usage_pricing import CanonicalUsage, estimate_usage_cost
+        from hermes_agent.agent.usage_pricing import CanonicalUsage, estimate_usage_cost
 
         cost = estimate_usage_cost(
             usage["model"],
@@ -2470,7 +2470,7 @@ def _probe_config_health(cfg: dict) -> str:
 
 def _current_profile_name() -> str:
     try:
-        from hermes_cli.profiles import get_active_profile_name
+        from hermes_agent.hermes_cli.profiles import get_active_profile_name
 
         return get_active_profile_name() or "default"
     except Exception:
@@ -2510,7 +2510,7 @@ def _session_info(agent, session: dict | None = None) -> dict:
     # silently auto-approves every dangerous command).
     yolo = False
     try:
-        from tools.approval import (
+        from hermes_agent.tools.approval import (
             _YOLO_MODE_FROZEN,
             _get_approval_mode,
             is_session_yolo_enabled,
@@ -2543,14 +2543,14 @@ def _session_info(agent, session: dict | None = None) -> dict:
         "profile_name": _current_profile_name(),
     }
     try:
-        from hermes_cli import __version__, __release_date__
+        from hermes_agent.hermes_cli import __version__, __release_date__
 
         info["version"] = __version__
         info["release_date"] = __release_date__
     except Exception:
         pass
     try:
-        from model_tools import get_toolset_for_tool
+        from hermes_agent.model_tools import get_toolset_for_tool
 
         for t in getattr(agent, "tools", []) or []:
             name = t["function"]["name"]
@@ -2560,13 +2560,13 @@ def _session_info(agent, session: dict | None = None) -> dict:
     except Exception:
         pass
     try:
-        from hermes_cli.banner import get_available_skills
+        from hermes_agent.hermes_cli.banner import get_available_skills
 
         info["skills"] = get_available_skills()
     except Exception:
         pass
     try:
-        from tools.mcp_tool import get_mcp_status
+        from hermes_agent.tools.mcp_tool import get_mcp_status
 
         info["mcp_servers"] = get_mcp_status()
     except Exception:
@@ -2576,8 +2576,8 @@ def _session_info(agent, session: dict | None = None) -> dict:
     except Exception:
         pass
     try:
-        from hermes_cli.banner import get_update_result
-        from hermes_cli.config import recommended_update_command
+        from hermes_agent.hermes_cli.banner import get_update_result
+        from hermes_agent.hermes_cli.config import recommended_update_command
 
         info["update_behind"] = get_update_result(timeout=0.5)
         info["update_command"] = recommended_update_command()
@@ -2591,7 +2591,7 @@ def _session_info(agent, session: dict | None = None) -> dict:
 
 def _tool_ctx(name: str, args: dict) -> str:
     try:
-        from agent.display import build_tool_preview
+        from hermes_agent.agent.display import build_tool_preview
 
         return build_tool_preview(name, args, max_len=80) or ""
     except Exception:
@@ -2647,7 +2647,7 @@ def _cap_tui_verbose_text(text: str) -> str:
 
 def _redact_tui_verbose_text(text: str) -> str:
     try:
-        from agent.redact import redact_sensitive_text
+        from hermes_agent.agent.redact import redact_sensitive_text
 
         redacted = redact_sensitive_text(str(text), force=True)
     except Exception:
@@ -2665,7 +2665,7 @@ def _tool_args_text(args: dict) -> str:
 
 def _tool_result_text(result: object) -> str:
     try:
-        from agent.tool_dispatch_helpers import _multimodal_text_summary
+        from hermes_agent.agent.tool_dispatch_helpers import _multimodal_text_summary
 
         raw = _multimodal_text_summary(result)
     except Exception:
@@ -2725,7 +2725,7 @@ def _on_tool_start(sid: str, tool_call_id: str, name: str, args: dict):
     session = _sessions.get(sid)
     if session is not None:
         try:
-            from agent.display import capture_local_edit_snapshot
+            from hermes_agent.agent.display import capture_local_edit_snapshot
 
             snapshot = capture_local_edit_snapshot(name, args)
             if snapshot is not None:
@@ -2778,7 +2778,7 @@ def _on_tool_complete(sid: str, tool_call_id: str, name: str, args: dict, result
         except Exception:
             pass
     try:
-        from agent.display import render_edit_diff_with_delta
+        from hermes_agent.agent.display import render_edit_diff_with_delta
 
         rendered: list[str] = []
         if render_edit_diff_with_delta(
@@ -3029,8 +3029,8 @@ def _agent_cbs(sid: str) -> dict:
 
 
 def _wire_callbacks(sid: str):
-    from tools.terminal_tool import set_sudo_password_callback
-    from tools.skills_tool import set_secret_capture_callback
+    from hermes_agent.tools.terminal_tool import set_sudo_password_callback
+    from hermes_agent.tools.skills_tool import set_secret_capture_callback
 
     set_sudo_password_callback(lambda: _block("sudo.request", sid, {}, timeout=120))
 
@@ -3047,7 +3047,7 @@ def _wire_callbacks(sid: str):
                 "skipped": True,
                 "message": "skipped",
             }
-        from hermes_cli.config import save_env_value_secure
+        from hermes_agent.hermes_cli.config import save_env_value_secure
 
         return {
             **save_env_value_secure(env_var, val),
@@ -3071,12 +3071,12 @@ def _render_personality_prompt(value) -> str:
 
 def _available_personalities(cfg: dict | None = None) -> dict:
     try:
-        from cli import load_cli_config
+        from hermes_agent.cli import load_cli_config
 
         return (load_cli_config().get("agent") or {}).get("personalities", {}) or {}
     except Exception:
         try:
-            from hermes_cli.config import load_config as _load_full_cfg
+            from hermes_agent.hermes_cli.config import load_config as _load_full_cfg
 
             return (_load_full_cfg().get("agent") or {}).get("personalities", {}) or {}
         except Exception:
@@ -3193,7 +3193,7 @@ def _load_fallback_model():
     order, with legacy ``fallback_model`` entries merged in afterwards
     (deduped on provider/model/base_url).
     """
-    from hermes_cli.fallback_config import get_fallback_chain
+    from hermes_agent.hermes_cli.fallback_config import get_fallback_chain
 
     return get_fallback_chain(_load_cfg())
 
@@ -3415,8 +3415,8 @@ def _make_agent(
     reasoning_config_override: dict | None = None,
     service_tier_override: str | None = None,
 ):
-    from run_agent import AIAgent
-    from hermes_cli.runtime_provider import resolve_runtime_provider
+    from hermes_agent.run_agent import AIAgent
+    from hermes_agent.hermes_cli.runtime_provider import resolve_runtime_provider
 
     # MCP tool discovery runs in a background daemon thread at startup so a
     # dead server can't freeze the shell.  The agent snapshots its tool list
@@ -3425,13 +3425,13 @@ def _make_agent(
     # block. Dashboard /api/ws uses hermes_cli.mcp_startup; TUI stdio keeps
     # its existing tui_gateway.entry-owned thread.
     try:
-        from hermes_cli.mcp_startup import wait_for_mcp_discovery
+        from hermes_agent.hermes_cli.mcp_startup import wait_for_mcp_discovery
 
         wait_for_mcp_discovery()
     except Exception:
         pass
     try:
-        from tui_gateway.entry import wait_for_mcp_discovery
+        from hermes_agent.tui_gateway.entry import wait_for_mcp_discovery
 
         wait_for_mcp_discovery()
     except Exception:
@@ -3442,7 +3442,7 @@ def _make_agent(
     system_prompt = _prompt_text(agent_cfg.get("system_prompt", ""))
     startup_skills = _parse_tui_skills_env()
     if startup_skills:
-        from agent.skill_commands import build_preloaded_skills_prompt
+        from hermes_agent.agent.skill_commands import build_preloaded_skills_prompt
 
         skills_prompt, _loaded_skills, missing_skills = build_preloaded_skills_prompt(
             startup_skills,
@@ -3477,7 +3477,7 @@ def _make_agent(
             # base_url. Recover the entry identity from the persisted
             # base_url; failing that, hand the base_url to the direct-alias
             # branch so pool/env credentials can still be resolved for it.
-            from hermes_cli.runtime_provider import find_custom_provider_identity
+            from hermes_agent.hermes_cli.runtime_provider import find_custom_provider_identity
 
             recovered = find_custom_provider_identity(override_base_url)
             if recovered:
@@ -3618,7 +3618,7 @@ def _init_session(
         # Defer hard-failure to slash.exec; chat still works without slash worker.
         _sessions[sid]["slash_worker"] = None
     try:
-        from tools.approval import register_gateway_notify, load_permanent_allowlist
+        from hermes_agent.tools.approval import register_gateway_notify, load_permanent_allowlist
 
         register_gateway_notify(key, lambda data: _emit("approval.request", sid, data))
         load_permanent_allowlist()
@@ -3667,7 +3667,7 @@ def _resolve_checkpoint_hash(mgr, cwd: str, ref: str) -> str:
 def _enrich_with_attached_images(user_text: str, image_paths: list[str]) -> str:
     """Pre-analyze attached images via vision and prepend descriptions to user text."""
     import asyncio, json as _json
-    from tools.vision_tools import vision_analyze_tool
+    from hermes_agent.tools.vision_tools import vision_analyze_tool
 
     prompt = (
         "Describe everything visible in this image in thorough detail. "
@@ -4023,7 +4023,7 @@ def _(rid, params: dict) -> dict:
     create_reasoning_override = None
     if effort := str(params.get("reasoning_effort") or "").strip():
         try:
-            from hermes_constants import parse_reasoning_effort
+            from hermes_agent.hermes_constants import parse_reasoning_effort
 
             create_reasoning_override = parse_reasoning_effort(effort)
         except Exception:
@@ -4232,7 +4232,7 @@ def _(rid, params: dict) -> dict:
     # In a profile scope, the agent OWNS a long-lived db handle bound to that
     # profile (do NOT auto-close it here). Otherwise reuse the shared launch db.
     if profile_home is not None:
-        from hermes_state import SessionDB
+        from hermes_agent.hermes_state import SessionDB
 
         db = SessionDB(db_path=profile_home / "state.db")
     else:
@@ -4849,7 +4849,7 @@ def _(rid, params: dict) -> dict:
     # missing home channel would leave the handoff pending forever, so reject
     # up front with a clear, actionable message (mirrors cli.py).
     try:
-        from gateway.config import Platform, load_gateway_config
+        from hermes_agent.gateway.config import Platform, load_gateway_config
     except Exception as e:  # pragma: no cover — gateway pkg always ships
         return _err(rid, 5021, f"could not load gateway config: {e}")
     try:
@@ -4975,7 +4975,7 @@ def _(rid, params: dict) -> dict:
     # these lines regardless of `calls`. Fail-open: [] when not logged into Nous
     # or on any portal hiccup.
     try:
-        from agent.account_usage import nous_credits_lines
+        from hermes_agent.agent.account_usage import nous_credits_lines
 
         credits = nous_credits_lines()
         if credits:
@@ -4996,7 +4996,7 @@ def _(rid, params: dict) -> dict:
     account yields {logged_in: false}, never an error the user has to parse.
     """
     try:
-        from agent.account_usage import build_credits_view
+        from hermes_agent.agent.account_usage import build_credits_view
 
         view = build_credits_view()
         return _ok(
@@ -5022,7 +5022,7 @@ def _(rid, params: dict) -> dict:
     if err:
         return err
 
-    from hermes_constants import display_hermes_home
+    from hermes_agent.hermes_constants import display_hermes_home
 
     key = session.get("session_key") or params.get("session_id") or ""
     agent = session.get("agent")
@@ -5136,8 +5136,8 @@ def _(rid, params: dict) -> dict:
     sid = params.get("session_id", "")
     focus_topic = str(params.get("focus_topic", "") or "").strip()
     try:
-        from agent.manual_compression_feedback import summarize_manual_compression
-        from agent.model_metadata import estimate_request_tokens_rough
+        from hermes_agent.agent.manual_compression_feedback import summarize_manual_compression
+        from hermes_agent.agent.model_metadata import estimate_request_tokens_rough
 
         with session["history_lock"]:
             before_messages = list(session.get("history", []))
@@ -5371,7 +5371,7 @@ def _(rid, params: dict) -> dict:
     # process, silently resolving them to empty strings.
     _clear_pending(params.get("session_id", ""))
     try:
-        from tools.approval import resolve_gateway_approval
+        from hermes_agent.tools.approval import resolve_gateway_approval
 
         resolve_gateway_approval(session["session_key"], "deny", resolve_all=True)
     except Exception:
@@ -5387,7 +5387,7 @@ def _(rid, params: dict) -> dict:
 
 @method("delegation.status")
 def _(rid, params: dict) -> dict:
-    from tools.delegate_tool import (
+    from hermes_agent.tools.delegate_tool import (
         is_spawn_paused,
         list_active_subagents,
         _get_max_concurrent_children,
@@ -5407,7 +5407,7 @@ def _(rid, params: dict) -> dict:
 
 @method("delegation.pause")
 def _(rid, params: dict) -> dict:
-    from tools.delegate_tool import set_spawn_paused
+    from hermes_agent.tools.delegate_tool import set_spawn_paused
 
     paused = bool(params.get("paused", True))
     return _ok(rid, {"paused": set_spawn_paused(paused)})
@@ -5415,7 +5415,7 @@ def _(rid, params: dict) -> dict:
 
 @method("subagent.interrupt")
 def _(rid, params: dict) -> dict:
-    from tools.delegate_tool import interrupt_subagent
+    from hermes_agent.tools.delegate_tool import interrupt_subagent
 
     subagent_id = str(params.get("subagent_id") or "").strip()
     if not subagent_id:
@@ -5434,7 +5434,7 @@ def _(rid, params: dict) -> dict:
 
 
 def _spawn_trees_root():
-    from hermes_constants import get_hermes_home
+    from hermes_agent.hermes_constants import get_hermes_home
 
     root = get_hermes_home() / "spawn-trees"
     root.mkdir(parents=True, exist_ok=True)
@@ -5791,7 +5791,7 @@ def _notification_poller_loop(
     even if the process was started by a different session. This matches
     CLI/gateway behavior (single session per process).
     """
-    from tools.process_registry import process_registry, format_process_notification
+    from hermes_agent.tools.process_registry import process_registry, format_process_notification
 
     _emitted = set()  # dedup re-queued events so same completion isn't emitted 50 times while session is busy
     while not stop_event.is_set() and not session.get("_finalized"):
@@ -5923,7 +5923,7 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
         home_token = None  # per-turn HERMES_HOME override for a resumed remote profile
         goal_followup = None  # set by the post-turn goal hook below
         try:
-            from tools.approval import (
+            from hermes_agent.tools.approval import (
                 reset_current_session_key,
                 set_current_session_key,
             )
@@ -5948,8 +5948,8 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
             prompt = text
 
             if isinstance(prompt, str) and "@" in prompt:
-                from agent.context_references import preprocess_context_references
-                from agent.model_metadata import get_model_context_length
+                from hermes_agent.agent.context_references import preprocess_context_references
+                from hermes_agent.agent.model_metadata import get_model_context_length
 
                 ctx_len = get_model_context_length(
                     getattr(agent, "model", "") or _resolve_model(),
@@ -5986,15 +5986,15 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
             run_message: Any = prompt
             if images:
                 try:
-                    from agent.image_routing import (
+                    from hermes_agent.agent.image_routing import (
                         decide_image_input_mode,
                         build_native_content_parts,
                     )
-                    from agent.auxiliary_client import (
+                    from hermes_agent.agent.auxiliary_client import (
                         _read_main_model,
                         _read_main_provider,
                     )
-                    from hermes_cli.config import load_config as _tui_load_config
+                    from hermes_agent.hermes_cli.config import load_config as _tui_load_config
 
                     _cfg = _tui_load_config()
                     _mode = decide_image_input_mode(
@@ -6140,7 +6140,7 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
             # outcome. Mirrors gateway/run._post_turn_goal_continuation.
             if status == "complete" and isinstance(raw, str) and raw.strip():
                 try:
-                    from hermes_cli.goals import GoalManager
+                    from hermes_agent.hermes_cli.goals import GoalManager
 
                     sid_key = session.get("session_key") or ""
                     if sid_key:
@@ -6205,7 +6205,7 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
                 and text.strip()
             ):
                 try:
-                    from agent.title_generator import maybe_auto_title
+                    from hermes_agent.agent.title_generator import maybe_auto_title
 
                     maybe_auto_title(
                         _get_db(),
@@ -6228,7 +6228,7 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
                 and _voice_tts_enabled()
             ):
                 try:
-                    from hermes_cli.voice import speak_text
+                    from hermes_agent.hermes_cli.voice import speak_text
 
                     spoken = raw
                     threading.Thread(
@@ -6300,7 +6300,7 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
         # The background poller handles between-turn delivery; this is
         # the safety net for events that arrived mid-turn.
         try:
-            from tools.process_registry import process_registry
+            from hermes_agent.tools.process_registry import process_registry
 
             for _evt, synth in process_registry.drain_notifications():
                 with session["history_lock"]:
@@ -6335,7 +6335,7 @@ def _(rid, params: dict) -> dict:
     if err:
         return err
     try:
-        from hermes_cli.clipboard import has_clipboard_image, save_clipboard_image
+        from hermes_agent.hermes_cli.clipboard import has_clipboard_image, save_clipboard_image
     except Exception as e:
         return _err(rid, 5027, f"clipboard unavailable: {e}")
 
@@ -6378,7 +6378,7 @@ def _(rid, params: dict) -> dict:
     if not raw:
         return _err(rid, 4015, "path required")
     try:
-        from cli import (
+        from hermes_agent.cli import (
             _IMAGE_EXTENSIONS,
             _detect_file_drop,
             _resolve_attachment_path,
@@ -6473,7 +6473,7 @@ def _sniff_image_ext(img_bytes: bytes, filename: str = "") -> str:
 
 def _allowed_image_extensions() -> frozenset[str]:
     try:
-        from cli import _IMAGE_EXTENSIONS
+        from hermes_agent.cli import _IMAGE_EXTENSIONS
 
         return frozenset(_IMAGE_EXTENSIONS)
     except Exception:
@@ -6608,7 +6608,7 @@ def _(rid, params: dict) -> dict:
             display_name = str(params.get("filename", "") or "uploaded.pdf")
         else:
             try:
-                from cli import _resolve_attachment_path
+                from hermes_agent.cli import _resolve_attachment_path
 
                 resolved = _resolve_attachment_path(raw_path)
             except Exception:
@@ -6749,7 +6749,7 @@ def _resolve_gateway_attachment_path(raw: str) -> Path | None:
     if not raw:
         return None
     try:
-        from cli import _detect_file_drop, _resolve_attachment_path, _split_path_input
+        from hermes_agent.cli import _detect_file_drop, _resolve_attachment_path, _split_path_input
     except Exception:
         return None
 
@@ -6897,7 +6897,7 @@ def _(rid, params: dict) -> dict:
     if err:
         return err
     try:
-        from cli import _detect_file_drop
+        from hermes_agent.cli import _detect_file_drop
 
         raw = str(params.get("text", "") or "")
         dropped = _detect_file_drop(raw)
@@ -6951,7 +6951,7 @@ def _(rid, params: dict) -> dict:
     def run():
         session_tokens = _set_session_context(task_id, cwd=_session_cwd(session))
         try:
-            from run_agent import AIAgent
+            from hermes_agent.run_agent import AIAgent
 
             result = AIAgent(
                 **_background_agent_kwargs(session["agent"], task_id)
@@ -7048,8 +7048,8 @@ def _(rid, params: dict) -> dict:
         # invalid client path, which would silently fall back to the launch dir.
         session_tokens = _set_session_context(task_id, cwd=(preview_cwd or _session_cwd(session)))
         try:
-            from run_agent import AIAgent
-            from tools.terminal_tool import register_task_env_overrides
+            from hermes_agent.run_agent import AIAgent
+            from hermes_agent.tools.terminal_tool import register_task_env_overrides
 
             if preview_cwd:
                 register_task_env_overrides(task_id, {"cwd": preview_cwd})
@@ -7086,7 +7086,7 @@ def _(rid, params: dict) -> dict:
             )
         finally:
             try:
-                from tools.terminal_tool import clear_task_env_overrides
+                from hermes_agent.tools.terminal_tool import clear_task_env_overrides
 
                 clear_task_env_overrides(task_id)
             except Exception:
@@ -7139,7 +7139,7 @@ def _(rid, params: dict) -> dict:
     if err:
         return err
     try:
-        from tools.approval import resolve_gateway_approval
+        from hermes_agent.tools.approval import resolve_gateway_approval
 
         return _ok(
             rid,
@@ -7182,7 +7182,7 @@ def _(rid, params: dict) -> dict:
                         4009,
                         "session busy — /interrupt the current turn before switching models",
                     )
-                from hermes_cli.model_switch import parse_model_flags
+                from hermes_agent.hermes_cli.model_switch import parse_model_flags
 
                 parsed_flags = parse_model_flags(value)
                 _model_input, explicit_provider, _persist_global, _force_refresh = parsed_flags
@@ -7250,7 +7250,7 @@ def _(rid, params: dict) -> dict:
 
         overrides = None
         if nv == "fast":
-            from hermes_cli.models import resolve_fast_mode_overrides
+            from hermes_agent.hermes_cli.models import resolve_fast_mode_overrides
 
             target_model = (
                 getattr(agent, "model", None) if agent is not None else _resolve_model()
@@ -7269,7 +7269,7 @@ def _(rid, params: dict) -> dict:
                     "fast mode is not available for this model",
                 )
 
-        _write_config_key("agent.service_tier", nv)
+        _write_config_key("hermes_agent.agent.service_tier", nv)
         if agent is not None:
             agent.service_tier = "priority" if nv == "fast" else None
             current_overrides = dict(getattr(agent, "request_overrides", {}) or {})
@@ -7331,7 +7331,7 @@ def _(rid, params: dict) -> dict:
         #     the TUI, and cron, and survives restarts.
         scope = str(params.get("scope") or "session").strip().lower()
         try:
-            from tools.approval import (
+            from hermes_agent.tools.approval import (
                 disable_session_yolo,
                 enable_session_yolo,
                 is_session_yolo_enabled,
@@ -7347,7 +7347,7 @@ def _(rid, params: dict) -> dict:
                 return not current
 
             if scope == "global":
-                from tools.approval import _normalize_approval_mode
+                from hermes_agent.tools.approval import _normalize_approval_mode
 
                 cfg = _load_cfg()
                 appr = cfg.get("approvals") if isinstance(cfg, dict) else None
@@ -7399,7 +7399,7 @@ def _(rid, params: dict) -> dict:
 
     if key == "reasoning":
         try:
-            from hermes_constants import parse_reasoning_effort
+            from hermes_agent.hermes_constants import parse_reasoning_effort
 
             arg = str(value or "").strip().lower()
             if arg in {"show", "on"}:
@@ -7442,7 +7442,7 @@ def _(rid, params: dict) -> dict:
             parsed = parse_reasoning_effort(arg)
             if parsed is None:
                 return _err(rid, 4002, f"unknown reasoning value: {value}")
-            _write_config_key("agent.reasoning_effort", arg)
+            _write_config_key("hermes_agent.agent.reasoning_effort", arg)
             if session and session.get("agent") is not None:
                 session["agent"].reasoning_config = parsed
                 _persist_live_session_runtime(session)
@@ -7614,7 +7614,7 @@ def _(rid, params: dict) -> dict:
                 sid_key = params.get("session_id", "")
                 pname, new_prompt = _validate_personality(str(value or ""), cfg)
                 _write_config_key("display.personality", pname)
-                _write_config_key("agent.system_prompt", new_prompt)
+                _write_config_key("hermes_agent.agent.system_prompt", new_prompt)
                 nv = str(value or "none")
                 history_reset, info = _apply_personality_to_session(
                     sid_key, session, new_prompt, pname
@@ -7641,7 +7641,7 @@ def _(rid, params: dict) -> dict:
     key = params.get("key", "")
     if key == "provider":
         try:
-            from hermes_cli.models import list_available_providers, normalize_provider
+            from hermes_agent.hermes_cli.models import list_available_providers, normalize_provider
 
             model = _resolve_model()
             parts = model.split("/", 1)
@@ -7658,7 +7658,7 @@ def _(rid, params: dict) -> dict:
         except Exception as e:
             return _err(rid, 5013, str(e))
     if key == "profile":
-        from hermes_constants import display_hermes_home
+        from hermes_agent.hermes_constants import display_hermes_home
 
         return _ok(rid, {"home": str(_hermes_home), "display": display_hermes_home()})
     if key == "project":
@@ -7776,7 +7776,7 @@ def _(rid, params: dict) -> dict:
 @method("setup.status")
 def _(rid, params: dict) -> dict:
     try:
-        from hermes_cli.main import _has_any_provider_configured
+        from hermes_agent.hermes_cli.main import _has_any_provider_configured
 
         return _ok(rid, {"provider_configured": bool(_has_any_provider_configured())})
     except Exception as e:
@@ -7795,9 +7795,9 @@ def _(rid, params: dict) -> dict:
     surface onboarding before the user submits a doomed prompt.
     """
     try:
-        from hermes_cli.runtime_provider import resolve_runtime_provider
-        from hermes_cli.auth import has_usable_secret
-        from hermes_cli.main import _has_any_provider_configured
+        from hermes_agent.hermes_cli.runtime_provider import resolve_runtime_provider
+        from hermes_agent.hermes_cli.auth import has_usable_secret
+        from hermes_agent.hermes_cli.main import _has_any_provider_configured
 
         runtime = resolve_runtime_provider(requested=None)
         provider_configured = bool(_has_any_provider_configured())
@@ -7858,7 +7858,7 @@ def _(rid, params: dict) -> dict:
 @method("process.stop")
 def _(rid, params: dict) -> dict:
     try:
-        from tools.process_registry import process_registry
+        from hermes_agent.tools.process_registry import process_registry
 
         return _ok(rid, {"killed": process_registry.kill_all()})
     except Exception as e:
@@ -7867,7 +7867,7 @@ def _(rid, params: dict) -> dict:
 
 def _session_processes(session: dict) -> list:
     """Background processes owned by this session (registry session_key match)."""
-    from tools.process_registry import process_registry
+    from hermes_agent.tools.process_registry import process_registry
 
     key = str(session.get("session_key") or "")
     owned = []
@@ -7905,7 +7905,7 @@ def _(rid, params: dict) -> dict:
     if not proc_id:
         return _err(rid, 4012, "process_id required")
     try:
-        from tools.process_registry import process_registry
+        from hermes_agent.tools.process_registry import process_registry
 
         proc = process_registry.get(proc_id)
         if proc is None or str(getattr(proc, "session_key", "") or "") != str(
@@ -7931,7 +7931,7 @@ def _(rid, params: dict) -> dict:
         user_confirm = bool(params.get("confirm", False))
         if not user_confirm:
             try:
-                from hermes_cli.config import load_config as _load_config
+                from hermes_agent.hermes_cli.config import load_config as _load_config
 
                 _cfg = _load_config()
                 _approvals = _cfg.get("approvals") if isinstance(_cfg, dict) else None
@@ -7959,7 +7959,7 @@ def _(rid, params: dict) -> dict:
                     },
                 )
 
-        from tools.mcp_tool import shutdown_mcp_servers, discover_mcp_tools
+        from hermes_agent.tools.mcp_tool import shutdown_mcp_servers, discover_mcp_tools
 
         shutdown_mcp_servers()
         discover_mcp_tools()
@@ -7972,7 +7972,7 @@ def _(rid, params: dict) -> dict:
             # The user already consented to the prompt-cache invalidation via
             # the confirm gate above.  Mirrors gateway/run.py::_execute_mcp_reload.
             try:
-                from model_tools import get_tool_definitions
+                from hermes_agent.model_tools import get_tool_definitions
 
                 new_defs = get_tool_definitions(
                     enabled_toolsets=_load_enabled_toolsets(),
@@ -7996,7 +7996,7 @@ def _(rid, params: dict) -> dict:
         # Honor `always=true` by persisting the opt-out to config.
         if bool(params.get("always", False)):
             try:
-                from cli import save_config_value as _save_cfg
+                from hermes_agent.cli import save_config_value as _save_cfg
 
                 _save_cfg("approvals.mcp_reload_confirm", False)
             except Exception as _exc:
@@ -8020,7 +8020,7 @@ def _(rid, params: dict) -> dict:
     should follow with ``/new``.
     """
     try:
-        from hermes_cli.config import reload_env
+        from hermes_agent.hermes_cli.config import reload_env
 
         count = reload_env()
         return _ok(rid, {"updated": int(count)})
@@ -8071,7 +8071,7 @@ _WORKER_BLOCKED_COMMANDS: frozenset[str] = frozenset({"snapshot", "snap"})
 def _(rid, params: dict) -> dict:
     """Registry-backed slash metadata for the TUI — categorized, no aliases."""
     try:
-        from hermes_cli.commands import (
+        from hermes_agent.hermes_cli.commands import (
             COMMAND_REGISTRY,
             SUBCOMMANDS,
             _build_description,
@@ -8138,7 +8138,7 @@ def _(rid, params: dict) -> dict:
 
         skill_count = 0
         try:
-            from agent.skill_commands import scan_skill_commands
+            from hermes_agent.agent.skill_commands import scan_skill_commands
 
             for k, info in sorted(scan_skill_commands().items()):
                 d = str(info.get("description", "Skill"))
@@ -8182,7 +8182,7 @@ def _cli_exec_blocked(argv: list[str]) -> str | None:
     return None
 
 
-@method("cli.exec")
+@method("hermes_agent.cli.exec")
 def _(rid, params: dict) -> dict:
     """Run `python -m hermes_cli.main` with argv; capture stdout/stderr (non-interactive only)."""
     argv = params.get("argv", [])
@@ -8193,7 +8193,7 @@ def _(rid, params: dict) -> dict:
         return _ok(rid, {"blocked": True, "hint": hint, "code": -1, "output": ""})
     try:
         r = subprocess.run(
-            [sys.executable, "-m", "hermes_cli.main", *argv],
+            [sys.executable, "-m", "hermes_agent.hermes_cli.main", *argv],
             capture_output=True,
             text=True,
             timeout=min(int(params.get("timeout", 240)), 600),
@@ -8207,7 +8207,7 @@ def _(rid, params: dict) -> dict:
             rid, {"blocked": False, "code": r.returncode, "output": out[:48_000]}
         )
     except subprocess.TimeoutExpired:
-        return _err(rid, 5016, "cli.exec: timeout")
+        return _err(rid, 5016, "hermes_agent.cli.exec: timeout")
     except Exception as e:
         return _err(rid, 5017, str(e))
 
@@ -8215,7 +8215,7 @@ def _(rid, params: dict) -> dict:
 @method("command.resolve")
 def _(rid, params: dict) -> dict:
     try:
-        from hermes_cli.commands import resolve_command
+        from hermes_agent.hermes_cli.commands import resolve_command
 
         r = resolve_command(params.get("name", ""))
         if r:
@@ -8234,7 +8234,7 @@ def _(rid, params: dict) -> dict:
 
 def _resolve_name(name: str) -> str:
     try:
-        from hermes_cli.commands import resolve_command
+        from hermes_agent.hermes_cli.commands import resolve_command
 
         r = resolve_command(name)
         return r.name if r else name
@@ -8278,7 +8278,7 @@ def _(rid, params: dict) -> dict:
             return _ok(rid, {"type": "alias", "target": qc.get("target", "")})
 
     try:
-        from hermes_cli.plugins import (
+        from hermes_agent.hermes_cli.plugins import (
             get_plugin_command_handler,
             resolve_plugin_command_result,
         )
@@ -8291,7 +8291,7 @@ def _(rid, params: dict) -> dict:
         pass
 
     try:
-        from agent.skill_commands import (
+        from hermes_agent.agent.skill_commands import (
             scan_skill_commands,
             build_skill_invocation_message,
         )
@@ -8381,7 +8381,7 @@ def _(rid, params: dict) -> dict:
         if not session:
             return _err(rid, 4001, "no active session")
         try:
-            from hermes_cli.goals import GoalManager
+            from hermes_agent.hermes_cli.goals import GoalManager
         except Exception as exc:
             return _err(rid, 5030, f"goals unavailable: {exc}")
 
@@ -9001,12 +9001,12 @@ def _(rid, params: dict) -> dict:
         return _ok(rid, {"items": []})
 
     try:
-        from hermes_cli.commands import SlashCommandCompleter
+        from hermes_agent.hermes_cli.commands import SlashCommandCompleter
         from prompt_toolkit.document import Document
         from prompt_toolkit.formatted_text import to_plain_text
 
-        from agent.skill_commands import get_skill_commands
-        from agent.skill_bundles import get_skill_bundles
+        from hermes_agent.agent.skill_commands import get_skill_commands
+        from hermes_agent.agent.skill_bundles import get_skill_bundles
 
         completer = SlashCommandCompleter(
             skill_commands_provider=lambda: get_skill_commands(),
@@ -9076,7 +9076,7 @@ def _(rid, params: dict) -> dict:
 @method("model.options")
 def _(rid, params: dict) -> dict:
     try:
-        from hermes_cli.inventory import build_models_payload, load_picker_context
+        from hermes_agent.hermes_cli.inventory import build_models_payload, load_picker_context
 
         session = _sessions.get(params.get("session_id", ""))
         agent = session.get("agent") if session else None
@@ -9125,9 +9125,9 @@ def _(rid, params: dict) -> dict:
     model.options entries) on success.
     """
     try:
-        from hermes_cli.auth import PROVIDER_REGISTRY
-        from hermes_cli.config import is_managed, save_env_value
-        from hermes_cli.inventory import build_models_payload, load_picker_context
+        from hermes_agent.hermes_cli.auth import PROVIDER_REGISTRY
+        from hermes_agent.hermes_cli.config import is_managed, save_env_value
+        from hermes_agent.hermes_cli.inventory import build_models_payload, load_picker_context
 
         slug = (params.get("slug") or "").strip()
         api_key = (params.get("api_key") or "").strip()
@@ -9205,8 +9205,8 @@ def _(rid, params: dict) -> dict:
     Returns success status and the provider's slug.
     """
     try:
-        from hermes_cli.auth import PROVIDER_REGISTRY, clear_provider_auth
-        from hermes_cli.config import remove_env_value
+        from hermes_agent.hermes_cli.auth import PROVIDER_REGISTRY, clear_provider_auth
+        from hermes_agent.hermes_cli.config import remove_env_value
 
         slug = (params.get("slug") or "").strip()
         if not slug:
@@ -9290,7 +9290,7 @@ def _mirror_slash_side_effects(sid: str, session: dict, command: str) -> str:
         elif name == "reload-mcp" and agent and hasattr(agent, "reload_mcp_tools"):
             agent.reload_mcp_tools()
         elif name == "stop":
-            from tools.process_registry import process_registry
+            from hermes_agent.tools.process_registry import process_registry
 
             process_registry.kill_all()
     except Exception as e:
@@ -9332,7 +9332,7 @@ def _(rid, params: dict) -> dict:
             )
 
     try:
-        from agent.skill_commands import get_skill_commands
+        from hermes_agent.agent.skill_commands import get_skill_commands
 
         _cmd_key = f"/{_cmd_base}"
         if _cmd_key in get_skill_commands():
@@ -9346,7 +9346,7 @@ def _(rid, params: dict) -> dict:
     resolve_plugin_command_result = None
     if _cmd_base:
         try:
-            from hermes_cli.plugins import (
+            from hermes_agent.hermes_cli.plugins import (
                 get_plugin_command_handler,
                 resolve_plugin_command_result,
             )
@@ -9479,7 +9479,7 @@ def _(rid, params: dict) -> dict:
             "tts": _voice_tts_enabled(),
         }
         try:
-            from tools.voice_mode import check_voice_requirements
+            from hermes_agent.tools.voice_mode import check_voice_requirements
 
             reqs = check_voice_requirements()
             payload["available"] = bool(reqs.get("available"))
@@ -9504,7 +9504,7 @@ def _(rid, params: dict) -> dict:
             # Disabling the mode must tear the continuous loop down; the
             # loop holds the microphone and would otherwise keep running.
             try:
-                from hermes_cli.voice import stop_continuous
+                from hermes_agent.hermes_cli.voice import stop_continuous
 
                 stop_continuous()
             except ImportError:
@@ -9570,7 +9570,7 @@ def _(rid, params: dict) -> dict:
                 global _voice_event_sid
                 _voice_event_sid = params.get("session_id") or _voice_event_sid
 
-            from hermes_cli.voice import start_continuous
+            from hermes_agent.hermes_cli.voice import start_continuous
 
             # Shape-safe lookups: malformed ``voice:`` YAML (bool/scalar/list)
             # must not crash /voice with a 5025 — fall back to VAD defaults.
@@ -9611,7 +9611,7 @@ def _(rid, params: dict) -> dict:
         with _voice_sid_lock:
             _voice_event_sid = params.get("session_id") or _voice_event_sid
 
-        from hermes_cli.voice import stop_continuous
+        from hermes_agent.hermes_cli.voice import stop_continuous
 
         stop_continuous(force_transcribe=True)
         return _ok(rid, {"status": "stopped"})
@@ -9629,7 +9629,7 @@ def _(rid, params: dict) -> dict:
     if not text:
         return _err(rid, 4020, "text required")
     try:
-        from hermes_cli.voice import speak_text
+        from hermes_agent.hermes_cli.voice import speak_text
 
         threading.Thread(target=speak_text, args=(text,), daemon=True).start()
         return _ok(rid, {"status": "speaking"})
@@ -9795,7 +9795,7 @@ def _resolve_browser_cdp_url() -> str:
     if env_url:
         return env_url
     try:
-        from hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.config import read_raw_config
 
         cfg = read_raw_config()
         browser_cfg = cfg.get("browser", {}) if isinstance(cfg, dict) else {}
@@ -9854,7 +9854,7 @@ def _normalize_cdp_url(parsed) -> str:
 
 
 def _failure_messages(url: str, port: int, system: str) -> list[str]:
-    from hermes_cli.browser_connect import manual_chrome_debug_command
+    from hermes_agent.hermes_cli.browser_connect import manual_chrome_debug_command
 
     command = manual_chrome_debug_command(port, system)
     hint = (
@@ -9892,8 +9892,8 @@ def _(rid, params: dict) -> dict:
 def _browser_connect(rid, params: dict) -> dict:
     import platform
 
-    from hermes_cli.browser_connect import DEFAULT_BROWSER_CDP_URL
-    from tools.browser_tool import cleanup_all_browsers
+    from hermes_agent.hermes_cli.browser_connect import DEFAULT_BROWSER_CDP_URL
+    from hermes_agent.tools.browser_tool import cleanup_all_browsers
     from urllib.parse import urlparse
 
     raw_url = params.get("url")
@@ -9951,7 +9951,7 @@ def _browser_connect(rid, params: dict) -> dict:
             ok = any(_http_ok(p, timeout=2.0) for p in probes)
 
             if not ok and _is_default_local_cdp(parsed):
-                from hermes_cli.browser_connect import try_launch_chrome_debug
+                from hermes_agent.hermes_cli.browser_connect import try_launch_chrome_debug
 
                 announce(
                     "Chromium-family browser isn't running with remote debugging — attempting to launch..."
@@ -10000,7 +10000,7 @@ def _browser_disconnect(rid) -> dict:
     # window covered by ``_browser_connect``.
     def reap() -> None:
         try:
-            from tools.browser_tool import cleanup_all_browsers
+            from hermes_agent.tools.browser_tool import cleanup_all_browsers
 
             cleanup_all_browsers()
         except Exception:
@@ -10012,10 +10012,10 @@ def _browser_disconnect(rid) -> dict:
     return _ok(rid, {"connected": False})
 
 
-@method("plugins.list")
+@method("hermes_agent.plugins.list")
 def _(rid, params: dict) -> dict:
     try:
-        from hermes_cli.plugins import get_plugin_manager
+        from hermes_agent.hermes_cli.plugins import get_plugin_manager
 
         return _ok(
             rid,
@@ -10073,10 +10073,10 @@ def _(rid, params: dict) -> dict:
         return _err(rid, 5030, str(e))
 
 
-@method("tools.list")
+@method("hermes_agent.tools.list")
 def _(rid, params: dict) -> dict:
     try:
-        from toolsets import get_all_toolsets, get_toolset_info
+        from hermes_agent.toolsets import get_all_toolsets, get_toolset_info
 
         session = _sessions.get(params.get("session_id", ""))
         enabled = (
@@ -10104,10 +10104,10 @@ def _(rid, params: dict) -> dict:
         return _err(rid, 5031, str(e))
 
 
-@method("tools.show")
+@method("hermes_agent.tools.show")
 def _(rid, params: dict) -> dict:
     try:
-        from model_tools import get_toolset_for_tool, get_tool_definitions
+        from hermes_agent.model_tools import get_toolset_for_tool, get_tool_definitions
 
         session = _sessions.get(params.get("session_id", ""))
         enabled = (
@@ -10144,7 +10144,7 @@ def _(rid, params: dict) -> dict:
         return _err(rid, 5034, str(e))
 
 
-@method("tools.configure")
+@method("hermes_agent.tools.configure")
 def _(rid, params: dict) -> dict:
     action = str(params.get("action", "") or "").strip().lower()
     targets = [
@@ -10156,8 +10156,8 @@ def _(rid, params: dict) -> dict:
         return _err(rid, 4018, "names required")
 
     try:
-        from hermes_cli.config import load_config, save_config
-        from hermes_cli.tools_config import (
+        from hermes_agent.hermes_cli.config import load_config, save_config
+        from hermes_agent.hermes_cli.tools_config import (
             CONFIGURABLE_TOOLSETS,
             _apply_mcp_change,
             _apply_toolset_change,
@@ -10213,10 +10213,10 @@ def _(rid, params: dict) -> dict:
         return _err(rid, 5035, str(e))
 
 
-@method("toolsets.list")
+@method("hermes_agent.toolsets.list")
 def _(rid, params: dict) -> dict:
     try:
-        from toolsets import get_all_toolsets, get_toolset_info
+        from hermes_agent.toolsets import get_all_toolsets, get_toolset_info
 
         session = _sessions.get(params.get("session_id", ""))
         enabled = (
@@ -10246,7 +10246,7 @@ def _(rid, params: dict) -> dict:
 @method("agents.list")
 def _(rid, params: dict) -> dict:
     try:
-        from tools.process_registry import process_registry
+        from hermes_agent.tools.process_registry import process_registry
 
         procs = process_registry.list_sessions()
         return _ok(
@@ -10267,11 +10267,11 @@ def _(rid, params: dict) -> dict:
         return _err(rid, 5033, str(e))
 
 
-@method("cron.manage")
+@method("hermes_agent.cron.manage")
 def _(rid, params: dict) -> dict:
     action, jid = params.get("action", "list"), params.get("name", "")
     try:
-        from tools.cronjob_tools import cronjob
+        from hermes_agent.tools.cronjob_tools import cronjob
 
         if action == "list":
             return _ok(rid, json.loads(cronjob(action="list")))
@@ -10299,11 +10299,11 @@ def _(rid, params: dict) -> dict:
     action, query = params.get("action", "list"), params.get("query", "")
     try:
         if action == "list":
-            from hermes_cli.banner import get_available_skills
+            from hermes_agent.hermes_cli.banner import get_available_skills
 
             return _ok(rid, {"skills": get_available_skills()})
         if action == "search":
-            from tools.skills_hub import (
+            from hermes_agent.tools.skills_hub import (
                 GitHubAuth,
                 create_source_router,
                 unified_search,
@@ -10327,7 +10327,7 @@ def _(rid, params: dict) -> dict:
                 },
             )
         if action == "install":
-            from hermes_cli.skills_hub import do_install
+            from hermes_agent.hermes_cli.skills_hub import do_install
 
             class _Q:
                 def print(self, *a, **k):
@@ -10336,7 +10336,7 @@ def _(rid, params: dict) -> dict:
             do_install(query, skip_confirm=True, console=_Q())
             return _ok(rid, {"installed": True, "name": query})
         if action == "browse":
-            from hermes_cli.skills_hub import browse_skills
+            from hermes_agent.hermes_cli.skills_hub import browse_skills
 
             pg = int(params.get("page", 0) or 0) or (
                 int(query) if query.isdigit() else 1
@@ -10345,7 +10345,7 @@ def _(rid, params: dict) -> dict:
                 rid, browse_skills(page=pg, page_size=int(params.get("page_size", 20)))
             )
         if action == "inspect":
-            from hermes_cli.skills_hub import inspect_skill
+            from hermes_agent.hermes_cli.skills_hub import inspect_skill
 
             return _ok(rid, {"info": inspect_skill(query) or {}})
         return _err(rid, 4017, f"unknown skills action: {action}")
@@ -10356,7 +10356,7 @@ def _(rid, params: dict) -> dict:
 @method("skills.reload")
 def _(rid, params: dict) -> dict:
     try:
-        from agent.skill_commands import reload_skills
+        from hermes_agent.agent.skill_commands import reload_skills
 
         result = reload_skills()
         added = result.get("added") or []
@@ -10378,7 +10378,7 @@ def _(rid, params: dict) -> dict:
         return _err(rid, 5025, str(e))
 
 
-@method("plugins.manage")
+@method("hermes_agent.plugins.manage")
 def _(rid, params: dict) -> dict:
     """List installed plugins with activation state, or toggle one on/off.
 
@@ -10394,7 +10394,7 @@ def _(rid, params: dict) -> dict:
     """
     action = params.get("action", "list")
     try:
-        from hermes_cli.plugins_cmd import (
+        from hermes_agent.hermes_cli.plugins_cmd import (
             _discover_all_plugins,
             _get_disabled_set,
             _get_enabled_set,
@@ -10432,11 +10432,11 @@ def _(rid, params: dict) -> dict:
             )
 
         if action == "toggle":
-            from hermes_cli.plugins_cmd import dashboard_set_agent_plugin_enabled
+            from hermes_agent.hermes_cli.plugins_cmd import dashboard_set_agent_plugin_enabled
 
             name = (params.get("name") or "").strip()
             if not name:
-                return _err(rid, 4019, "plugins.toggle requires a 'name'")
+                return _err(rid, 4019, "hermes_agent.plugins.toggle requires a 'name'")
             enable = bool(params.get("enable"))
             result = dashboard_set_agent_plugin_enabled(name, enabled=enable)
             if not result.get("ok"):
@@ -10463,7 +10463,7 @@ def _(rid, params: dict) -> dict:
     if not cmd:
         return _err(rid, 4004, "empty command")
     try:
-        from tools.approval import detect_dangerous_command, detect_hardline_command
+        from hermes_agent.tools.approval import detect_dangerous_command, detect_hardline_command
 
         is_hardline, hardline_desc = detect_hardline_command(cmd)
         if is_hardline:

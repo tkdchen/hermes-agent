@@ -36,7 +36,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Optional, Sequence
 
-from hermes_constants import get_config_path, get_hermes_home
+from hermes_agent.hermes_constants import get_config_path, get_hermes_home
 
 # Sentinel to track whether setup_logging() has already run.  The function
 # is idempotent — calling it twice is safe but the second call is a no-op
@@ -187,8 +187,8 @@ COMPONENT_PREFIXES = {
     "cli": ("hermes_cli", "cli"),
     "cron": ("cron",),
     "gui": (
-        "hermes_cli.web_server",
-        "hermes_cli.pty_bridge",
+        "hermes_agent.hermes_cli.web_server",
+        "hermes_agent.hermes_cli.pty_bridge",
         "tui_gateway",
         "uvicorn",
     ),
@@ -256,14 +256,14 @@ def setup_logging(
     backups = backup_count or cfg_backup or 3
 
     # Lazy import to avoid circular dependency at module load time.
-    from agent.redact import RedactingFormatter
+    from hermes_agent.agent.redact import RedactingFormatter
 
     root = logging.getLogger()
 
     # --- agent.log (INFO+) — the main activity log -------------------------
     _add_rotating_handler(
         root,
-        log_dir / "agent.log",
+        log_dir / "hermes_agent.agent.log",
         level=level,
         max_bytes=max_bytes,
         backup_count=backups,
@@ -284,7 +284,7 @@ def setup_logging(
     if mode == "gateway":
         _add_rotating_handler(
             root,
-            log_dir / "gateway.log",
+            log_dir / "hermes_agent.gateway.log",
             level=logging.INFO,
             max_bytes=5 * 1024 * 1024,
             backup_count=3,
@@ -324,7 +324,7 @@ def setup_verbose_logging() -> None:
 
     Called by ``AIAgent.__init__()`` when ``verbose_logging=True``.
     """
-    from agent.redact import RedactingFormatter
+    from hermes_agent.agent.redact import RedactingFormatter
 
     root = logging.getLogger()
 
@@ -381,7 +381,7 @@ class _ManagedRotatingFileHandler(RotatingFileHandler):
     """
 
     def __init__(self, *args, **kwargs):
-        from hermes_cli.config import is_managed
+        from hermes_agent.hermes_cli.config import is_managed
         self._managed = is_managed()
         super().__init__(*args, **kwargs)
         # Snapshot the inode of the currently open stream so emit() can

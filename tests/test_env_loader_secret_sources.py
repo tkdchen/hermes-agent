@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from hermes_cli import env_loader  # noqa: E402
+from hermes_agent.hermes_cli import env_loader  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -79,7 +79,7 @@ def test_apply_external_secret_sources_records_bitwarden_origin(tmp_path, monkey
     )
 
     # Stub apply_bitwarden_secrets to return a synthetic FetchResult.
-    from agent.secret_sources.bitwarden import FetchResult
+    from hermes_agent.agent.secret_sources.bitwarden import FetchResult
 
     fake_result = FetchResult(
         secrets={"ANTHROPIC_API_KEY": "sk-ant-test"},
@@ -91,7 +91,7 @@ def test_apply_external_secret_sources_records_bitwarden_origin(tmp_path, monkey
 
     # The import inside _apply_external_secret_sources is lazy, so we
     # patch the *module attribute* it will pull in.
-    import agent.secret_sources.bitwarden as bw_module
+    import hermes_agent.agent.secret_sources.bitwarden as bw_module
 
     monkeypatch.setattr(bw_module, "apply_bitwarden_secrets", _fake_apply)
 
@@ -141,7 +141,7 @@ def test_apply_external_secret_sources_dedupes_within_process(tmp_path, monkeypa
         encoding="utf-8",
     )
 
-    from agent.secret_sources.bitwarden import FetchResult
+    from hermes_agent.agent.secret_sources.bitwarden import FetchResult
 
     call_count = {"n": 0}
 
@@ -152,7 +152,7 @@ def test_apply_external_secret_sources_dedupes_within_process(tmp_path, monkeypa
             applied=["ANTHROPIC_API_KEY"],
         )
 
-    import agent.secret_sources.bitwarden as bw_module
+    import hermes_agent.agent.secret_sources.bitwarden as bw_module
     monkeypatch.setattr(bw_module, "apply_bitwarden_secrets", _fake_apply)
 
     # Five calls in a row, simulating module-import-time invocations from

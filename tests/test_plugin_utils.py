@@ -9,7 +9,7 @@ import threading
 
 import pytest
 
-from plugins.plugin_utils import SingletonSlot, lazy_singleton
+from hermes_agent.plugins.plugin_utils import SingletonSlot, lazy_singleton
 
 
 # --- lazy_singleton -------------------------------------------------------

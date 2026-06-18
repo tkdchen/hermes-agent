@@ -67,7 +67,7 @@ import secrets
 import time
 from typing import Any, Optional
 
-from hermes_cli.dashboard_auth import (
+from hermes_agent.hermes_cli.dashboard_auth import (
     DashboardAuthProvider,
     InvalidCredentialsError,
     LoginStart,
@@ -339,7 +339,7 @@ def _load_config_basic_auth_section() -> dict:
     not being a dict — every shape falls through to ``{}``.
     """
     try:
-        from hermes_cli.config import cfg_get, load_config
+        from hermes_agent.hermes_cli.config import cfg_get, load_config
 
         cfg = load_config()
     except Exception as exc:  # noqa: BLE001 — broad catch is intentional
@@ -433,7 +433,7 @@ def register(ctx) -> None:
             "dashboard.basic_auth.username is set but neither password_hash "
             "nor password is configured. Provide one of them (password_hash "
             "is preferred — compute it with "
-            "plugins.dashboard_auth.basic.hash_password)."
+            "hermes_agent.plugins.dashboard_auth.basic.hash_password)."
         )
         logger.warning("dashboard-auth-basic: %s", LAST_SKIP_REASON)
         return

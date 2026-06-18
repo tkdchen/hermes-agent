@@ -116,7 +116,7 @@ def wait_for_response(clarify_id: str, timeout: float) -> Optional[str]:
         return None
 
     try:
-        from tools.environments.base import touch_activity_if_due
+        from hermes_agent.tools.environments.base import touch_activity_if_due
     except Exception:  # pragma: no cover - optional
         touch_activity_if_due = None
 
@@ -239,7 +239,7 @@ def get_clarify_timeout() -> int:
     Reads ``agent.clarify_timeout`` from config.yaml.
     """
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         cfg = load_config() or {}
         agent_cfg = cfg.get("agent", {}) or {}
         return int(agent_cfg.get("clarify_timeout", 600))

@@ -62,23 +62,23 @@ from acp.schema import (
     UserMessageChunk,
 )
 
-from acp_adapter.auth import TERMINAL_SETUP_AUTH_METHOD_ID, build_auth_methods, detect_provider
-from acp_adapter.events import (
+from hermes_agent.acp_adapter.auth import TERMINAL_SETUP_AUTH_METHOD_ID, build_auth_methods, detect_provider
+from hermes_agent.acp_adapter.events import (
     _build_plan_update_from_todo_result,
     make_message_cb,
     make_step_cb,
     make_thinking_cb,
     make_tool_progress_cb,
 )
-from acp_adapter.permissions import make_approval_callback
-from acp_adapter.provenance import session_provenance_meta
-from acp_adapter.session import SessionManager, SessionState, _expand_acp_enabled_toolsets
-from acp_adapter.tools import build_tool_complete, build_tool_start
+from hermes_agent.acp_adapter.permissions import make_approval_callback
+from hermes_agent.acp_adapter.provenance import session_provenance_meta
+from hermes_agent.acp_adapter.session import SessionManager, SessionState, _expand_acp_enabled_toolsets
+from hermes_agent.acp_adapter.tools import build_tool_complete, build_tool_start
 
 logger = logging.getLogger(__name__)
 
 try:
-    from hermes_cli import __version__ as HERMES_VERSION
+    from hermes_agent.hermes_cli import __version__ as HERMES_VERSION
 except Exception:
     HERMES_VERSION = "0.0.0"
 
@@ -582,7 +582,7 @@ class HermesACPAgent(acp.Agent):
         provider = getattr(state.agent, "provider", None) or detect_provider() or "openrouter"
 
         try:
-            from hermes_cli.models import curated_models_for_provider, normalize_provider, provider_label
+            from hermes_agent.hermes_cli.models import curated_models_for_provider, normalize_provider, provider_label
 
             normalized_provider = normalize_provider(provider)
             provider_name = provider_label(normalized_provider)
@@ -645,7 +645,7 @@ class HermesACPAgent(acp.Agent):
         new_model = raw_model.strip()
 
         try:
-            from hermes_cli.models import detect_provider_for_model, parse_model_input
+            from hermes_agent.hermes_cli.models import detect_provider_for_model, parse_model_input
 
             target_provider, new_model = parse_model_input(new_model, current_provider)
             if target_provider == current_provider:
@@ -674,7 +674,7 @@ class HermesACPAgent(acp.Agent):
             return None
 
         try:
-            from agent.model_metadata import estimate_request_tokens_rough
+            from hermes_agent.agent.model_metadata import estimate_request_tokens_rough
 
             used = estimate_request_tokens_rough(
                 state.history,
@@ -795,7 +795,7 @@ class HermesACPAgent(acp.Agent):
             return
 
         try:
-            from tools.mcp_tool import register_mcp_servers
+            from hermes_agent.tools.mcp_tool import register_mcp_servers
 
             config_map: dict[str, dict] = {}
             for server in mcp_servers:
@@ -823,8 +823,8 @@ class HermesACPAgent(acp.Agent):
             return
 
         try:
-            from model_tools import get_tool_definitions
-            from agent.memory_manager import inject_memory_provider_tools
+            from hermes_agent.model_tools import get_tool_definitions
+            from hermes_agent.agent.memory_manager import inject_memory_provider_tools
 
             enabled_toolsets = _expand_acp_enabled_toolsets(
                 getattr(state.agent, "enabled_toolsets", None) or ["hermes-acp"],
@@ -1416,7 +1416,7 @@ class HermesACPAgent(acp.Agent):
 
             approval_cb = make_approval_callback(conn.request_permission, loop, session_id)
             try:
-                from acp_adapter.edit_approval import make_acp_edit_approval_requester
+                from hermes_agent.acp_adapter.edit_approval import make_acp_edit_approval_requester
 
                 edit_approval_requester = make_acp_edit_approval_requester(
                     conn.request_permission,
@@ -1467,7 +1467,7 @@ class HermesACPAgent(acp.Agent):
             # inside a contextvars.copy_context() below, so the ContextVar
             # write is isolated from other concurrent ACP sessions.
             try:
-                from gateway.session_context import (
+                from hermes_agent.gateway.session_context import (
                     clear_session_vars,
                     set_session_vars,
                 )
@@ -1478,14 +1478,14 @@ class HermesACPAgent(acp.Agent):
                 logger.debug("Could not set ACP session context", exc_info=True)
             if approval_cb:
                 try:
-                    from tools import terminal_tool as _terminal_tool
+                    from hermes_agent.tools import terminal_tool as _terminal_tool
                     previous_approval_cb = _terminal_tool._get_approval_callback()
                     _terminal_tool.set_approval_callback(approval_cb)
                 except Exception:
                     logger.debug("Could not set ACP approval callback", exc_info=True)
             if edit_approval_requester:
                 try:
-                    from acp_adapter.edit_approval import set_edit_approval_requester
+                    from hermes_agent.acp_adapter.edit_approval import set_edit_approval_requester
 
                     edit_approval_token = set_edit_approval_requester(edit_approval_requester)
                 except Exception:
@@ -1525,13 +1525,13 @@ class HermesACPAgent(acp.Agent):
                     os.environ["HERMES_SESSION_ID"] = previous_session_id
                 if approval_cb:
                     try:
-                        from tools import terminal_tool as _terminal_tool
+                        from hermes_agent.tools import terminal_tool as _terminal_tool
                         _terminal_tool.set_approval_callback(previous_approval_cb)
                     except Exception:
                         logger.debug("Could not restore approval callback", exc_info=True)
                 if edit_approval_token is not None:
                     try:
-                        from acp_adapter.edit_approval import reset_edit_approval_requester
+                        from hermes_agent.acp_adapter.edit_approval import reset_edit_approval_requester
 
                         reset_edit_approval_requester(edit_approval_token)
                     except Exception:
@@ -1595,14 +1595,14 @@ class HermesACPAgent(acp.Agent):
         interrupted = bool(result.get("interrupted")) or cancelled
         # Hermes' local "waiting for model response" interrupt status is metadata,
         # not assistant prose — clients get cancellation from stop_reason instead.
-        from agent.conversation_loop import INTERRUPT_WAITING_FOR_MODEL_PREFIX
+        from hermes_agent.agent.conversation_loop import INTERRUPT_WAITING_FOR_MODEL_PREFIX
 
         suppress_interrupt_response = interrupted and final_response.startswith(
             INTERRUPT_WAITING_FOR_MODEL_PREFIX
         )
         if final_response and not suppress_interrupt_response:
             try:
-                from agent.title_generator import maybe_auto_title
+                from hermes_agent.agent.title_generator import maybe_auto_title
 
                 def _notify_title_update(_title: str) -> None:
                     if conn:
@@ -1780,9 +1780,9 @@ class HermesACPAgent(acp.Agent):
 
     def _cmd_tools(self, args: str, state: SessionState) -> str:
         try:
-            from model_tools import get_tool_definitions
+            from hermes_agent.model_tools import get_tool_definitions
             from types import SimpleNamespace
-            from agent.memory_manager import inject_memory_provider_tools
+            from hermes_agent.agent.memory_manager import inject_memory_provider_tools
 
             toolsets = _expand_acp_enabled_toolsets(
                 getattr(state.agent, "enabled_toolsets", None) or ["hermes-acp"]
@@ -1832,7 +1832,7 @@ class HermesACPAgent(acp.Agent):
         threshold_tokens = int(getattr(compressor, "threshold_tokens", 0) or 0)
 
         try:
-            from agent.model_metadata import estimate_request_tokens_rough
+            from hermes_agent.agent.model_metadata import estimate_request_tokens_rough
 
             system_prompt = getattr(agent, "_cached_system_prompt", "") or ""
             tools = getattr(agent, "tools", None) or None
@@ -1910,7 +1910,7 @@ class HermesACPAgent(acp.Agent):
             if not hasattr(agent, "_compress_context"):
                 return "Context compression not available for this agent."
 
-            from agent.model_metadata import estimate_request_tokens_rough
+            from hermes_agent.agent.model_metadata import estimate_request_tokens_rough
 
             original_count = len(state.history)
             # Include system prompt + tool schemas so the figure reflects real

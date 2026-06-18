@@ -23,7 +23,7 @@ class TestSetRuntimeMainCustomProvider:
 
     def test_globals_stored(self):
         """set_runtime_main stores all five fields in process-local globals."""
-        import agent.auxiliary_client as mod
+        import hermes_agent.agent.auxiliary_client as mod
 
         mod.clear_runtime_main()
         try:
@@ -45,7 +45,7 @@ class TestSetRuntimeMainCustomProvider:
 
     def test_clear_resets_all_globals(self):
         """clear_runtime_main resets all five globals to empty."""
-        import agent.auxiliary_client as mod
+        import hermes_agent.agent.auxiliary_client as mod
 
         mod.set_runtime_main(
             "custom:x", "m",
@@ -60,7 +60,7 @@ class TestSetRuntimeMainCustomProvider:
 
     def test_resolve_auto_uses_globals_for_custom_provider(self):
         """_resolve_auto reads base_url/api_key from globals when main_runtime is None."""
-        import agent.auxiliary_client as mod
+        import hermes_agent.agent.auxiliary_client as mod
 
         mod.clear_runtime_main()
         try:
@@ -85,7 +85,7 @@ class TestSetRuntimeMainCustomProvider:
 
     def test_explicit_main_runtime_takes_precedence(self):
         """When main_runtime dict has values, globals are NOT used."""
-        import agent.auxiliary_client as mod
+        import hermes_agent.agent.auxiliary_client as mod
 
         mod.clear_runtime_main()
         try:
@@ -114,7 +114,7 @@ class TestSetRuntimeMainCustomProvider:
 
     def test_backward_compatible_defaults(self):
         """Calling set_runtime_main with only positional args still works."""
-        import agent.auxiliary_client as mod
+        import hermes_agent.agent.auxiliary_client as mod
 
         mod.clear_runtime_main()
         try:
@@ -153,7 +153,7 @@ class TestResolveAutoCustomEndToEnd:
         """custom:<name> with NO config entry: the live base_url carried by
         set_runtime_main() must build a real client at that endpoint — not
         fall through to Step 2 (the regression in #34777)."""
-        import agent.auxiliary_client as mod
+        import hermes_agent.agent.auxiliary_client as mod
 
         # Hermetic: no aggregator creds, no stale OPENAI_BASE_URL.
         for var in ("OPENROUTER_API_KEY", "NOUS_API_KEY", "OPENAI_API_KEY",
@@ -193,7 +193,7 @@ class TestResolveAutoCustomEndToEnd:
         still resolve to that entry's endpoint.  An earlier competing fix
         collapsed the provider to bare ``custom`` before resolution, which
         broke the named-custom branch and returned None here."""
-        import agent.auxiliary_client as mod
+        import hermes_agent.agent.auxiliary_client as mod
 
         for var in ("OPENROUTER_API_KEY", "NOUS_API_KEY", "OPENAI_API_KEY",
                     "OPENAI_BASE_URL"):

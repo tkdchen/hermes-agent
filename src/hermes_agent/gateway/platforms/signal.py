@@ -26,8 +26,8 @@ from urllib.parse import quote, unquote
 
 import httpx
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
@@ -38,8 +38,8 @@ from gateway.platforms.base import (
     cache_document_from_bytes,
     cache_image_from_url,
 )
-from gateway.platforms.helpers import redact_phone
-from gateway.platforms.signal_rate_limit import (
+from hermes_agent.gateway.platforms.helpers import redact_phone
+from hermes_agent.gateway.platforms.signal_rate_limit import (
     SIGNAL_BATCH_PACING_NOTICE_THRESHOLD,
     SIGNAL_MAX_ATTACHMENTS_PER_MSG,
     SIGNAL_RATE_LIMIT_MAX_ATTEMPTS,
@@ -266,7 +266,7 @@ class SignalAdapter(BasePlatformAdapter):
             logger.warning("Signal: Could not acquire phone lock (non-fatal): %s", e)
 
         # Tighter keepalive so idle CLOSE_WAIT drains promptly (#18451).
-        from gateway.platforms._http_client_limits import platform_httpx_limits
+        from hermes_agent.gateway.platforms._http_client_limits import platform_httpx_limits
         self.client = httpx.AsyncClient(timeout=30.0, limits=platform_httpx_limits())
         try:
             # Health check — verify signal-cli daemon is reachable

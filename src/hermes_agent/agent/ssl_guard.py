@@ -11,7 +11,7 @@ import os
 import ssl
 from pathlib import Path
 
-from agent.errors import SSLConfigurationError
+from hermes_agent.agent.errors import SSLConfigurationError
 
 logger = logging.getLogger(__name__)
 

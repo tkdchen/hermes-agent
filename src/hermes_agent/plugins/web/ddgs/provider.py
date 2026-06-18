@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict
 
-from agent.web_search_provider import WebSearchProvider
+from hermes_agent.agent.web_search_provider import WebSearchProvider
 
 logger = logging.getLogger(__name__)
 

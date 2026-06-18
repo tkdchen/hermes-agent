@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 # EKS deployment without baking boto3 into the base image.
 # ---------------------------------------------------------------------------
 try:
-    from tools.lazy_deps import ensure
+    from hermes_agent.tools.lazy_deps import ensure
     ensure("provider.bedrock", prompt=False)
 except Exception:
     pass  # lazy_deps unavailable or install failed — let downstream imports surface the real error
@@ -952,7 +952,7 @@ def build_converse_kwargs(
     if system_prompt:
         kwargs["system"] = system_prompt
 
-    from agent.anthropic_adapter import _forbids_sampling_params
+    from hermes_agent.agent.anthropic_adapter import _forbids_sampling_params
 
     if not _forbids_sampling_params(model):
         if temperature is not None:

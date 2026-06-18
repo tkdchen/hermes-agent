@@ -17,9 +17,9 @@ import signal
 import time
 import traceback
 
-from tui_gateway import server
-from tui_gateway.server import _CRASH_LOG, dispatch, resolve_skin, write_json
-from tui_gateway.transport import TeeTransport
+from hermes_agent.tui_gateway import server
+from hermes_agent.tui_gateway.server import _CRASH_LOG, dispatch, resolve_skin, write_json
+from hermes_agent.tui_gateway.transport import TeeTransport
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ def _install_sidecar_publisher() -> None:
     if not url:
         return
 
-    from tui_gateway.event_publisher import WsPublisherTransport
+    from hermes_agent.tui_gateway.event_publisher import WsPublisherTransport
 
     server._stdio_transport = TeeTransport(
         server._stdio_transport, WsPublisherTransport(url)
@@ -234,7 +234,7 @@ def main():
     # thread when there's actually MCP work to do, so the import cost stays
     # off the path entirely for the common case.
     try:
-        from hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.config import read_raw_config
         _mcp_servers = (read_raw_config() or {}).get("mcp_servers")
         _has_mcp_servers = isinstance(_mcp_servers, dict) and len(_mcp_servers) > 0
     except Exception:
@@ -244,7 +244,7 @@ def main():
     if _has_mcp_servers:
         def _discover_mcp_background() -> None:
             try:
-                from tools.mcp_tool import discover_mcp_tools
+                from hermes_agent.tools.mcp_tool import discover_mcp_tools
                 discover_mcp_tools()
             except Exception:
                 logger.warning(
@@ -266,7 +266,7 @@ def main():
     if not write_json({
         "jsonrpc": "2.0",
         "method": "event",
-        "params": {"type": "gateway.ready", "payload": {"skin": resolve_skin()}},
+        "params": {"type": "hermes_agent.gateway.ready", "payload": {"skin": resolve_skin()}},
     }):
         _log_exit("startup write failed (broken stdout pipe before first event)")
         sys.exit(0)

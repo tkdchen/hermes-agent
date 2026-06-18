@@ -1,7 +1,7 @@
 """Tests for Nous subscription feature detection."""
 
-from hermes_cli.nous_account import NousPortalAccountInfo, NousToolAccessInfo
-from hermes_cli import nous_subscription as ns
+from hermes_agent.hermes_cli.nous_account import NousPortalAccountInfo, NousToolAccessInfo
+from hermes_agent.hermes_cli import nous_subscription as ns
 
 
 _POOL_COVERAGE = {
@@ -78,7 +78,7 @@ def test_get_nous_subscription_features_force_fresh_forwards_account_request(mon
 
 
 def test_get_nous_subscription_features_prefers_managed_modal_in_auto_mode(monkeypatch):
-    monkeypatch.setattr("tools.tool_backend_helpers.managed_nous_tools_enabled", lambda: True)
+    monkeypatch.setattr("hermes_agent.tools.tool_backend_helpers.managed_nous_tools_enabled", lambda: True)
     monkeypatch.setattr(ns, "get_env_value", lambda name: "")
     monkeypatch.setattr(
         ns, "get_nous_portal_account_info", lambda: _account(logged_in=True, paid=True)
@@ -280,9 +280,9 @@ def _stub_browser_probes(monkeypatch, *, has_agent_browser, chromium, lightpanda
     monkeypatch.setattr(ns, "resolve_openai_audio_api_key", lambda: "")
     monkeypatch.setattr(ns, "has_direct_modal_credentials", lambda: False)
     monkeypatch.setattr(ns, "is_managed_tool_gateway_ready", lambda vendor: False)
-    monkeypatch.setattr("tools.browser_tool._chromium_installed", lambda: chromium)
+    monkeypatch.setattr("hermes_agent.tools.browser_tool._chromium_installed", lambda: chromium)
     monkeypatch.setattr(
-        "tools.browser_tool._using_lightpanda_engine", lambda: lightpanda
+        "hermes_agent.tools.browser_tool._using_lightpanda_engine", lambda: lightpanda
     )
 
 
@@ -360,8 +360,8 @@ def test_cloud_browserbase_available_without_local_chromium(monkeypatch):
     monkeypatch.setattr(ns, "has_direct_modal_credentials", lambda: False)
     monkeypatch.setattr(ns, "is_managed_tool_gateway_ready", lambda vendor: False)
     # Chromium absent locally — must not matter for a cloud provider.
-    monkeypatch.setattr("tools.browser_tool._chromium_installed", lambda: False)
-    monkeypatch.setattr("tools.browser_tool._using_lightpanda_engine", lambda: False)
+    monkeypatch.setattr("hermes_agent.tools.browser_tool._chromium_installed", lambda: False)
+    monkeypatch.setattr("hermes_agent.tools.browser_tool._using_lightpanda_engine", lambda: False)
 
     features = ns.get_nous_subscription_features(
         {"browser": {"cloud_provider": "browserbase"}}
@@ -414,11 +414,11 @@ def _capture_checklist(monkeypatch, *, selected_idx):
         captured["pre_selected"] = list(pre_selected or [])
         return list(selected_idx)
 
-    import hermes_cli.setup as setup_mod
+    import hermes_agent.hermes_cli.setup as setup_mod
 
     monkeypatch.setattr(setup_mod, "prompt_checklist", _fake_checklist, raising=False)
     monkeypatch.setattr(
-        "hermes_cli.config.save_config", lambda cfg: None, raising=False
+        "hermes_agent.hermes_cli.config.save_config", lambda cfg: None, raising=False
     )
     return captured
 

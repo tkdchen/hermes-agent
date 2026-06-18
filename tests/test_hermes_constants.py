@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-import hermes_constants
-from hermes_constants import (
+import hermes_agent.hermes_constants as hermes_constants
+from hermes_agent.hermes_constants import (
     VALID_REASONING_EFFORTS,
     get_default_hermes_root,
     get_hermes_home,

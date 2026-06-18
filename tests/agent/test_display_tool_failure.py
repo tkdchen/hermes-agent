@@ -8,7 +8,7 @@ not a generic "[error]".
 
 import json
 
-from agent.display import (
+from hermes_agent.agent.display import (
     _detect_tool_failure,
     _trim_error,
     _ERROR_SUFFIX_MAX_LEN,

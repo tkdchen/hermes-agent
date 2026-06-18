@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import html
 
-from hermes_cli.dashboard_auth import list_providers
+from hermes_agent.hermes_cli.dashboard_auth import list_providers
 
 # Inline minimal CSS. The dashboard's full skin lives in the React
 # bundle, which we deliberately do NOT load here — the login page must

@@ -7,8 +7,8 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from agent import video_gen_registry
-from agent.video_gen_provider import VideoGenProvider
+from hermes_agent.agent import video_gen_registry
+from hermes_agent.agent.video_gen_provider import VideoGenProvider
 
 
 @pytest.fixture(autouse=True)
@@ -61,8 +61,8 @@ class _RaisingProvider(VideoGenProvider):
 
 class TestUnifiedDispatch:
     def _run(self, args: Dict[str, Any], *, configured: Optional[str] = None) -> Dict[str, Any]:
-        from tools import video_generation_tool
-        import hermes_cli.plugins as plugins_module
+        from hermes_agent.tools import video_generation_tool
+        import hermes_agent.hermes_cli.plugins as plugins_module
 
         saved = video_generation_tool._read_configured_video_provider
         video_generation_tool._read_configured_video_provider = lambda: configured  # type: ignore
@@ -121,6 +121,6 @@ class TestUnifiedDispatch:
 
     def test_operation_field_not_in_schema(self):
         """Make sure we removed the operation field from the schema."""
-        from tools.video_generation_tool import VIDEO_GENERATE_SCHEMA
+        from hermes_agent.tools.video_generation_tool import VIDEO_GENERATE_SCHEMA
         assert "operation" not in VIDEO_GENERATE_SCHEMA["parameters"]["properties"]
         assert "video_url" not in VIDEO_GENERATE_SCHEMA["parameters"]["properties"]

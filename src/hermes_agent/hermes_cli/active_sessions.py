@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
-from hermes_constants import get_hermes_home
+from hermes_agent.hermes_constants import get_hermes_home
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ def resolve_max_concurrent_sessions(config: Any) -> Optional[int]:
             gateway_cfg = config.get("gateway")
             if isinstance(gateway_cfg, dict):
                 raw = gateway_cfg.get("max_concurrent_sessions")
-                key = "gateway.max_concurrent_sessions"
+                key = "hermes_agent.gateway.max_concurrent_sessions"
     else:
         raw = getattr(config, "max_concurrent_sessions", None)
     return coerce_max_concurrent_sessions(raw, key=key)
@@ -193,7 +193,7 @@ def _pid_alive(pid: Any, process_start_time: Any = None) -> bool:
     if pid_int <= 0:
         return False
     try:
-        from gateway.status import _pid_exists
+        from hermes_agent.gateway.status import _pid_exists
 
         exists = bool(_pid_exists(pid_int))
     except Exception:

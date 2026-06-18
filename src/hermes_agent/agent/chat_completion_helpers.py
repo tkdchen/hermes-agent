@@ -25,16 +25,16 @@ import uuid
 from types import SimpleNamespace
 from typing import Any, Dict, Optional
 
-from hermes_cli.timeouts import get_provider_request_timeout, get_provider_stale_timeout
-from hermes_constants import PARTIAL_STREAM_STUB_ID, FINISH_REASON_LENGTH
-from agent.error_classifier import FailoverReason
-from agent.model_metadata import is_local_endpoint
-from agent.message_sanitization import (
+from hermes_agent.hermes_cli.timeouts import get_provider_request_timeout, get_provider_stale_timeout
+from hermes_agent.hermes_constants import PARTIAL_STREAM_STUB_ID, FINISH_REASON_LENGTH
+from hermes_agent.agent.error_classifier import FailoverReason
+from hermes_agent.agent.model_metadata import is_local_endpoint
+from hermes_agent.agent.message_sanitization import (
     _sanitize_surrogates,
     _repair_tool_call_arguments,
 )
-from tools.terminal_tool import is_persistent_env
-from utils import base_url_host_matches, base_url_hostname, env_int
+from hermes_agent.tools.terminal_tool import is_persistent_env
+from hermes_agent.utils import base_url_host_matches, base_url_hostname, env_int
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +43,10 @@ def _ra():
     """Lazy ``run_agent`` reference.
 
     Used to honor test patches like
-    ``patch("run_agent.cleanup_vm")`` / ``patch("run_agent.cleanup_browser")``
+    ``patch("hermes_agent.run_agent.cleanup_vm")`` / ``patch("hermes_agent.run_agent.cleanup_browser")``
     that target symbols imported into ``run_agent``'s namespace.
     """
-    import run_agent
+    import hermes_agent.run_agent as run_agent
     return run_agent
 
 
@@ -211,7 +211,7 @@ def interruptible_api_call(agent, api_kwargs: dict):
                 # normalize_converse_response produces an OpenAI-compatible
                 # SimpleNamespace so the rest of the agent loop can treat
                 # bedrock responses like chat_completions responses.
-                from agent.bedrock_adapter import (
+                from hermes_agent.agent.bedrock_adapter import (
                     _get_bedrock_runtime_client,
                     invalidate_runtime_client,
                     is_stale_connection_error,
@@ -628,7 +628,7 @@ def build_api_kwargs(agent, api_messages: list) -> dict:
         if is_xai_responses:
             try:
                 import copy as _copy
-                from tools.schema_sanitizer import (
+                from hermes_agent.tools.schema_sanitizer import (
                     strip_pattern_and_format,
                     strip_slash_enum,
                 )
@@ -682,7 +682,7 @@ def build_api_kwargs(agent, api_messages: list) -> dict:
     # Temperature: _fixed_temperature_for_model may return OMIT_TEMPERATURE
     # sentinel (temperature omitted entirely), a numeric override, or None.
     try:
-        from agent.auxiliary_client import _fixed_temperature_for_model, OMIT_TEMPERATURE
+        from hermes_agent.agent.auxiliary_client import _fixed_temperature_for_model, OMIT_TEMPERATURE
         _ft = _fixed_temperature_for_model(agent.model, agent.base_url)
         _omit_temp = _ft is OMIT_TEMPERATURE
         _fixed_temp = _ft if not _omit_temp else None
@@ -709,7 +709,7 @@ def build_api_kwargs(agent, api_messages: list) -> dict:
     _ant_max = None
     if (_is_or or _is_nous) and "claude" in (agent.model or "").lower():
         try:
-            from agent.anthropic_adapter import _get_anthropic_max_output
+            from hermes_agent.agent.anthropic_adapter import _get_anthropic_max_output
             _ant_max = _get_anthropic_max_output(agent.model)
         except Exception:
             pass
@@ -726,7 +726,7 @@ def build_api_kwargs(agent, api_messages: list) -> dict:
     # Profiles handle per-provider quirks via hooks. When a profile is
     # found, delegate fully; otherwise fall through to the legacy flag path.
     try:
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         _profile = get_provider_profile(agent.provider)
     except Exception:
         _profile = None
@@ -879,7 +879,7 @@ def build_assistant_message(agent, assistant_message, finish_reason: str) -> dic
     # Respects HERMES_REDACT_SECRETS via redact_sensitive_text — no-op
     # when disabled. (#19798)
     if isinstance(_san_content, str) and _san_content:
-        from agent.redact import redact_sensitive_text
+        from hermes_agent.agent.redact import redact_sensitive_text
         _san_content = redact_sensitive_text(_san_content)
 
     msg = {
@@ -1023,7 +1023,7 @@ def build_assistant_message(agent, assistant_message, finish_reason: str) -> dic
             # call (e.g. `terminal(command="curl -H 'Authorization: Bearer
             # sk-...'")`). (#19798)
             if isinstance(tc_dict["function"]["arguments"], str):
-                from agent.redact import redact_sensitive_text
+                from hermes_agent.agent.redact import redact_sensitive_text
                 tc_dict["function"]["arguments"] = redact_sensitive_text(
                     tc_dict["function"]["arguments"]
                 )
@@ -1103,7 +1103,7 @@ def try_activate_fallback(agent, reason: "FailoverReason | None" = None) -> bool
     # raw_codex=True because the main agent needs direct responses.stream()
     # access for Codex providers.
     try:
-        from agent.auxiliary_client import resolve_provider_client
+        from hermes_agent.agent.auxiliary_client import resolve_provider_client
         # Pass base_url and api_key from fallback config so custom
         # endpoints (e.g. Ollama Cloud) resolve correctly instead of
         # falling through to OpenRouter defaults.
@@ -1130,7 +1130,7 @@ def try_activate_fallback(agent, reason: "FailoverReason | None" = None) -> bool
                 fb_provider)
             return agent._try_activate_fallback()  # try next in chain
         try:
-            from hermes_cli.model_normalize import normalize_model_for_provider
+            from hermes_agent.hermes_cli.model_normalize import normalize_model_for_provider
 
             fb_model = normalize_model_for_provider(fb_model, fb_provider)
         except Exception as _norm_err:
@@ -1207,7 +1207,7 @@ def try_activate_fallback(agent, reason: "FailoverReason | None" = None) -> bool
 
         if fb_api_mode == "anthropic_messages":
             # Build native Anthropic client instead of using OpenAI client
-            from agent.anthropic_adapter import build_anthropic_client, resolve_anthropic_token, _is_oauth_token
+            from hermes_agent.agent.anthropic_adapter import build_anthropic_client, resolve_anthropic_token, _is_oauth_token
             effective_key = (fb_client.api_key or resolve_anthropic_token() or "") if fb_provider == "anthropic" else (fb_client.api_key or "")
             agent.api_key = effective_key
             agent._anthropic_api_key = effective_key
@@ -1266,7 +1266,7 @@ def try_activate_fallback(agent, reason: "FailoverReason | None" = None) -> bool
         # (model.context_length in config.yaml) is respected — without this,
         # the fallback activation drops to 128K even when config says 204800.
         if hasattr(agent, 'context_compressor') and agent.context_compressor:
-            from agent.model_metadata import get_model_context_length
+            from hermes_agent.agent.model_metadata import get_model_context_length
             # ``agent.api_key`` may be callable (Entra ID); the
             # context-length resolver expects a string for live
             # probes. Foundry typically resolves via config/static
@@ -1362,7 +1362,7 @@ def handle_max_iterations(agent, messages: list, api_call_count: int) -> str:
 
         summary_extra_body = {}
         try:
-            from agent.auxiliary_client import _fixed_temperature_for_model, OMIT_TEMPERATURE as _OMIT_TEMP
+            from hermes_agent.agent.auxiliary_client import _fixed_temperature_for_model, OMIT_TEMPERATURE as _OMIT_TEMP
         except Exception:
             _fixed_temperature_for_model = None
             _OMIT_TEMP = None
@@ -1395,7 +1395,7 @@ def handle_max_iterations(agent, messages: list, api_call_count: int) -> str:
                     "effort": "medium"
                 }
         if _is_nous:
-            from agent.portal_tags import nous_portal_tags as _portal_tags
+            from hermes_agent.agent.portal_tags import nous_portal_tags as _portal_tags
             summary_extra_body["tags"] = _portal_tags()
 
         if agent.api_mode == "codex_responses":
@@ -1611,7 +1611,7 @@ def interruptible_streaming_api_call(agent, api_kwargs: dict, *, on_first_delta=
 
         def _bedrock_call():
             try:
-                from agent.bedrock_adapter import (
+                from hermes_agent.agent.bedrock_adapter import (
                     _get_bedrock_runtime_client,
                     invalidate_runtime_client,
                     is_stale_connection_error,
@@ -2145,7 +2145,7 @@ def interruptible_streaming_api_call(agent, api_kwargs: dict, *, on_first_delta=
         # that can leak in under an api_mode-flip race. The Anthropic SDK
         # raises a non-retryable TypeError on them, killing the turn. See
         # #31673 / sanitize_anthropic_kwargs().
-        from agent.anthropic_adapter import sanitize_anthropic_kwargs
+        from hermes_agent.agent.anthropic_adapter import sanitize_anthropic_kwargs
         sanitize_anthropic_kwargs(
             api_kwargs, log_prefix=getattr(agent, "log_prefix", "")
         )
@@ -2464,7 +2464,7 @@ def interruptible_streaming_api_call(agent, api_kwargs: dict, *, on_first_delta=
                             # adapter — bedrock_adapter triggers a lazy boto3
                             # install at import time, which must not run for
                             # unrelated providers' stream errors.
-                            from agent.bedrock_adapter import (
+                            from hermes_agent.agent.bedrock_adapter import (
                                 is_streaming_access_denied_error,
                             )
                             _is_bedrock_stream_denied = (

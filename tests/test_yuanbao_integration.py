@@ -21,8 +21,8 @@ if _REPO_ROOT not in sys.path:
 
 import pytest
 from unittest.mock import MagicMock, patch
-from gateway.config import Platform, PlatformConfig, GatewayConfig
-from gateway.platforms.yuanbao import YuanbaoAdapter
+from hermes_agent.gateway.config import Platform, PlatformConfig, GatewayConfig
+from hermes_agent.gateway.platforms.yuanbao import YuanbaoAdapter
 
 
 def make_config(**kwargs):
@@ -112,8 +112,8 @@ class TestGatewayRunnerRegistration:
         # Stub out heavy dependencies if not already present
         stubs = [
             "dotenv",
-            "hermes_cli.env_loader",
-            "hermes_cli.config",
+            "hermes_agent.hermes_cli.env_loader",
+            "hermes_agent.hermes_cli.config",
             "hermes_constants",
         ]
         _orig = {}
@@ -123,7 +123,7 @@ class TestGatewayRunnerRegistration:
                 sys.modules[mod] = MagicMock()
 
         try:
-            from gateway.run import GatewayRunner
+            from hermes_agent.gateway.run import GatewayRunner
         finally:
             # Restore only the ones we injected
             for mod, orig in _orig.items():
@@ -139,14 +139,14 @@ class TestGatewayRunnerRegistration:
 
     def test_runner_creates_yuanbao_adapter(self):
         """GatewayRunner._create_adapter 能为 YUANBAO 返回 YuanbaoAdapter 实例"""
-        from gateway.config import GatewayConfig
+        from hermes_agent.gateway.config import GatewayConfig
         config = make_config(enabled=True)
         gw_config = GatewayConfig(platforms={Platform.YUANBAO: config})
 
         try:
             runner, _ = self._make_minimal_runner(gw_config)
             # websockets 在测试环境可能未安装，mock 掉 WEBSOCKETS_AVAILABLE
-            with patch("gateway.platforms.yuanbao.WEBSOCKETS_AVAILABLE", True):
+            with patch("hermes_agent.gateway.platforms.yuanbao.WEBSOCKETS_AVAILABLE", True):
                 adapter = runner._create_adapter(Platform.YUANBAO, config)
         except ImportError as e:
             pytest.skip(f"run.py import unavailable in test env: {e}")
@@ -156,13 +156,13 @@ class TestGatewayRunnerRegistration:
 
     def test_runner_adapter_platform_attr(self):
         """创建的 adapter.PLATFORM 为 Platform.YUANBAO"""
-        from gateway.config import GatewayConfig
+        from hermes_agent.gateway.config import GatewayConfig
         config = make_config(enabled=True)
         gw_config = GatewayConfig(platforms={Platform.YUANBAO: config})
 
         try:
             runner, _ = self._make_minimal_runner(gw_config)
-            with patch("gateway.platforms.yuanbao.WEBSOCKETS_AVAILABLE", True):
+            with patch("hermes_agent.gateway.platforms.yuanbao.WEBSOCKETS_AVAILABLE", True):
                 adapter = runner._create_adapter(Platform.YUANBAO, config)
         except ImportError as e:
             pytest.skip(f"run.py import unavailable in test env: {e}")
@@ -179,14 +179,14 @@ class TestProtoRoundTrip:
     """验证 proto 编解码基本功能"""
 
     def test_conn_msg_roundtrip(self):
-        from gateway.platforms.yuanbao_proto import encode_conn_msg, decode_conn_msg
+        from hermes_agent.gateway.platforms.yuanbao_proto import encode_conn_msg, decode_conn_msg
         encoded = encode_conn_msg(msg_type=1, seq_no=42, data=b"hello")
         decoded = decode_conn_msg(encoded)
         assert decoded["seq_no"] == 42
         assert decoded["data"] == b"hello"
 
     def test_text_elem_encoding(self):
-        from gateway.platforms.yuanbao_proto import encode_send_c2c_message
+        from hermes_agent.gateway.platforms.yuanbao_proto import encode_send_c2c_message
         msg = encode_send_c2c_message(
             to_account="user123",
             msg_body=[{"msg_type": "TIMTextElem", "msg_content": {"text": "hello"}}],
@@ -202,7 +202,7 @@ class TestProtoRoundTrip:
 
 class TestMarkdownChunking:
     def test_chunks_are_sent_separately(self):
-        from gateway.platforms.yuanbao import MarkdownProcessor
+        from hermes_agent.gateway.platforms.yuanbao import MarkdownProcessor
         long_text = "paragraph\n\n" * 100
         chunks = MarkdownProcessor.chunk_markdown_text(long_text, 200)
         assert len(chunks) > 1
@@ -212,7 +212,7 @@ class TestMarkdownChunking:
             assert len(c) > 0
 
     def test_chunk_short_text_no_split(self):
-        from gateway.platforms.yuanbao import MarkdownProcessor
+        from hermes_agent.gateway.platforms.yuanbao import MarkdownProcessor
         text = "hello world"
         chunks = MarkdownProcessor.chunk_markdown_text(text, 3000)
         assert chunks == [text]
@@ -224,7 +224,7 @@ class TestMarkdownChunking:
 
 class TestSignToken:
     def test_import_ok(self):
-        from gateway.platforms.yuanbao import SignManager
+        from hermes_agent.gateway.platforms.yuanbao import SignManager
         assert callable(SignManager.get_token)
         assert callable(SignManager.force_refresh)
 
@@ -235,34 +235,34 @@ class TestSignToken:
 
 class TestManagerImports:
     def test_connection_manager_import(self):
-        from gateway.platforms.yuanbao import ConnectionManager
+        from hermes_agent.gateway.platforms.yuanbao import ConnectionManager
         assert ConnectionManager is not None
 
     def test_outbound_manager_import(self):
-        from gateway.platforms.yuanbao import OutboundManager
+        from hermes_agent.gateway.platforms.yuanbao import OutboundManager
         assert OutboundManager is not None
 
     def test_message_sender_import(self):
-        from gateway.platforms.yuanbao import MessageSender
+        from hermes_agent.gateway.platforms.yuanbao import MessageSender
         assert MessageSender is not None
 
     def test_heartbeat_manager_import(self):
-        from gateway.platforms.yuanbao import HeartbeatManager
+        from hermes_agent.gateway.platforms.yuanbao import HeartbeatManager
         assert HeartbeatManager is not None
 
     def test_slow_response_notifier_import(self):
-        from gateway.platforms.yuanbao import SlowResponseNotifier
+        from hermes_agent.gateway.platforms.yuanbao import SlowResponseNotifier
         assert SlowResponseNotifier is not None
 
     def test_adapter_has_outbound_manager(self):
         adapter = YuanbaoAdapter(make_config())
-        from gateway.platforms.yuanbao import ConnectionManager, OutboundManager
+        from hermes_agent.gateway.platforms.yuanbao import ConnectionManager, OutboundManager
         assert isinstance(adapter._connection, ConnectionManager)
         assert isinstance(adapter._outbound, OutboundManager)
 
     def test_outbound_composes_sub_managers(self):
         adapter = YuanbaoAdapter(make_config())
-        from gateway.platforms.yuanbao import MessageSender, HeartbeatManager, SlowResponseNotifier
+        from hermes_agent.gateway.platforms.yuanbao import MessageSender, HeartbeatManager, SlowResponseNotifier
         assert isinstance(adapter._outbound.sender, MessageSender)
         assert isinstance(adapter._outbound.heartbeat, HeartbeatManager)
         assert isinstance(adapter._outbound.slow_notifier, SlowResponseNotifier)
@@ -274,7 +274,7 @@ class TestManagerImports:
 
 class TestMediaModule:
     def test_import_ok(self):
-        from gateway.platforms.yuanbao_media import upload_to_cos, download_url
+        from hermes_agent.gateway.platforms.yuanbao_media import upload_to_cos, download_url
         assert callable(upload_to_cos)
         assert callable(download_url)
 
@@ -285,7 +285,7 @@ class TestMediaModule:
 
 class TestToolset:
     def test_yuanbao_toolset_registered(self):
-        """toolsets.py 中存在 hermes-yuanbao 键"""
+        """hermes_agent.toolsets.py 中存在 hermes-yuanbao 键"""
         import importlib
         ts = importlib.import_module("toolsets")
         assert hasattr(ts, "TOOLSETS") or hasattr(ts, "toolsets")
@@ -293,7 +293,7 @@ class TestToolset:
         assert "hermes-yuanbao" in toolsets_dict
 
     def test_tools_import(self):
-        from tools.yuanbao_tools import (
+        from hermes_agent.tools.yuanbao_tools import (
             get_group_info,
             query_group_members,
             send_dm,
@@ -311,8 +311,8 @@ class TestToolset:
 
 class TestPlatformInit:
     def test_yuanbao_adapter_exported(self):
-        """gateway.platforms.__init__.py 应导出 YuanbaoAdapter"""
-        from gateway.platforms import YuanbaoAdapter as _YuanbaoAdapter
+        """hermes_agent.gateway.platforms.__init__.py 应导出 YuanbaoAdapter"""
+        from hermes_agent.gateway.platforms import YuanbaoAdapter as _YuanbaoAdapter
         assert _YuanbaoAdapter is YuanbaoAdapter
 
 
@@ -367,7 +367,7 @@ class TestP0ChatLockEviction:
     def test_eviction_skips_locked(self):
         """When eviction is needed, locked entries are skipped."""
         adapter = YuanbaoAdapter(make_config())
-        from gateway.platforms.yuanbao import OutboundManager
+        from hermes_agent.gateway.platforms.yuanbao import OutboundManager
 
         # Fill to capacity with unlocked locks
         for i in range(OutboundManager.CHAT_DICT_MAX_SIZE):

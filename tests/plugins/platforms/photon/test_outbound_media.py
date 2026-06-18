@@ -13,9 +13,9 @@ from typing import Any, Dict, List, Tuple
 
 import pytest
 
-from gateway.config import PlatformConfig
-from plugins.platforms.photon import adapter as photon_adapter
-from plugins.platforms.photon.adapter import PhotonAdapter
+from hermes_agent.gateway.config import PlatformConfig
+from hermes_agent.plugins.platforms.photon import adapter as photon_adapter
+from hermes_agent.plugins.platforms.photon.adapter import PhotonAdapter
 
 
 def _make_adapter(monkeypatch: pytest.MonkeyPatch) -> PhotonAdapter:
@@ -143,7 +143,7 @@ async def test_send_image_url_caches_then_sends_attachment(
         assert url == "https://example.com/cat.jpg"
         return real_file
 
-    import gateway.platforms.base as base_mod
+    import hermes_agent.gateway.platforms.base as base_mod
 
     monkeypatch.setattr(base_mod, "cache_image_from_url", _fake_cache)
 
@@ -168,7 +168,7 @@ async def test_send_image_url_fetch_failure_falls_back_to_text(
     async def _boom(url: str, *a, **k) -> str:
         raise RuntimeError("network down")
 
-    import gateway.platforms.base as base_mod
+    import hermes_agent.gateway.platforms.base as base_mod
 
     monkeypatch.setattr(base_mod, "cache_image_from_url", _boom)
 

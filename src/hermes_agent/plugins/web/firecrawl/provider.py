@@ -50,8 +50,8 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-from agent.web_search_provider import WebSearchProvider
-from tools.website_policy import check_website_access
+from hermes_agent.agent.web_search_provider import WebSearchProvider
+from hermes_agent.tools.website_policy import check_website_access
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ logger = logging.getLogger(__name__)
 # trees) on a cold CLI. We only need it when the backend is actually
 # "firecrawl", so defer the import to first use via a callable proxy.
 #
-# Tests that do ``patch("tools.web_tools.Firecrawl", ...)`` continue to
+# Tests that do ``patch("hermes_agent.tools.web_tools.Firecrawl", ...)`` continue to
 # work because tools/web_tools.py re-exports ``Firecrawl`` from this
 # module — so the patched name still references the same proxy instance.
 
@@ -78,7 +78,7 @@ def _load_firecrawl_cls() -> type:
     global _FIRECRAWL_CLS_CACHE
     if _FIRECRAWL_CLS_CACHE is None:
         try:
-            from tools.lazy_deps import ensure as _lazy_ensure
+            from hermes_agent.tools.lazy_deps import ensure as _lazy_ensure
 
             _lazy_ensure("search.firecrawl", prompt=False)
         except ImportError:
@@ -138,7 +138,7 @@ def _get_direct_firecrawl_config() -> Optional[tuple]:
 
 def _get_firecrawl_gateway_url() -> str:
     """Return the configured Firecrawl gateway URL."""
-    import tools.web_tools as _wt
+    import hermes_agent.tools.web_tools as _wt
 
     return _wt.build_vendor_gateway_url("firecrawl")
 
@@ -148,11 +148,11 @@ def _is_tool_gateway_ready() -> bool:
 
     Reads ``peek_nous_access_token`` and ``resolve_managed_tool_gateway``
     via :mod:`tools.web_tools` rather than direct imports, so unit tests
-    that ``patch("tools.web_tools._peek_nous_access_token", ...)`` see
+    that ``patch("hermes_agent.tools.web_tools._peek_nous_access_token", ...)`` see
     their patches honored. The names are re-exported on
     :mod:`tools.web_tools` for exactly this reason.
     """
-    import tools.web_tools as _wt
+    import hermes_agent.tools.web_tools as _wt
 
     return _wt.resolve_managed_tool_gateway(
         "firecrawl", token_reader=_wt._peek_nous_access_token
@@ -175,7 +175,7 @@ def check_firecrawl_api_key() -> bool:
 
 def _firecrawl_backend_help_suffix() -> str:
     """Return optional managed-gateway guidance for Firecrawl help text."""
-    import tools.web_tools as _wt
+    import hermes_agent.tools.web_tools as _wt
 
     if not _wt.managed_nous_tools_enabled():
         return ""
@@ -187,7 +187,7 @@ def _firecrawl_backend_help_suffix() -> str:
 
 def _raise_web_backend_configuration_error() -> None:
     """Raise a clear error for unsupported web backend configuration."""
-    import tools.web_tools as _wt
+    import hermes_agent.tools.web_tools as _wt
 
     message = (
         "Web tools are not configured. "
@@ -224,7 +224,7 @@ def _get_firecrawl_client() -> Any:
     :mod:`tools.web_tools` for the same reason — see
     :func:`_is_tool_gateway_ready`.
     """
-    import tools.web_tools as _wt
+    import hermes_agent.tools.web_tools as _wt
 
     direct_config = _get_direct_firecrawl_config()
     if direct_config is not None and not _wt.prefers_gateway("web"):
@@ -268,7 +268,7 @@ def _reset_client_for_tests() -> None:
     Clears the canonical slots on :mod:`tools.web_tools` (where
     :func:`_get_firecrawl_client` reads/writes them).
     """
-    import tools.web_tools as _wt
+    import hermes_agent.tools.web_tools as _wt
 
     _wt._firecrawl_client = None
     _wt._firecrawl_client_config = None
@@ -399,7 +399,7 @@ class FirecrawlWebSearchProvider(WebSearchProvider):
         envelope. Only in-flight errors are caught and surfaced as
         ``{"success": False, "error": ...}``.
         """
-        from tools.interrupt import is_interrupted
+        from hermes_agent.tools.interrupt import is_interrupted
 
         if is_interrupted():
             return {"success": False, "error": "Interrupted"}
@@ -432,7 +432,7 @@ class FirecrawlWebSearchProvider(WebSearchProvider):
         (timeout, SSRF block, scrape error, policy block) become items
         with an ``error`` field rather than raising.
         """
-        from tools.interrupt import is_interrupted as _is_interrupted
+        from hermes_agent.tools.interrupt import is_interrupted as _is_interrupted
 
         if _is_interrupted():
             return [{"url": u, "error": "Interrupted", "title": ""} for u in urls]

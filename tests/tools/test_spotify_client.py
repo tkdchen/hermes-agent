@@ -4,8 +4,8 @@ import json
 
 import pytest
 
-from plugins.spotify import client as spotify_mod
-from plugins.spotify import tools as spotify_tool
+from hermes_agent.plugins.spotify import client as spotify_mod
+from hermes_agent.plugins.spotify import tools as spotify_tool
 
 
 class _FakeResponse:

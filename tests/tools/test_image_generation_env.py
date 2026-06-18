@@ -6,7 +6,7 @@ def test_fal_key_whitespace_is_unset(monkeypatch):
     # gateway fallback must be disabled for this assertion to be meaningful.
     monkeypatch.setenv("FAL_KEY", "   ")
 
-    from tools import image_generation_tool
+    from hermes_agent.tools import image_generation_tool
 
     monkeypatch.setattr(
         image_generation_tool, "_resolve_managed_fal_gateway", lambda: None
@@ -18,7 +18,7 @@ def test_fal_key_whitespace_is_unset(monkeypatch):
 def test_fal_key_valid(monkeypatch):
     monkeypatch.setenv("FAL_KEY", "sk-test")
 
-    from tools import image_generation_tool
+    from hermes_agent.tools import image_generation_tool
 
     monkeypatch.setattr(
         image_generation_tool, "_resolve_managed_fal_gateway", lambda: None
@@ -30,7 +30,7 @@ def test_fal_key_valid(monkeypatch):
 def test_fal_key_empty_is_unset(monkeypatch):
     monkeypatch.setenv("FAL_KEY", "")
 
-    from tools import image_generation_tool
+    from hermes_agent.tools import image_generation_tool
 
     monkeypatch.setattr(
         image_generation_tool, "_resolve_managed_fal_gateway", lambda: None
@@ -46,7 +46,7 @@ def test_fal_key_empty_is_unset(monkeypatch):
 
 
 def test_no_backend_message_mentions_fal_signup_and_plugins(monkeypatch):
-    from tools import image_generation_tool
+    from hermes_agent.tools import image_generation_tool
 
     monkeypatch.setattr(
         image_generation_tool, "managed_nous_tools_enabled", lambda: False
@@ -61,7 +61,7 @@ def test_no_backend_message_mentions_fal_signup_and_plugins(monkeypatch):
 
 
 def test_no_backend_message_mentions_managed_gateway_when_enabled(monkeypatch):
-    from tools import image_generation_tool
+    from hermes_agent.tools import image_generation_tool
 
     monkeypatch.setattr(
         image_generation_tool, "managed_nous_tools_enabled", lambda: True
@@ -77,7 +77,7 @@ def test_image_generate_tool_returns_actionable_error_when_no_backend(monkeypatc
     """End-to-end: handler must surface the actionable message, not a bare string."""
     import json
 
-    from tools import image_generation_tool
+    from hermes_agent.tools import image_generation_tool
 
     monkeypatch.setattr(
         image_generation_tool, "fal_key_is_configured", lambda: False

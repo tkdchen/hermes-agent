@@ -23,7 +23,7 @@ Usage:
 # IMPORTANT: hermes_bootstrap must be the very first import — UTF-8 stdio
 # on Windows.  No-op on POSIX.  See hermes_bootstrap.py for full rationale.
 try:
-    import hermes_bootstrap  # noqa: F401
+    import hermes_agent.hermes_bootstrap  # noqa: F401
 except ModuleNotFoundError:
     # Graceful fallback when hermes_bootstrap isn't registered in the venv
     # yet — happens during partial ``hermes update`` where git-reset landed
@@ -46,13 +46,13 @@ from rich.console import Console
 logger = logging.getLogger(__name__)
 import fire
 
-from run_agent import AIAgent
+from hermes_agent.run_agent import AIAgent
 from toolset_distributions import (
     list_distributions, 
     sample_toolsets_from_distribution,
     validate_distribution
 )
-from model_tools import TOOL_TO_TOOLSET_MAP
+from hermes_agent.model_tools import TOOL_TO_TOOLSET_MAP
 
 
 # Global configuration for worker processes
@@ -300,7 +300,7 @@ def _process_single_prompt(
                 if config.get("verbose"):
                     print(f"   Prompt {prompt_index}: Docker image check failed: {img_err}", flush=True)
 
-        from tools.terminal_tool import register_task_env_overrides
+        from hermes_agent.tools.terminal_tool import register_task_env_overrides
         overrides = {
             "docker_image": container_image,
             "modal_image": container_image,
@@ -722,7 +722,7 @@ class BatchRunner:
         """
         checkpoint_data["last_updated"] = datetime.now().isoformat()
 
-        from utils import atomic_json_write
+        from hermes_agent.utils import atomic_json_write
         if lock:
             with lock:
                 atomic_json_write(self.checkpoint_file, checkpoint_data)

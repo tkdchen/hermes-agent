@@ -19,7 +19,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 
-from plugins.platforms.discord.adapter import DiscordAdapter
+from hermes_agent.plugins.platforms.discord.adapter import DiscordAdapter
 
 
 def _set_dm_role_auth_guild(monkeypatch, guild_id=None):
@@ -29,7 +29,7 @@ def _set_dm_role_auth_guild(monkeypatch, guild_id=None):
     cfg = {"discord": {"dm_role_auth_guild": guild_id if guild_id is not None else ""}}
     # Patch the attribute ``hermes_cli.config.read_raw_config`` — that's
     # what ``_read_dm_role_auth_guild`` imports at call time.
-    import hermes_cli.config as _cfg_mod
+    import hermes_agent.hermes_cli.config as _cfg_mod
     monkeypatch.setattr(_cfg_mod, "read_raw_config", lambda: cfg, raising=True)
 
 

@@ -9,7 +9,7 @@ import time
 import unittest
 from unittest.mock import MagicMock
 
-from tools.interrupt import set_interrupt, is_interrupted
+from hermes_agent.tools.interrupt import set_interrupt, is_interrupted
 
 
 class TestInterruptPropagationToChild(unittest.TestCase):
@@ -23,7 +23,7 @@ class TestInterruptPropagationToChild(unittest.TestCase):
 
     def _make_bare_agent(self):
         """Create a bare AIAgent via __new__ with all interrupt-related attrs."""
-        from run_agent import AIAgent
+        from hermes_agent.run_agent import AIAgent
         agent = AIAgent.__new__(AIAgent)
         agent._interrupt_requested = False
         agent._interrupt_message = None
@@ -147,7 +147,7 @@ class TestInterruptPropagationToChild(unittest.TestCase):
         assert is_interrupted() is False
 
         def run_thread():
-            from tools.interrupt import set_interrupt as _set_interrupt_for_test
+            from hermes_agent.tools.interrupt import set_interrupt as _set_interrupt_for_test
 
             agent._execution_thread_id = threading.current_thread().ident
             _set_interrupt_for_test(False, agent._execution_thread_id)
@@ -231,7 +231,7 @@ class TestPerThreadInterruptIsolation(unittest.TestCase):
         set_interrupt(False, tid_a)
 
         # Simulate checking from thread B's perspective
-        from tools.interrupt import _interrupted_threads, _lock
+        from hermes_agent.tools.interrupt import _interrupted_threads, _lock
         with _lock:
             assert tid_a not in _interrupted_threads
             assert tid_b in _interrupted_threads

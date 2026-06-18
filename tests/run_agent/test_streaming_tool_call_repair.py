@@ -13,7 +13,7 @@ unclosed brackets, Python None) don't kill the session.
 
 import json
 
-from run_agent import _repair_tool_call_arguments
+from hermes_agent.run_agent import _repair_tool_call_arguments
 
 
 class TestStreamingAssemblyRepair:

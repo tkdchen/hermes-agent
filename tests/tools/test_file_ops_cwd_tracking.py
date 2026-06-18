@@ -19,7 +19,7 @@ from __future__ import annotations
 
 
 
-from tools.file_operations import ShellFileOperations
+from hermes_agent.tools.file_operations import ShellFileOperations
 
 
 class _FakeEnv:

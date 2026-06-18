@@ -20,9 +20,9 @@ import hashlib
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from hermes_constants import get_hermes_home
-from hermes_cli.profiles import _get_default_hermes_home
-from plugins.plugin_utils import SingletonSlot
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.hermes_cli.profiles import _get_default_hermes_home
+from hermes_agent.plugins.plugin_utils import SingletonSlot
 from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -64,7 +64,7 @@ def resolve_active_host() -> str:
         return explicit
 
     try:
-        from hermes_cli.profiles import get_active_profile_name
+        from hermes_agent.hermes_cli.profiles import get_active_profile_name
         profile = get_active_profile_name()
         return profile_host_key(profile)
     except Exception:
@@ -778,7 +778,7 @@ def get_honcho_client(config: HonchoClientConfig | None = None) -> Honcho:
         # the original ImportError-shape message so existing callers still get
         # the "go run hermes honcho setup" hint they used to.
         try:
-            from tools.lazy_deps import FeatureUnavailable, ensure as _lazy_ensure
+            from hermes_agent.tools.lazy_deps import FeatureUnavailable, ensure as _lazy_ensure
             _lazy_ensure("memory.honcho", prompt=False)
         except ImportError:
             # lazy_deps module missing — fall through to the raw import below.
@@ -804,7 +804,7 @@ def get_honcho_client(config: HonchoClientConfig | None = None) -> Honcho:
         resolved_timeout = config.timeout
         if not resolved_base_url or resolved_timeout is None:
             try:
-                from hermes_cli.config import load_config
+                from hermes_agent.hermes_cli.config import load_config
                 hermes_cfg = load_config()
                 honcho_cfg = hermes_cfg.get("honcho", {})
                 if isinstance(honcho_cfg, dict):

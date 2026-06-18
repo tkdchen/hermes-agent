@@ -23,7 +23,7 @@ import json
 
 import pytest
 
-from run_agent import (
+from hermes_agent.run_agent import (
     AIAgent,
     _FILE_MUTATING_TOOLS,
     _extract_error_preview,
@@ -328,7 +328,7 @@ class TestFormatFooter:
         config.yaml path out of the rendered footer (#35584)."""
         import os
         import tempfile
-        from gateway.platforms.base import BasePlatformAdapter
+        from hermes_agent.gateway.platforms.base import BasePlatformAdapter
 
         tmp = tempfile.mkdtemp(prefix="hermes_footer_")
         try:
@@ -363,7 +363,7 @@ class TestVerifierEnabled:
         agent = _bare_agent()
         # With no env and no config present, safe default is True.
         # load_config may surface a user config.yaml in some envs — stub it.
-        import hermes_cli.config as _cfg_mod
+        import hermes_agent.hermes_cli.config as _cfg_mod
         monkeypatch.setattr(_cfg_mod, "load_config", lambda: {})
         assert agent._file_mutation_verifier_enabled() is True
 
@@ -375,7 +375,7 @@ class TestVerifierEnabled:
 
     def test_env_enables_over_config(self, monkeypatch):
         monkeypatch.setenv("HERMES_FILE_MUTATION_VERIFIER", "1")
-        import hermes_cli.config as _cfg_mod
+        import hermes_agent.hermes_cli.config as _cfg_mod
         monkeypatch.setattr(
             _cfg_mod, "load_config",
             lambda: {"display": {"file_mutation_verifier": False}},
@@ -385,7 +385,7 @@ class TestVerifierEnabled:
 
     def test_config_disables_when_no_env(self, monkeypatch):
         monkeypatch.delenv("HERMES_FILE_MUTATION_VERIFIER", raising=False)
-        import hermes_cli.config as _cfg_mod
+        import hermes_agent.hermes_cli.config as _cfg_mod
         monkeypatch.setattr(
             _cfg_mod, "load_config",
             lambda: {"display": {"file_mutation_verifier": False}},

@@ -37,10 +37,10 @@ from typing import List, Optional
 # the module) fail with ModuleNotFoundError for hermes_time et al.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from hermes_constants import get_hermes_home
-from hermes_cli._subprocess_compat import windows_hide_flags
-from hermes_cli.config import load_config, _expand_env_vars
-from hermes_time import now as _hermes_now
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.hermes_cli._subprocess_compat import windows_hide_flags
+from hermes_agent.hermes_cli.config import load_config, _expand_env_vars
+from hermes_agent.hermes_time import now as _hermes_now
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +102,7 @@ def _resolve_cron_enabled_toolsets(job: dict, cfg: dict) -> list[str] | None:
     if per_job:
         return per_job
     try:
-        from hermes_cli.tools_config import _get_platform_tools  # lazy: avoid heavy import at cron module load
+        from hermes_agent.hermes_cli.tools_config import _get_platform_tools  # lazy: avoid heavy import at cron module load
         return sorted(_get_platform_tools(cfg or {}, "cron"))
     except Exception as exc:
         logger.warning(
@@ -149,7 +149,7 @@ _LEGACY_HOME_TARGET_ENV_VARS = {
     "QQBOT_HOME_CHANNEL": "QQ_HOME_CHANNEL",
 }
 
-from cron.jobs import get_due_jobs, mark_job_run, save_job_output, advance_next_run
+from hermes_agent.cron.jobs import get_due_jobs, mark_job_run, save_job_output, advance_next_run
 
 # Sentinel: when a cron agent has nothing new to report, it can start its
 # response with this marker to suppress delivery.  Output is still saved
@@ -289,9 +289,9 @@ def _plugin_cron_env_var(platform_name: str) -> str:
     support without editing this module.
     """
     try:
-        from hermes_cli.plugins import discover_plugins
+        from hermes_agent.hermes_cli.plugins import discover_plugins
         discover_plugins()  # idempotent
-        from gateway.platform_registry import platform_registry
+        from hermes_agent.gateway.platform_registry import platform_registry
         entry = platform_registry.get(platform_name.lower())
         if entry and entry.cron_deliver_env_var:
             return entry.cron_deliver_env_var
@@ -373,9 +373,9 @@ def _iter_home_target_platforms():
     for name in _HOME_TARGET_ENV_VARS:
         yield name
     try:
-        from hermes_cli.plugins import discover_plugins
+        from hermes_agent.hermes_cli.plugins import discover_plugins
         discover_plugins()  # idempotent
-        from gateway.platform_registry import platform_registry
+        from hermes_agent.gateway.platform_registry import platform_registry
         for entry in platform_registry.plugin_entries():
             if entry.cron_deliver_env_var and entry.name not in _HOME_TARGET_ENV_VARS:
                 yield entry.name
@@ -399,7 +399,7 @@ def cron_delivery_targets() -> list[dict]:
     """
     targets: list[dict] = []
     try:
-        from gateway.config import load_gateway_config
+        from hermes_agent.gateway.config import load_gateway_config
 
         gateway_config = load_gateway_config()
         connected = {p.value for p in gateway_config.get_connected_platforms()}
@@ -460,7 +460,7 @@ def _resolve_single_delivery_target(job: dict, deliver_value: str) -> Optional[d
         platform_name, rest = deliver_value.split(":", 1)
         platform_key = platform_name.lower()
 
-        from tools.send_message_tool import _parse_target_ref
+        from hermes_agent.tools.send_message_tool import _parse_target_ref
 
         parsed_chat_id, parsed_thread_id, is_explicit = _parse_target_ref(platform_key, rest)
         if is_explicit:
@@ -470,7 +470,7 @@ def _resolve_single_delivery_target(job: dict, deliver_value: str) -> Optional[d
 
         # Resolve human-friendly labels like "Alice (dm)" to real IDs.
         try:
-            from gateway.channel_directory import resolve_channel_name
+            from hermes_agent.gateway.channel_directory import resolve_channel_name
             resolved = resolve_channel_name(platform_key, chat_id)
             if resolved:
                 parsed_chat_id, parsed_thread_id, resolved_is_explicit = _parse_target_ref(platform_key, resolved)
@@ -617,7 +617,7 @@ def _send_media_via_adapter(
     """
     from pathlib import Path
 
-    from gateway.platforms.base import BasePlatformAdapter, should_send_media_as_audio
+    from hermes_agent.gateway.platforms.base import BasePlatformAdapter, should_send_media_as_audio
 
     media_files = BasePlatformAdapter.filter_media_delivery_paths(media_files)
 
@@ -634,7 +634,7 @@ def _send_media_via_adapter(
             else:
                 coro = adapter.send_document(chat_id=chat_id, file_path=media_path, metadata=metadata)
 
-            from agent.async_utils import safe_schedule_threadsafe
+            from hermes_agent.agent.async_utils import safe_schedule_threadsafe
             future = safe_schedule_threadsafe(coro, loop)
             if future is None:
                 logger.warning(
@@ -675,8 +675,8 @@ def _deliver_result(job: dict, content: str, adapters=None, loop=None) -> Option
             return msg
         return None  # local-only jobs don't deliver — not a failure
 
-    from tools.send_message_tool import _send_to_platform
-    from gateway.config import load_gateway_config, Platform
+    from hermes_agent.tools.send_message_tool import _send_to_platform
+    from hermes_agent.gateway.config import load_gateway_config, Platform
 
     # Optionally wrap the content with a header/footer so the user knows this
     # is a cron delivery.  Wrapping is on by default; set cron.wrap_response: false
@@ -702,7 +702,7 @@ def _deliver_result(job: dict, content: str, adapters=None, loop=None) -> Option
         delivery_content = content
 
     # Extract MEDIA: tags so attachments are forwarded as files, not raw text
-    from gateway.platforms.base import BasePlatformAdapter
+    from hermes_agent.gateway.platforms.base import BasePlatformAdapter
     media_files, cleaned_delivery_content = BasePlatformAdapter.extract_media(delivery_content)
     media_files = BasePlatformAdapter.filter_media_delivery_paths(media_files)
 
@@ -763,7 +763,7 @@ def _deliver_result(job: dict, content: str, adapters=None, loop=None) -> Option
                 text_to_send = cleaned_delivery_content.strip()
                 adapter_ok = True
                 if text_to_send:
-                    from agent.async_utils import safe_schedule_threadsafe
+                    from hermes_agent.agent.async_utils import safe_schedule_threadsafe
                     future = safe_schedule_threadsafe(
                         runtime_adapter.send(chat_id, text_to_send, metadata=send_metadata),
                         loop,
@@ -982,7 +982,7 @@ def _run_job_script(script_path: str) -> tuple[bool, str]:
 
         # Redact secrets from both stdout and stderr before any return path.
         try:
-            from agent.redact import redact_sensitive_text
+            from hermes_agent.agent.redact import redact_sensitive_text
             stdout = redact_sensitive_text(stdout)
             stderr = redact_sensitive_text(stderr)
         except Exception:
@@ -1083,7 +1083,7 @@ def _build_job_prompt(job: dict, prerun_script: Optional[tuple] = None) -> str:
     # Inject output from referenced cron jobs as context.
     context_from = job.get("context_from")
     if context_from:
-        from cron.jobs import OUTPUT_DIR
+        from hermes_agent.cron.jobs import OUTPUT_DIR
         if isinstance(context_from, str):
             context_from = [context_from]
         for source_job_id in context_from:
@@ -1158,9 +1158,9 @@ def _build_job_prompt(job: dict, prerun_script: Optional[tuple] = None) -> str:
             user_prompt=user_prompt,
         )
 
-    from tools.skills_tool import skill_view
-    from tools.skill_usage import bump_use
-    from agent.skill_bundles import build_bundle_invocation_message, resolve_bundle_command_key
+    from hermes_agent.tools.skills_tool import skill_view
+    from hermes_agent.tools.skill_usage import bump_use
+    from hermes_agent.agent.skill_bundles import build_bundle_invocation_message, resolve_bundle_command_key
 
     parts = []
     skipped: list[str] = []
@@ -1276,7 +1276,7 @@ def _scan_assembled_cron_prompt(
     create/update-time guarantee at runtime (defense-in-depth for legacy
     jobs that predate the create-time scanner).
     """
-    from tools.cronjob_tools import _scan_cron_prompt, _scan_cron_skill_assembled
+    from hermes_agent.tools.cronjob_tools import _scan_cron_prompt, _scan_cron_skill_assembled
 
     if has_skills or has_injected_data:
         # Runtime-loaded content (vetted skill markdown and/or data from
@@ -1422,13 +1422,13 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
     # at module top keeps no_agent ticks from paying for AIAgent / SessionDB
     # construction costs.
     # ---------------------------------------------------------------
-    from run_agent import AIAgent
+    from hermes_agent.run_agent import AIAgent
 
     # Initialize SQLite session store so cron job messages are persisted
     # and discoverable via session_search (same pattern as gateway/run.py).
     _session_db = None
     try:
-        from hermes_state import SessionDB
+        from hermes_agent.hermes_state import SessionDB
         _session_db = SessionDB()
     except Exception as e:
         logger.debug("Job '%s': SQLite session store not available: %s", job.get("id", "?"), e)
@@ -1498,7 +1498,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
 
     # Use ContextVars for per-job session/delivery state so parallel jobs
     # don't clobber each other's targets (os.environ is process-global).
-    from gateway.session_context import set_session_vars, clear_session_vars, _VAR_MAP
+    from hermes_agent.gateway.session_context import set_session_vars, clear_session_vars, _VAR_MAP
 
     # Cron execution is an internal scheduler context, not a live inbound
     # gateway message. Do not seed HERMES_SESSION_* contextvars from the
@@ -1599,7 +1599,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
 
         # Apply IPv4 preference if configured.
         try:
-            from hermes_constants import apply_ipv4_preference
+            from hermes_agent.hermes_constants import apply_ipv4_preference
             _net_cfg = _cfg.get("network", {})
             if isinstance(_net_cfg, dict) and _net_cfg.get("force_ipv4"):
                 apply_ipv4_preference(force=True)
@@ -1607,7 +1607,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
             pass
 
         # Reasoning config from config.yaml
-        from hermes_constants import parse_reasoning_effort
+        from hermes_agent.hermes_constants import parse_reasoning_effort
         effort = str(_cfg.get("agent", {}).get("reasoning_effort", "")).strip()
         reasoning_config = parse_reasoning_effort(effort)
 
@@ -1641,11 +1641,11 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
         # Provider routing
         pr = _cfg.get("provider_routing", {})
 
-        from hermes_cli.runtime_provider import (
+        from hermes_agent.hermes_cli.runtime_provider import (
             resolve_runtime_provider,
             format_runtime_provider_error,
         )
-        from hermes_cli.auth import AuthError
+        from hermes_agent.hermes_cli.auth import AuthError
         try:
             # Do not inject HERMES_INFERENCE_PROVIDER here. resolve_runtime_provider()
             # already prefers persisted config over stale shell/env overrides when
@@ -1689,7 +1689,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
         runtime_provider = str(runtime.get("provider") or "").strip().lower()
         if runtime_provider:
             try:
-                from agent.credential_pool import load_pool
+                from hermes_agent.agent.credential_pool import load_pool
                 pool = load_pool(runtime_provider)
                 if pool.has_credentials():
                     credential_pool = pool
@@ -1710,7 +1710,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
         # register_mcp_servers(). Non-fatal on failure: a broken MCP server
         # shouldn't kill an otherwise-working cron job. See #4219.
         try:
-            from tools.mcp_tool import discover_mcp_tools
+            from hermes_agent.tools.mcp_tool import discover_mcp_tools
             _mcp_tools = discover_mcp_tools()
             if _mcp_tools:
                 logger.info(
@@ -1847,7 +1847,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
         # Guard against non-dict returns from run_conversation under error conditions
         if not isinstance(result, dict):
             raise RuntimeError(
-                f"agent.run_conversation returned {type(result).__name__} instead of dict: {result!r}"
+                f"hermes_agent.agent.run_conversation returned {type(result).__name__} instead of dict: {result!r}"
             )
 
         # If the agent itself reported failure (e.g. all retries exhausted on
@@ -1961,7 +1961,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
         # httpx clients cached under that loop are now unusable — reap them
         # so their transports don't accumulate in the process-global cache.
         try:
-            from agent.auxiliary_client import cleanup_stale_async_clients
+            from hermes_agent.agent.auxiliary_client import cleanup_stale_async_clients
             cleanup_stale_async_clients()
         except Exception as e:
             logger.debug("Job '%s': failed to reap stale auxiliary clients: %s", job_id, e)
@@ -2160,7 +2160,7 @@ def tick(verbose: bool = True, adapters=None, loop=None, sync: bool = True) -> i
         # reaped.
         def _sweep_mcp_orphans() -> None:
             try:
-                from tools.mcp_tool import _kill_orphaned_mcp_children
+                from hermes_agent.tools.mcp_tool import _kill_orphaned_mcp_children
                 _kill_orphaned_mcp_children()
             except Exception as _e:
                 logger.debug("Post-tick MCP orphan cleanup failed: %s", _e)

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from gateway.config import PlatformConfig
+from hermes_agent.gateway.config import PlatformConfig
 
 
 class _FakeAllowedMentions:
@@ -67,8 +67,8 @@ def _ensure_discord_mock():
 
 _ensure_discord_mock()
 
-import plugins.platforms.discord.adapter as discord_platform  # noqa: E402
-from plugins.platforms.discord.adapter import DiscordAdapter  # noqa: E402
+import hermes_agent.plugins.platforms.discord.adapter as discord_platform  # noqa: E402
+from hermes_agent.plugins.platforms.discord.adapter import DiscordAdapter  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -152,8 +152,8 @@ async def test_connect_only_requests_members_intent_when_needed(monkeypatch, all
     adapter = DiscordAdapter(PlatformConfig(enabled=True, token="test-token"))
 
     monkeypatch.setenv("DISCORD_ALLOWED_USERS", allowed_users)
-    monkeypatch.setattr("gateway.status.acquire_scoped_lock", lambda scope, identity, metadata=None: (True, None))
-    monkeypatch.setattr("gateway.status.release_scoped_lock", lambda scope, identity: None)
+    monkeypatch.setattr("hermes_agent.gateway.status.acquire_scoped_lock", lambda scope, identity, metadata=None: (True, None))
+    monkeypatch.setattr("hermes_agent.gateway.status.release_scoped_lock", lambda scope, identity: None)
 
     intents = SimpleNamespace(message_content=False, dm_messages=False, guild_messages=False, members=False, voice_states=False)
     monkeypatch.setattr(discord_platform.Intents, "default", lambda: intents)
@@ -192,8 +192,8 @@ async def test_reconnect_closes_previous_client_to_prevent_zombie_websocket(monk
     """
     adapter = DiscordAdapter(PlatformConfig(enabled=True, token="test-token"))
 
-    monkeypatch.setattr("gateway.status.acquire_scoped_lock", lambda scope, identity, metadata=None: (True, None))
-    monkeypatch.setattr("gateway.status.release_scoped_lock", lambda scope, identity: None)
+    monkeypatch.setattr("hermes_agent.gateway.status.acquire_scoped_lock", lambda scope, identity, metadata=None: (True, None))
+    monkeypatch.setattr("hermes_agent.gateway.status.release_scoped_lock", lambda scope, identity: None)
 
     intents = SimpleNamespace(
         message_content=False, dm_messages=False, guild_messages=False,
@@ -249,9 +249,9 @@ async def test_reconnect_closes_previous_client_to_prevent_zombie_websocket(monk
 async def test_connect_releases_token_lock_on_timeout(monkeypatch):
     adapter = DiscordAdapter(PlatformConfig(enabled=True, token="test-token"))
 
-    monkeypatch.setattr("gateway.status.acquire_scoped_lock", lambda scope, identity, metadata=None: (True, None))
+    monkeypatch.setattr("hermes_agent.gateway.status.acquire_scoped_lock", lambda scope, identity, metadata=None: (True, None))
     released = []
-    monkeypatch.setattr("gateway.status.release_scoped_lock", lambda scope, identity: released.append((scope, identity)))
+    monkeypatch.setattr("hermes_agent.gateway.status.release_scoped_lock", lambda scope, identity: released.append((scope, identity)))
 
     intents = SimpleNamespace(message_content=False, dm_messages=False, guild_messages=False, members=False, voice_states=False)
     monkeypatch.setattr(discord_platform.Intents, "default", lambda: intents)
@@ -291,8 +291,8 @@ async def test_connect_timeout_cancels_bot_task(monkeypatch):
     """
     adapter = DiscordAdapter(PlatformConfig(enabled=True, token="test-token"))
 
-    monkeypatch.setattr("gateway.status.acquire_scoped_lock", lambda scope, identity, metadata=None: (True, None))
-    monkeypatch.setattr("gateway.status.release_scoped_lock", lambda scope, identity: None)
+    monkeypatch.setattr("hermes_agent.gateway.status.acquire_scoped_lock", lambda scope, identity, metadata=None: (True, None))
+    monkeypatch.setattr("hermes_agent.gateway.status.release_scoped_lock", lambda scope, identity: None)
 
     intents = SimpleNamespace(
         message_content=False, dm_messages=False, guild_messages=False,
@@ -340,8 +340,8 @@ async def test_disconnect_cancels_running_bot_task(monkeypatch):
     """
     adapter = DiscordAdapter(PlatformConfig(enabled=True, token="test-token"))
 
-    monkeypatch.setattr("gateway.status.acquire_scoped_lock", lambda scope, identity, metadata=None: (True, None))
-    monkeypatch.setattr("gateway.status.release_scoped_lock", lambda scope, identity: None)
+    monkeypatch.setattr("hermes_agent.gateway.status.acquire_scoped_lock", lambda scope, identity, metadata=None: (True, None))
+    monkeypatch.setattr("hermes_agent.gateway.status.release_scoped_lock", lambda scope, identity: None)
 
     # Simulate a zombie bot_task that never finishes (as if discord.py is mid-handshake)
     async def _forever():
@@ -368,8 +368,8 @@ async def test_connect_does_not_wait_for_slash_sync(monkeypatch):
     adapter = DiscordAdapter(PlatformConfig(enabled=True, token="test-token"))
 
     monkeypatch.setenv("DISCORD_COMMAND_SYNC_POLICY", "bulk")
-    monkeypatch.setattr("gateway.status.acquire_scoped_lock", lambda scope, identity, metadata=None: (True, None))
-    monkeypatch.setattr("gateway.status.release_scoped_lock", lambda scope, identity: None)
+    monkeypatch.setattr("hermes_agent.gateway.status.acquire_scoped_lock", lambda scope, identity, metadata=None: (True, None))
+    monkeypatch.setattr("hermes_agent.gateway.status.release_scoped_lock", lambda scope, identity: None)
 
     intents = SimpleNamespace(message_content=False, dm_messages=False, guild_messages=False, members=False, voice_states=False)
     monkeypatch.setattr(discord_platform.Intents, "default", lambda: intents)
@@ -404,8 +404,8 @@ async def test_connect_respects_slash_commands_opt_out(monkeypatch):
     )
 
     monkeypatch.setenv("DISCORD_COMMAND_SYNC_POLICY", "off")
-    monkeypatch.setattr("gateway.status.acquire_scoped_lock", lambda scope, identity, metadata=None: (True, None))
-    monkeypatch.setattr("gateway.status.release_scoped_lock", lambda scope, identity: None)
+    monkeypatch.setattr("hermes_agent.gateway.status.acquire_scoped_lock", lambda scope, identity, metadata=None: (True, None))
+    monkeypatch.setattr("hermes_agent.gateway.status.release_scoped_lock", lambda scope, identity: None)
 
     intents = SimpleNamespace(message_content=False, dm_messages=False, guild_messages=False, members=False, voice_states=False)
     monkeypatch.setattr(discord_platform.Intents, "default", lambda: intents)
@@ -633,7 +633,7 @@ async def test_post_connect_initialization_skips_sync_when_policy_off(monkeypatc
 @pytest.mark.asyncio
 async def test_post_connect_initialization_skips_same_fingerprint_after_success(tmp_path, monkeypatch):
     adapter = DiscordAdapter(PlatformConfig(enabled=True, token="test-token"))
-    monkeypatch.setattr("hermes_constants.get_hermes_home", lambda: tmp_path)
+    monkeypatch.setattr("hermes_agent.hermes_constants.get_hermes_home", lambda: tmp_path)
 
     class _DesiredCommand:
         def to_dict(self, tree):
@@ -670,7 +670,7 @@ async def test_post_connect_initialization_skips_same_fingerprint_after_success(
 @pytest.mark.asyncio
 async def test_post_connect_initialization_respects_discord_retry_after(tmp_path, monkeypatch):
     adapter = DiscordAdapter(PlatformConfig(enabled=True, token="test-token"))
-    monkeypatch.setattr("hermes_constants.get_hermes_home", lambda: tmp_path)
+    monkeypatch.setattr("hermes_agent.hermes_constants.get_hermes_home", lambda: tmp_path)
 
     class _DesiredCommand:
         def to_dict(self, tree):
@@ -711,7 +711,7 @@ async def test_post_connect_initialization_respects_discord_retry_after(tmp_path
 async def test_post_connect_initialization_reraises_non_rate_limit_exceptions(tmp_path, monkeypatch):
     """Arbitrary failures during sync must surface, not be swallowed as rate-limits."""
     adapter = DiscordAdapter(PlatformConfig(enabled=True, token="test-token"))
-    monkeypatch.setattr("hermes_constants.get_hermes_home", lambda: tmp_path)
+    monkeypatch.setattr("hermes_agent.hermes_constants.get_hermes_home", lambda: tmp_path)
 
     class _DesiredCommand:
         def to_dict(self, tree):

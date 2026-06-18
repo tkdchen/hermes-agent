@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from agent import video_gen_registry
+from hermes_agent.agent import video_gen_registry
 
 
 @pytest.fixture(autouse=True)
@@ -15,7 +15,7 @@ def _reset_registry():
 
 
 def test_fal_provider_registers():
-    from plugins.video_gen.fal import FALVideoGenProvider, DEFAULT_MODEL
+    from hermes_agent.plugins.video_gen.fal import FALVideoGenProvider, DEFAULT_MODEL
 
     provider = FALVideoGenProvider()
     video_gen_registry.register_provider(provider)
@@ -30,7 +30,7 @@ def test_fal_provider_registers():
 def test_fal_family_catalog():
     """Each family declares both endpoints. The catalog covers the
     cheap + premium tiers Teknium listed."""
-    from plugins.video_gen.fal import FAL_FAMILIES
+    from hermes_agent.plugins.video_gen.fal import FAL_FAMILIES
 
     expected = {
         # cheap
@@ -53,7 +53,7 @@ def test_fal_family_catalog():
 def test_kling_4k_uses_start_image_url():
     """Kling v3 4K's image-to-video endpoint expects start_image_url,
     not image_url. The family must declare image_param_key='start_image_url'."""
-    from plugins.video_gen.fal import FAL_FAMILIES, _build_payload
+    from hermes_agent.plugins.video_gen.fal import FAL_FAMILIES, _build_payload
 
     meta = FAL_FAMILIES["kling-v3-4k"]
     assert meta.get("image_param_key") == "start_image_url"
@@ -73,7 +73,7 @@ def test_kling_4k_uses_start_image_url():
 
 
 def test_fal_list_models_advertises_both_modalities():
-    from plugins.video_gen.fal import FALVideoGenProvider
+    from hermes_agent.plugins.video_gen.fal import FALVideoGenProvider
 
     models = FALVideoGenProvider().list_models()
     for m in models:
@@ -84,8 +84,8 @@ def test_fal_list_models_advertises_both_modalities():
 
 
 def test_fal_unavailable_without_key(monkeypatch):
-    from plugins.video_gen.fal import FALVideoGenProvider
-    from plugins.video_gen import fal as fal_plugin
+    from hermes_agent.plugins.video_gen.fal import FALVideoGenProvider
+    from hermes_agent.plugins.video_gen import fal as fal_plugin
 
     monkeypatch.delenv("FAL_KEY", raising=False)
     # Also ensure managed gateway is unavailable
@@ -94,8 +94,8 @@ def test_fal_unavailable_without_key(monkeypatch):
 
 
 def test_fal_generate_requires_fal_key(monkeypatch):
-    from plugins.video_gen.fal import FALVideoGenProvider
-    from plugins.video_gen import fal as fal_plugin
+    from hermes_agent.plugins.video_gen.fal import FALVideoGenProvider
+    from hermes_agent.plugins.video_gen import fal as fal_plugin
 
     monkeypatch.delenv("FAL_KEY", raising=False)
     # Also ensure managed gateway is unavailable
@@ -106,8 +106,8 @@ def test_fal_generate_requires_fal_key(monkeypatch):
 
 
 def test_fal_available_via_gateway(monkeypatch):
-    from plugins.video_gen.fal import FALVideoGenProvider
-    from plugins.video_gen import fal as fal_plugin
+    from hermes_agent.plugins.video_gen.fal import FALVideoGenProvider
+    from hermes_agent.plugins.video_gen import fal as fal_plugin
 
     monkeypatch.delenv("FAL_KEY", raising=False)
     monkeypatch.setattr(
@@ -142,7 +142,7 @@ class TestFamilyRouting:
         monkeypatch.setitem(sys.modules, "fal_client", fake)
 
         # Reset the lazy global so it picks up our stub
-        from plugins.video_gen import fal as fal_plugin
+        from hermes_agent.plugins.video_gen import fal as fal_plugin
         fal_plugin._fal_client = None
         # Also reset the managed client cache
         fal_plugin._managed_fal_video_client = None
@@ -154,7 +154,7 @@ class TestFamilyRouting:
         return captured
 
     def test_text_to_video_routes_to_text_endpoint(self, with_fake_fal):
-        from plugins.video_gen.fal import FALVideoGenProvider
+        from hermes_agent.plugins.video_gen.fal import FALVideoGenProvider
 
         result = FALVideoGenProvider().generate(
             "a dog running",
@@ -167,7 +167,7 @@ class TestFamilyRouting:
         assert "image_url" not in with_fake_fal["arguments"]
 
     def test_image_to_video_routes_to_image_endpoint(self, with_fake_fal):
-        from plugins.video_gen.fal import FALVideoGenProvider
+        from hermes_agent.plugins.video_gen.fal import FALVideoGenProvider
 
         result = FALVideoGenProvider().generate(
             "animate this dog",
@@ -181,7 +181,7 @@ class TestFamilyRouting:
 
     def test_default_family_text_routing(self, with_fake_fal):
         """No model arg → DEFAULT_MODEL → text-to-video endpoint."""
-        from plugins.video_gen.fal import FALVideoGenProvider, FAL_FAMILIES, DEFAULT_MODEL
+        from hermes_agent.plugins.video_gen.fal import FALVideoGenProvider, FAL_FAMILIES, DEFAULT_MODEL
 
         result = FALVideoGenProvider().generate("a dog")
         assert result["success"] is True
@@ -189,7 +189,7 @@ class TestFamilyRouting:
         assert with_fake_fal["endpoint"] == expected_endpoint
 
     def test_default_family_image_routing(self, with_fake_fal):
-        from plugins.video_gen.fal import FALVideoGenProvider, FAL_FAMILIES, DEFAULT_MODEL
+        from hermes_agent.plugins.video_gen.fal import FALVideoGenProvider, FAL_FAMILIES, DEFAULT_MODEL
 
         result = FALVideoGenProvider().generate(
             "animate this",
@@ -200,7 +200,7 @@ class TestFamilyRouting:
         assert with_fake_fal["endpoint"] == expected_endpoint
 
     def test_unknown_family_falls_back_to_default(self, with_fake_fal):
-        from plugins.video_gen.fal import FALVideoGenProvider, FAL_FAMILIES, DEFAULT_MODEL
+        from hermes_agent.plugins.video_gen.fal import FALVideoGenProvider, FAL_FAMILIES, DEFAULT_MODEL
 
         result = FALVideoGenProvider().generate(
             "x",
@@ -212,7 +212,7 @@ class TestFamilyRouting:
 
     def test_premium_seedance_routing(self, with_fake_fal):
         """Sanity check the premium-tier seedance routes correctly."""
-        from plugins.video_gen.fal import FALVideoGenProvider
+        from hermes_agent.plugins.video_gen.fal import FALVideoGenProvider
 
         result = FALVideoGenProvider().generate(
             "a dog",
@@ -226,7 +226,7 @@ class TestFamilyRouting:
 
     def test_kling_4k_remaps_image_param(self, with_fake_fal):
         """Kling v3 4K image-to-video receives start_image_url, not image_url."""
-        from plugins.video_gen.fal import FALVideoGenProvider
+        from hermes_agent.plugins.video_gen.fal import FALVideoGenProvider
 
         result = FALVideoGenProvider().generate(
             "x",
@@ -242,7 +242,7 @@ class TestFamilyRouting:
 class TestPayloadBuilder:
     def test_drops_unsupported_keys(self):
         """Veo enum-clamps duration, supports aspect+resolution+audio+neg."""
-        from plugins.video_gen.fal import FAL_FAMILIES, _build_payload
+        from hermes_agent.plugins.video_gen.fal import FAL_FAMILIES, _build_payload
 
         meta = FAL_FAMILIES["veo3.1"]
         p = _build_payload(
@@ -265,7 +265,7 @@ class TestPayloadBuilder:
         assert p["seed"] == 42
 
     def test_pixverse_range_clamps_correctly(self):
-        from plugins.video_gen.fal import FAL_FAMILIES, _build_payload
+        from hermes_agent.plugins.video_gen.fal import FAL_FAMILIES, _build_payload
 
         meta = FAL_FAMILIES["pixverse-v6"]
         p = _build_payload(
@@ -282,7 +282,7 @@ class TestPayloadBuilder:
         assert p["duration"] == "15"
 
     def test_kling_4k_clamps_below_min(self):
-        from plugins.video_gen.fal import FAL_FAMILIES, _build_payload
+        from hermes_agent.plugins.video_gen.fal import FAL_FAMILIES, _build_payload
 
         meta = FAL_FAMILIES["kling-v3-4k"]
         p = _build_payload(
@@ -301,7 +301,7 @@ class TestPayloadBuilder:
     def test_ltx_omits_duration_aspect_resolution(self):
         """LTX 2.3 doesn't declare duration/aspect/resolution enums —
         the payload should NOT include those keys (let FAL default)."""
-        from plugins.video_gen.fal import FAL_FAMILIES, _build_payload
+        from hermes_agent.plugins.video_gen.fal import FAL_FAMILIES, _build_payload
 
         meta = FAL_FAMILIES["ltx-2.3"]
         p = _build_payload(
@@ -324,7 +324,7 @@ class TestPayloadBuilder:
 
     def test_happy_horse_minimal_payload(self):
         """Happy Horse has sparse docs — payload should be minimal."""
-        from plugins.video_gen.fal import FAL_FAMILIES, _build_payload
+        from hermes_agent.plugins.video_gen.fal import FAL_FAMILIES, _build_payload
 
         meta = FAL_FAMILIES["happy-horse"]
         p = _build_payload(

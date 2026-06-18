@@ -22,8 +22,8 @@ if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
 import pytest
-from gateway.config import PlatformConfig
-from gateway.platforms.yuanbao import (
+from hermes_agent.gateway.config import PlatformConfig
+from hermes_agent.gateway.platforms.yuanbao import (
     YuanbaoAdapter,
     ConnectionManager,
     WS_CLOSE_TIMEOUT_S,

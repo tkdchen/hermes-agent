@@ -13,9 +13,9 @@ from typing import Any, Dict, List
 
 import pytest
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import MessageEvent, MessageType
-from plugins.platforms.photon.adapter import PhotonAdapter
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import MessageEvent, MessageType
+from hermes_agent.plugins.platforms.photon.adapter import PhotonAdapter
 
 
 def _make_adapter(monkeypatch: pytest.MonkeyPatch) -> PhotonAdapter:
@@ -295,7 +295,7 @@ def test_is_duplicate_window(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_is_duplicate_hard_size_bound(monkeypatch: pytest.MonkeyPatch) -> None:
     # A burst of unique ids within the window must not grow the dedup map past
     # its bound — evict oldest (LRU), not only expired entries.
-    import plugins.platforms.photon.adapter as ad
+    import hermes_agent.plugins.platforms.photon.adapter as ad
 
     monkeypatch.setattr(ad, "_DEDUP_MAX_SIZE", 5)
     adapter = _make_adapter(monkeypatch)
@@ -308,7 +308,7 @@ def test_is_duplicate_hard_size_bound(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_check_requirements_without_node(monkeypatch: pytest.MonkeyPatch) -> None:
     # If no node binary on PATH the adapter should refuse to start.
-    from plugins.platforms.photon import adapter as adapter_mod
+    from hermes_agent.plugins.platforms.photon import adapter as adapter_mod
 
     monkeypatch.setattr(adapter_mod.shutil, "which", lambda _name: None)
     assert adapter_mod.check_requirements() is False

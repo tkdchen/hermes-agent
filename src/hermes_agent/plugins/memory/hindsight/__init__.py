@@ -41,10 +41,10 @@ import threading
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from agent.memory_provider import MemoryProvider
-from hermes_constants import get_hermes_home
-from tools.registry import tool_error
-from hermes_cli.config import cfg_get
+from hermes_agent.agent.memory_provider import MemoryProvider
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.tools.registry import tool_error
+from hermes_agent.hermes_cli.config import cfg_get
 
 logger = logging.getLogger(__name__)
 
@@ -222,7 +222,7 @@ def _get_loop() -> asyncio.AbstractEventLoop:
 
 def _run_sync(coro, timeout: float = _DEFAULT_TIMEOUT):
     """Schedule *coro* on the shared loop and block until done."""
-    from agent.async_utils import safe_schedule_threadsafe
+    from hermes_agent.agent.async_utils import safe_schedule_threadsafe
     loop = _get_loop()
     future = safe_schedule_threadsafe(coro, loop)
     if future is None:
@@ -689,7 +689,7 @@ class HindsightMemoryProvider(MemoryProvider):
             except Exception:
                 pass
         existing.update(values)
-        from utils import atomic_json_write
+        from hermes_agent.utils import atomic_json_write
         atomic_json_write(config_path, existing, mode=0o600)
 
     def post_setup(self, hermes_home: str, config: dict) -> None:
@@ -699,10 +699,10 @@ class HindsightMemoryProvider(MemoryProvider):
         import sys
         from pathlib import Path
 
-        from hermes_cli.config import save_config
-        from hermes_cli.secret_prompt import masked_secret_prompt
+        from hermes_agent.hermes_cli.config import save_config
+        from hermes_agent.hermes_cli.secret_prompt import masked_secret_prompt
 
-        from hermes_cli.memory_setup import _curses_select
+        from hermes_agent.hermes_cli.memory_setup import _curses_select
 
         print("\n  Configuring Hindsight memory:\n")
 
@@ -947,7 +947,7 @@ class HindsightMemoryProvider(MemoryProvider):
                         + (f": {reason}" if reason else "")
                     )
                 try:
-                    from tools.lazy_deps import ensure as _lazy_ensure
+                    from hermes_agent.tools.lazy_deps import ensure as _lazy_ensure
                     _lazy_ensure("memory.hindsight", prompt=False)
                 except ImportError:
                     pass

@@ -140,6 +140,6 @@ def test_production_code_contains_hydration_block():
         "(conversation_loop.py / turn_context.py)"
     )
     assert (
-        "agent._turns_since_memory = prior_user_turns % agent._memory_nudge_interval"
+        "hermes_agent.agent._turns_since_memory = prior_user_turns % agent._memory_nudge_interval"
         in turn_src
     ), "Hydration modulo assignment missing from the turn subsystem"

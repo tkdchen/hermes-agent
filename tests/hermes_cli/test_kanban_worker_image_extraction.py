@@ -19,8 +19,8 @@ from pathlib import Path
 
 import pytest
 
-from hermes_cli import kanban_db as kb
-from agent.image_routing import (
+from hermes_agent.hermes_cli import kanban_db as kb
+from hermes_agent.agent.image_routing import (
     build_native_content_parts,
     extract_image_refs,
 )

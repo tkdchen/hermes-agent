@@ -10,9 +10,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from gateway.config import GatewayConfig, Platform, PlatformConfig
-from gateway.platforms.base import MessageEvent
-from gateway.session import (
+from hermes_agent.gateway.config import GatewayConfig, Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import MessageEvent
+from hermes_agent.gateway.session import (
     SessionContext,
     SessionEntry,
     SessionSource,
@@ -32,7 +32,7 @@ SENDER = "@alice:example.org"
 
 
 def _make_adapter():
-    from gateway.platforms.matrix import MatrixAdapter
+    from hermes_agent.gateway.platforms.matrix import MatrixAdapter
 
     adapter = MatrixAdapter(
         PlatformConfig(
@@ -191,8 +191,8 @@ async def test_matrix_session_scope_auto_and_thread_preserve_synthetic_threads()
 
 @pytest.mark.asyncio
 async def test_matrix_project_context_survives_concurrent_messages():
-    from gateway.run import GatewayRunner
-    from gateway.session_context import get_session_env
+    from hermes_agent.gateway.run import GatewayRunner
+    from hermes_agent.gateway.session_context import get_session_env
 
     async def observe(room_id: str):
         adapter = _make_adapter()
@@ -319,7 +319,7 @@ def _entry(source: SessionSource, session_id: str, title: str | None = None) -> 
 
 
 def _make_runner(current_source: SessionSource, entries: list[SessionEntry]):
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = object.__new__(GatewayRunner)
     runner.config = GatewayConfig(platforms={Platform.MATRIX: PlatformConfig(enabled=True)})

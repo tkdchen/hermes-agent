@@ -16,8 +16,8 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any, Callable
 from enum import Enum
 
-from hermes_cli.config import get_hermes_home
-from utils import is_truthy_value
+from hermes_agent.hermes_cli.config import get_hermes_home
+from hermes_agent.utils import is_truthy_value
 
 logger = logging.getLogger(__name__)
 
@@ -196,7 +196,7 @@ class Platform(Enum):
         # Runtime-registered plugins (e.g. user-installed, discovered after
         # the enum was defined).
         try:
-            from gateway.platform_registry import platform_registry
+            from hermes_agent.gateway.platform_registry import platform_registry
             if platform_registry.is_registered(value):
                 pseudo = object.__new__(cls)
                 pseudo._value_ = value
@@ -581,7 +581,7 @@ class GatewayConfig:
 
         # Plugin-registered platforms
         try:
-            from gateway.platform_registry import platform_registry
+            from hermes_agent.gateway.platform_registry import platform_registry
             entry = platform_registry.get(platform.value)
             if entry:
                 if entry.is_connected is not None:
@@ -693,7 +693,7 @@ class GatewayConfig:
             max_concurrent_key = "max_concurrent_sessions"
         else:
             max_concurrent_raw = nested_gateway.get("max_concurrent_sessions")
-            max_concurrent_key = "gateway.max_concurrent_sessions"
+            max_concurrent_key = "hermes_agent.gateway.max_concurrent_sessions"
         max_concurrent_sessions = _coerce_optional_positive_int(
             max_concurrent_raw,
             max_concurrent_key,
@@ -768,7 +768,7 @@ def load_gateway_config() -> GatewayConfig:
 
     # Legacy fallback: gateway.json provides the base layer.
     # config.yaml keys always win when both specify the same setting.
-    gateway_json_path = _home / "gateway.json"
+    gateway_json_path = _home / "hermes_agent.gateway.json"
     if gateway_json_path.exists():
         try:
             with open(gateway_json_path, "r", encoding="utf-8") as f:
@@ -883,9 +883,9 @@ def load_gateway_config() -> GatewayConfig:
             # Iterate built-in platforms plus any registered plugin platforms
             # so plugin authors get the same shared-key bridging (#24836).
             try:
-                from hermes_cli.plugins import discover_plugins
+                from hermes_agent.hermes_cli.plugins import discover_plugins
                 discover_plugins()  # idempotent
-                from gateway.platform_registry import platform_registry as _pr
+                from hermes_agent.gateway.platform_registry import platform_registry as _pr
             except Exception as e:
                 logger.debug("plugin discovery skipped: %s", e)
                 _pr = None
@@ -1323,7 +1323,7 @@ def _validate_gateway_config(config: "GatewayConfig") -> None:
     # without changing placeholder values get a clear startup error instead
     # of a confusing "auth failed" from the platform API.
     try:
-        from hermes_cli.auth import has_usable_secret
+        from hermes_agent.hermes_cli.auth import has_usable_secret
     except ImportError:
         has_usable_secret = None  # type: ignore[assignment]
 
@@ -2027,9 +2027,9 @@ def _apply_env_overrides(config: GatewayConfig) -> None:
     # for the same bug class in commit 7849a3d73; this is the runtime
     # counterpart.
     try:
-        from hermes_cli.plugins import discover_plugins
+        from hermes_agent.hermes_cli.plugins import discover_plugins
         discover_plugins()  # idempotent
-        from gateway.platform_registry import platform_registry
+        from hermes_agent.gateway.platform_registry import platform_registry
         for entry in platform_registry.plugin_entries():
             try:
                 if not entry.check_fn():

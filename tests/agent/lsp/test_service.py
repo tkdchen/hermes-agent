@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from agent.lsp.manager import LSPService
-from agent.lsp.servers import (
+from hermes_agent.agent.lsp.manager import LSPService
+from hermes_agent.agent.lsp.servers import (
     SERVERS,
     ServerContext,
     ServerDef,

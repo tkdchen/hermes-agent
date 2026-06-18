@@ -243,7 +243,7 @@ def _allow_lazy_installs() -> bool:
     if os.environ.get("HERMES_DISABLE_LAZY_INSTALLS") == "1":
         return False
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         cfg = load_config()
     except Exception:
         return True

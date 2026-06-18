@@ -15,9 +15,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from gateway.config import PlatformConfig
-from gateway.platforms.base import SendResult
-from gateway.platforms.telegram import TelegramAdapter
+from hermes_agent.gateway.config import PlatformConfig
+from hermes_agent.gateway.platforms.base import SendResult
+from hermes_agent.gateway.platforms.telegram import TelegramAdapter
 from telegram.error import BadRequest, NetworkError, TimedOut
 
 
@@ -795,8 +795,8 @@ def _reply_message(reply_to_id, *, reply_text=None, reply_caption=None, quote_te
 async def test_rich_reply_records_and_recovers_text(monkeypatch, tmp_path):
     """A reply to a rich-sent message resolves the original text via the index."""
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    from gateway.platforms.base import MessageType
-    from gateway import rich_sent_store
+    from hermes_agent.gateway.platforms.base import MessageType
+    from hermes_agent.gateway import rich_sent_store
 
     adapter = _make_adapter()
 
@@ -825,7 +825,7 @@ async def test_rich_reply_records_and_recovers_text(monkeypatch, tmp_path):
 async def test_rich_reply_lookup_miss_leaves_text_none(monkeypatch, tmp_path):
     """No recorded entry -> reply_to_text stays None, no crash."""
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    from gateway.platforms.base import MessageType
+    from hermes_agent.gateway.platforms.base import MessageType
 
     adapter = _make_adapter()
     event = adapter._build_message_event(
@@ -839,8 +839,8 @@ async def test_rich_reply_lookup_miss_leaves_text_none(monkeypatch, tmp_path):
 async def test_rich_reply_native_quote_wins_over_lookup(monkeypatch, tmp_path):
     """A native partial quote takes precedence over the send-time index."""
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    from gateway.platforms.base import MessageType
-    from gateway import rich_sent_store
+    from hermes_agent.gateway.platforms.base import MessageType
+    from hermes_agent.gateway import rich_sent_store
 
     rich_sent_store.record("12345", "678", "full recorded body")
     adapter = _make_adapter()
@@ -854,8 +854,8 @@ async def test_rich_reply_native_quote_wins_over_lookup(monkeypatch, tmp_path):
 async def test_rich_reply_caption_wins_over_lookup(monkeypatch, tmp_path):
     """When Telegram DOES echo a caption, it wins over the index fallback."""
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    from gateway.platforms.base import MessageType
-    from gateway import rich_sent_store
+    from hermes_agent.gateway.platforms.base import MessageType
+    from hermes_agent.gateway import rich_sent_store
 
     rich_sent_store.record("12345", "678", "recorded body")
     adapter = _make_adapter()

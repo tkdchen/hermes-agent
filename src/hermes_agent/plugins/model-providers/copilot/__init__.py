@@ -12,8 +12,8 @@ Key quirks for the chat_completions subset:
 
 from typing import Any
 
-from providers import register_provider
-from providers.base import ProviderProfile
+from hermes_agent.providers import register_provider
+from hermes_agent.providers.base import ProviderProfile
 
 
 class CopilotProfile(ProviderProfile):
@@ -30,7 +30,7 @@ class CopilotProfile(ProviderProfile):
         extra_body: dict[str, Any] = {}
         if supports_reasoning and model:
             try:
-                from hermes_cli.models import github_model_reasoning_efforts
+                from hermes_agent.hermes_cli.models import github_model_reasoning_efforts
 
                 supported_efforts = github_model_reasoning_efforts(model)
                 if supported_efforts and reasoning_config:

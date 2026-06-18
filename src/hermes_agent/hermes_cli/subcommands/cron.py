@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Callable
 
-from hermes_cli.subcommands._shared import add_accept_hooks_flag
+from hermes_agent.hermes_cli.subcommands._shared import add_accept_hooks_flag
 
 
 def build_cron_parser(subparsers, *, cmd_cron: Callable) -> None:

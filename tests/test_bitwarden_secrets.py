@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from agent.secret_sources import bitwarden as bw  # noqa: E402
+from hermes_agent.agent.secret_sources import bitwarden as bw  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -45,7 +45,7 @@ def hermes_home(tmp_path, monkeypatch):
     home.mkdir()
     monkeypatch.setenv("HERMES_HOME", str(home))
     # Some modules cache get_hermes_home; clear if needed.
-    import hermes_constants
+    import hermes_agent.hermes_constants as hermes_constants
     if hasattr(hermes_constants, "_HERMES_HOME_CACHE"):
         hermes_constants._HERMES_HOME_CACHE = None  # type: ignore[attr-defined]
     return home
@@ -616,7 +616,7 @@ def test_env_loader_skips_when_disabled(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
-    from hermes_cli.env_loader import _apply_external_secret_sources
+    from hermes_agent.hermes_cli.env_loader import _apply_external_secret_sources
     # Should be a no-op (returns None).
     assert _apply_external_secret_sources(home) is None
 
@@ -650,11 +650,11 @@ def test_env_loader_calls_bsm_when_enabled(tmp_path, monkeypatch):
         )
 
     monkeypatch.setattr(
-        "agent.secret_sources.bitwarden.apply_bitwarden_secrets",
+        "hermes_agent.agent.secret_sources.bitwarden.apply_bitwarden_secrets",
         fake_apply,
     )
 
-    from hermes_cli.env_loader import _apply_external_secret_sources
+    from hermes_agent.hermes_cli.env_loader import _apply_external_secret_sources
     _apply_external_secret_sources(home)
 
     assert called["n"] == 1

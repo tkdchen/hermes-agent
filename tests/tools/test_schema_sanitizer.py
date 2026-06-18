@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import copy
 
-from tools.schema_sanitizer import (
+from hermes_agent.tools.schema_sanitizer import (
     sanitize_tool_schemas,
     strip_pattern_and_format,
     strip_slash_enum,
@@ -377,7 +377,7 @@ def test_strip_none_returns_zero():
 
 def test_strip_responses_format_strips_format_keyword():
     """Responses-format:  keyword should be stripped."""
-    from tools.schema_sanitizer import strip_pattern_and_format
+    from hermes_agent.tools.schema_sanitizer import strip_pattern_and_format
 
     tools = [
         {
@@ -458,7 +458,7 @@ def test_nested_allof_preserved():
 
 def test_strip_responses_format_tools():
     """strip_pattern_and_format should handle Responses-format tools (no function wrapper)."""
-    from tools.schema_sanitizer import strip_pattern_and_format
+    from hermes_agent.tools.schema_sanitizer import strip_pattern_and_format
 
     # Responses-format: {"name": "...", "parameters": {...}, "type": "function"}
     tools = [
@@ -492,7 +492,7 @@ def test_strip_responses_format_tools():
 
 def test_strip_responses_idempotent():
     """Second call on already-stripped Responses-format tools should return 0."""
-    from tools.schema_sanitizer import strip_pattern_and_format
+    from hermes_agent.tools.schema_sanitizer import strip_pattern_and_format
 
     tools = [
         {
@@ -518,7 +518,7 @@ def test_strip_responses_idempotent():
 
 def test_strip_responses_mixed_formats():
     """Mixed list of OpenAI-format and Responses-format tools should both be sanitized."""
-    from tools.schema_sanitizer import strip_pattern_and_format
+    from hermes_agent.tools.schema_sanitizer import strip_pattern_and_format
 
     tools = [
         # OpenAI-format: {"function": {"parameters": {...}}}

@@ -7,8 +7,8 @@ loop that crashes a model with "no content after all retries".
 
 import pytest
 
-from gateway.config import GatewayConfig, Platform
-from gateway.delivery import (
+from hermes_agent.gateway.config import GatewayConfig, Platform
+from hermes_agent.gateway.delivery import (
     DeliveryRouter,
     DeliveryTarget,
     _is_silence_narration,
@@ -85,7 +85,7 @@ class RecordingAdapter:
 
 @pytest.mark.asyncio
 async def test_silence_narration_dropped_pre_send(tmp_path, monkeypatch):
-    monkeypatch.setattr("gateway.delivery.get_hermes_home", lambda: tmp_path)
+    monkeypatch.setattr("hermes_agent.gateway.delivery.get_hermes_home", lambda: tmp_path)
     monkeypatch.delenv("HERMES_FILTER_SILENCE_NARRATION", raising=False)
     adapter = RecordingAdapter()
     router = DeliveryRouter(GatewayConfig(), adapters={Platform.DISCORD: adapter})
@@ -103,7 +103,7 @@ async def test_silence_narration_dropped_pre_send(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_real_message_is_delivered(tmp_path, monkeypatch):
-    monkeypatch.setattr("gateway.delivery.get_hermes_home", lambda: tmp_path)
+    monkeypatch.setattr("hermes_agent.gateway.delivery.get_hermes_home", lambda: tmp_path)
     monkeypatch.delenv("HERMES_FILTER_SILENCE_NARRATION", raising=False)
     adapter = RecordingAdapter()
     router = DeliveryRouter(GatewayConfig(), adapters={Platform.DISCORD: adapter})
@@ -120,7 +120,7 @@ async def test_real_message_is_delivered(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_config_opt_out_lets_silence_through(tmp_path, monkeypatch):
-    monkeypatch.setattr("gateway.delivery.get_hermes_home", lambda: tmp_path)
+    monkeypatch.setattr("hermes_agent.gateway.delivery.get_hermes_home", lambda: tmp_path)
     monkeypatch.delenv("HERMES_FILTER_SILENCE_NARRATION", raising=False)
     adapter = RecordingAdapter()
     config = GatewayConfig(filter_silence_narration=False)
@@ -136,7 +136,7 @@ async def test_config_opt_out_lets_silence_through(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_env_override_disables_filter(tmp_path, monkeypatch):
-    monkeypatch.setattr("gateway.delivery.get_hermes_home", lambda: tmp_path)
+    monkeypatch.setattr("hermes_agent.gateway.delivery.get_hermes_home", lambda: tmp_path)
     monkeypatch.setenv("HERMES_FILTER_SILENCE_NARRATION", "0")
     adapter = RecordingAdapter()
     # Config default is True, but env override wins.
@@ -151,7 +151,7 @@ async def test_env_override_disables_filter(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_env_override_enables_filter_over_config(tmp_path, monkeypatch):
-    monkeypatch.setattr("gateway.delivery.get_hermes_home", lambda: tmp_path)
+    monkeypatch.setattr("hermes_agent.gateway.delivery.get_hermes_home", lambda: tmp_path)
     monkeypatch.setenv("HERMES_FILTER_SILENCE_NARRATION", "1")
     adapter = RecordingAdapter()
     # Config says off, env override forces on.
@@ -167,7 +167,7 @@ async def test_env_override_enables_filter_over_config(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_local_delivery_not_filtered(tmp_path, monkeypatch):
-    monkeypatch.setattr("gateway.delivery.get_hermes_home", lambda: tmp_path)
+    monkeypatch.setattr("hermes_agent.gateway.delivery.get_hermes_home", lambda: tmp_path)
     monkeypatch.delenv("HERMES_FILTER_SILENCE_NARRATION", raising=False)
     router = DeliveryRouter(GatewayConfig(), adapters={})
 

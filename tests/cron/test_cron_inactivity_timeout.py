@@ -304,10 +304,10 @@ class TestSysPathOrdering:
     def test_hermes_time_importable(self):
         """hermes_time should be importable when cron.scheduler loads."""
         # This import would fail if sys.path.insert comes after the import
-        from cron.scheduler import _hermes_now
+        from hermes_agent.cron.scheduler import _hermes_now
         assert callable(_hermes_now)
 
     def test_hermes_constants_importable(self):
         """hermes_constants should be importable from cron context."""
-        from hermes_constants import get_hermes_home
+        from hermes_agent.hermes_constants import get_hermes_home
         assert callable(get_hermes_home)

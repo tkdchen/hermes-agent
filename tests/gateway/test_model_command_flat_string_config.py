@@ -14,10 +14,10 @@ the proper ``model: {default: ..., provider: ...}`` form.
 import yaml
 import pytest
 
-from gateway.config import Platform
-from gateway.platforms.base import MessageEvent, MessageType
-from gateway.run import GatewayRunner
-from gateway.session import SessionSource
+from hermes_agent.gateway.config import Platform
+from hermes_agent.gateway.platforms.base import MessageEvent, MessageType
+from hermes_agent.gateway.run import GatewayRunner
+from hermes_agent.gateway.session import SessionSource
 
 
 def _make_runner():
@@ -39,7 +39,7 @@ def _make_event(text):
 
 def _fake_switch_result():
     """Build a successful ModelSwitchResult that bypasses real provider resolution."""
-    from hermes_cli.model_switch import ModelSwitchResult
+    from hermes_agent.hermes_cli.model_switch import ModelSwitchResult
 
     return ModelSwitchResult(
         success=True,
@@ -56,7 +56,7 @@ def _fake_switch_result():
 
 def _setup_isolated_home(tmp_path, monkeypatch, model_yaml_value):
     """Write a config.yaml with the given ``model:`` value and stub the heavy bits."""
-    import gateway.run as gateway_run
+    import hermes_agent.gateway.run as gateway_run
 
     hermes_home = tmp_path / ".hermes"
     hermes_home.mkdir()
@@ -67,14 +67,14 @@ def _setup_isolated_home(tmp_path, monkeypatch, model_yaml_value):
     )
 
     monkeypatch.setattr(gateway_run, "_hermes_home", hermes_home)
-    monkeypatch.setattr("agent.models_dev.fetch_models_dev", lambda: {})
+    monkeypatch.setattr("hermes_agent.agent.models_dev.fetch_models_dev", lambda: {})
     monkeypatch.setattr(
-        "hermes_cli.model_switch.switch_model",
+        "hermes_agent.hermes_cli.model_switch.switch_model",
         lambda **kw: _fake_switch_result(),
     )
     # save_config writes to ``get_hermes_home() / config.yaml`` — point it here.
-    monkeypatch.setattr("hermes_constants.get_hermes_home", lambda: hermes_home)
-    monkeypatch.setattr("hermes_cli.config.get_hermes_home", lambda: hermes_home)
+    monkeypatch.setattr("hermes_agent.hermes_constants.get_hermes_home", lambda: hermes_home)
+    monkeypatch.setattr("hermes_agent.hermes_cli.config.get_hermes_home", lambda: hermes_home)
     return cfg_path
 
 
@@ -110,7 +110,7 @@ async def test_model_global_persists_when_config_has_missing_model(tmp_path, mon
     """Companion case: ``model:`` key absent entirely. setdefault would have
     worked here, but the coercion branch also has to handle this cleanly.
     """
-    import gateway.run as gateway_run
+    import hermes_agent.gateway.run as gateway_run
 
     hermes_home = tmp_path / ".hermes"
     hermes_home.mkdir()
@@ -118,13 +118,13 @@ async def test_model_global_persists_when_config_has_missing_model(tmp_path, mon
     cfg_path.write_text(yaml.safe_dump({"providers": {}}), encoding="utf-8")
 
     monkeypatch.setattr(gateway_run, "_hermes_home", hermes_home)
-    monkeypatch.setattr("agent.models_dev.fetch_models_dev", lambda: {})
+    monkeypatch.setattr("hermes_agent.agent.models_dev.fetch_models_dev", lambda: {})
     monkeypatch.setattr(
-        "hermes_cli.model_switch.switch_model",
+        "hermes_agent.hermes_cli.model_switch.switch_model",
         lambda **kw: _fake_switch_result(),
     )
-    monkeypatch.setattr("hermes_constants.get_hermes_home", lambda: hermes_home)
-    monkeypatch.setattr("hermes_cli.config.get_hermes_home", lambda: hermes_home)
+    monkeypatch.setattr("hermes_agent.hermes_constants.get_hermes_home", lambda: hermes_home)
+    monkeypatch.setattr("hermes_agent.hermes_cli.config.get_hermes_home", lambda: hermes_home)
 
     result = await _make_runner()._handle_model_command(
         _make_event("/model gpt-5.5 --global")

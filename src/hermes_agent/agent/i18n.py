@@ -14,9 +14,9 @@ crashes the agent.
 
 Usage::
 
-    from agent.i18n import t
+    from hermes_agent.agent.i18n import t
     print(t("approval.choose_long"))                       # current lang
-    print(t("gateway.draining", count=3))                  # {count} formatted
+    print(t("hermes_agent.gateway.draining", count=3))                  # {count} formatted
     print(t("approval.choose_long", lang="zh"))            # explicit override
 
 Language resolution order:
@@ -217,7 +217,7 @@ def _config_language_cached() -> str | None:
     (e.g. after the setup wizard).
     """
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         cfg = load_config()
         lang = (cfg.get("display") or {}).get("language")
         if lang:
@@ -259,7 +259,7 @@ def t(key: str, lang: str | None = None, **format_kwargs: Any) -> str:
     lang
         Explicit language override.  Takes precedence over env + config.
     **format_kwargs
-        ``str.format`` substitution arguments (``t("gateway.drain", count=3)``
+        ``str.format`` substitution arguments (``t("hermes_agent.gateway.drain", count=3)``
         expects a catalog entry with a ``{count}`` placeholder).
 
     Returns

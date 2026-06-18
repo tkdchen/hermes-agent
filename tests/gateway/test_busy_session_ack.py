@@ -24,7 +24,7 @@ sys.modules.setdefault("telegram", _tg)
 sys.modules.setdefault("telegram.constants", _tg.constants)
 sys.modules.setdefault("telegram.ext", types.ModuleType("telegram.ext"))
 
-from gateway.platforms.base import (
+from hermes_agent.gateway.platforms.base import (
     MessageEvent,
     MessageType,
     Platform,
@@ -56,7 +56,7 @@ def _make_event(text="hello", chat_id="123", platform_val="telegram"):
 
 def _make_runner():
     """Build a minimal GatewayRunner-like object for testing."""
-    from gateway.run import GatewayRunner, _AGENT_PENDING_SENTINEL
+    from hermes_agent.gateway.run import GatewayRunner, _AGENT_PENDING_SENTINEL
 
     runner = object.__new__(GatewayRunner)
     runner._running_agents = {}
@@ -101,7 +101,7 @@ class TestBusySessionAck:
     @pytest.mark.asyncio
     async def test_handle_message_queue_mode_queues_without_interrupt(self):
         """Runner queue mode must not interrupt an active agent for text follow-ups."""
-        from gateway.run import GatewayRunner
+        from hermes_agent.gateway.run import GatewayRunner
 
         runner, _sentinel = _make_runner()
         adapter = _make_adapter()
@@ -125,7 +125,7 @@ class TestBusySessionAck:
     @pytest.mark.asyncio
     async def test_telegram_grace_followups_respect_queue_fifo(self, monkeypatch):
         """Rapid Telegram text follow-ups in queue mode must not merge."""
-        from gateway.run import GatewayRunner
+        from hermes_agent.gateway.run import GatewayRunner
 
         monkeypatch.setenv("HERMES_TELEGRAM_FOLLOWUP_GRACE_SECONDS", "3.0")
 
@@ -225,7 +225,7 @@ class TestBusySessionAck:
         agent = MagicMock()
         runner._running_agents[sk] = agent
 
-        with patch("gateway.run.merge_pending_message_event"):
+        with patch("hermes_agent.gateway.run.merge_pending_message_event"):
             await runner._handle_active_session_busy_message(event, sk)
 
         # VERIFY: Agent was NOT interrupted
@@ -280,7 +280,7 @@ class TestBusySessionAck:
         agent.steer = MagicMock(return_value=True)
         runner._running_agents[sk] = agent
 
-        with patch("gateway.run.merge_pending_message_event") as mock_merge:
+        with patch("hermes_agent.gateway.run.merge_pending_message_event") as mock_merge:
             await runner._handle_active_session_busy_message(event, sk)
 
         # VERIFY: Agent was steered, NOT interrupted
@@ -312,7 +312,7 @@ class TestBusySessionAck:
         agent.steer = MagicMock(return_value=False)  # rejected
         runner._running_agents[sk] = agent
 
-        with patch("gateway.run.merge_pending_message_event") as mock_merge:
+        with patch("hermes_agent.gateway.run.merge_pending_message_event") as mock_merge:
             await runner._handle_active_session_busy_message(event, sk)
 
         agent.steer.assert_called_once()
@@ -340,7 +340,7 @@ class TestBusySessionAck:
         # Agent is still being set up — sentinel in place
         runner._running_agents[sk] = sentinel
 
-        with patch("gateway.run.merge_pending_message_event") as mock_merge:
+        with patch("hermes_agent.gateway.run.merge_pending_message_event") as mock_merge:
             await runner._handle_active_session_busy_message(event, sk)
 
         # Event was queued instead of steered
@@ -430,7 +430,7 @@ class TestBusySessionAck:
     @pytest.mark.asyncio
     async def test_includes_status_detail_when_opted_in(self, monkeypatch):
         """Ack message should include iteration and tool info when available."""
-        import gateway.run as _gr
+        import hermes_agent.gateway.run as _gr
 
         monkeypatch.setattr(
             _gr,
@@ -559,7 +559,7 @@ class TestBusySessionOnboardingHint:
     @pytest.mark.asyncio
     async def test_first_busy_ack_appends_interrupt_hint(self, tmp_path, monkeypatch):
         """First busy-while-running message gets an extra hint about /busy."""
-        import gateway.run as _gr
+        import hermes_agent.gateway.run as _gr
 
         monkeypatch.setattr(_gr, "_hermes_home", tmp_path)
         # mark_seen imports utils.atomic_yaml_write; make sure it resolves
@@ -602,7 +602,7 @@ class TestBusySessionOnboardingHint:
     @pytest.mark.asyncio
     async def test_second_busy_ack_omits_hint(self, tmp_path, monkeypatch):
         """Once the flag is marked, the hint never appears again."""
-        import gateway.run as _gr
+        import hermes_agent.gateway.run as _gr
         import yaml
 
         monkeypatch.setattr(_gr, "_hermes_home", tmp_path)
@@ -644,7 +644,7 @@ class TestBusySessionOnboardingHint:
     @pytest.mark.asyncio
     async def test_queue_mode_hint_points_to_interrupt(self, tmp_path, monkeypatch):
         """In queue mode the hint should suggest /busy interrupt, not /busy queue."""
-        import gateway.run as _gr
+        import hermes_agent.gateway.run as _gr
 
         monkeypatch.setattr(_gr, "_hermes_home", tmp_path)
         monkeypatch.setattr(_gr, "_load_gateway_config", lambda: {})
@@ -660,7 +660,7 @@ class TestBusySessionOnboardingHint:
         agent = MagicMock()
         runner._running_agents[sk] = agent
 
-        with patch("gateway.run.merge_pending_message_event"):
+        with patch("hermes_agent.gateway.run.merge_pending_message_event"):
             await runner._handle_active_session_busy_message(event, sk)
 
         content = adapter._send_with_retry.call_args.kwargs.get("content", "")

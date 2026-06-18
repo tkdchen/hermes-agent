@@ -9,7 +9,7 @@ sys.modules.setdefault("fire", types.SimpleNamespace(Fire=lambda *a, **k: None))
 sys.modules.setdefault("firecrawl", types.SimpleNamespace(Firecrawl=object))
 sys.modules.setdefault("fal_client", types.SimpleNamespace())
 
-import run_agent
+import hermes_agent.run_agent as run_agent
 
 
 @pytest.fixture(autouse=True)
@@ -510,14 +510,14 @@ def test_build_api_kwargs_xai_does_not_mutate_agent_tools(monkeypatch):
     accept_after = agent.tools[0]["function"]["parameters"]["properties"]["accept"]
     match_after = agent.tools[0]["function"]["parameters"]["properties"]["match"]
     assert accept_after.get("enum") == ["application/json", "*/*"], (
-        "agent.tools mutated — slash-containing enum was stripped from the "
+        "hermes_agent.agent.tools mutated — slash-containing enum was stripped from the "
         "shared per-agent registry, will leak to non-xAI calls"
     )
     assert match_after.get("pattern") == "^[a-z]+$", (
-        "agent.tools mutated — pattern stripped from shared registry"
+        "hermes_agent.agent.tools mutated — pattern stripped from shared registry"
     )
     assert match_after.get("format") == "regex", (
-        "agent.tools mutated — format stripped from shared registry"
+        "hermes_agent.agent.tools mutated — format stripped from shared registry"
     )
 
 
@@ -907,7 +907,7 @@ def test_try_refresh_codex_client_credentials_handles_xai_oauth(monkeypatch):
         }
 
     monkeypatch.setattr(
-        "hermes_cli.auth.resolve_xai_oauth_runtime_credentials",
+        "hermes_agent.hermes_cli.auth.resolve_xai_oauth_runtime_credentials",
         _fake_resolve,
     )
     monkeypatch.setattr(run_agent, "OpenAI", _fake_openai)
@@ -954,7 +954,7 @@ def test_try_refresh_codex_client_credentials_skips_xai_oauth_when_singleton_dif
         }
 
     monkeypatch.setattr(
-        "hermes_cli.auth.resolve_xai_oauth_runtime_credentials",
+        "hermes_agent.hermes_cli.auth.resolve_xai_oauth_runtime_credentials",
         _fake_resolve,
     )
 
@@ -1029,7 +1029,7 @@ def test_try_refresh_codex_client_credentials_rebuilds_client(monkeypatch):
         }
 
     monkeypatch.setattr(
-        "hermes_cli.auth.resolve_codex_runtime_credentials",
+        "hermes_agent.hermes_cli.auth.resolve_codex_runtime_credentials",
         _fake_resolve,
     )
     monkeypatch.setattr(run_agent, "OpenAI", _fake_openai)
@@ -1061,7 +1061,7 @@ def test_try_refresh_copilot_client_credentials_rebuilds_client(monkeypatch):
         return _RebuiltClient()
 
     monkeypatch.setattr(
-        "hermes_cli.copilot_auth.resolve_copilot_token",
+        "hermes_agent.hermes_cli.copilot_auth.resolve_copilot_token",
         lambda: ("gho_new_token", "GH_TOKEN"),
     )
     monkeypatch.setattr(run_agent, "OpenAI", _fake_openai)
@@ -1089,7 +1089,7 @@ def test_try_refresh_copilot_client_credentials_rebuilds_even_if_token_unchanged
         return _RebuiltClient()
 
     monkeypatch.setattr(
-        "hermes_cli.copilot_auth.resolve_copilot_token",
+        "hermes_agent.hermes_cli.copilot_auth.resolve_copilot_token",
         lambda: ("gh-token", "gh auth token"),
     )
     monkeypatch.setattr(run_agent, "OpenAI", _fake_openai)
@@ -1127,7 +1127,7 @@ def test_run_conversation_codex_tool_round_trip(monkeypatch):
 
 def test_chat_messages_to_responses_input_uses_call_id_for_function_call(monkeypatch):
     agent = _build_agent(monkeypatch)
-    from agent.codex_responses_adapter import _chat_messages_to_responses_input
+    from hermes_agent.agent.codex_responses_adapter import _chat_messages_to_responses_input
     items = _chat_messages_to_responses_input(
         [
             {"role": "user", "content": "Run terminal"},
@@ -1156,7 +1156,7 @@ def test_chat_messages_to_responses_input_uses_call_id_for_function_call(monkeyp
 
 def test_chat_messages_to_responses_input_accepts_call_pipe_fc_ids(monkeypatch):
     agent = _build_agent(monkeypatch)
-    from agent.codex_responses_adapter import _chat_messages_to_responses_input
+    from hermes_agent.agent.codex_responses_adapter import _chat_messages_to_responses_input
     items = _chat_messages_to_responses_input(
         [
             {"role": "user", "content": "Run terminal"},
@@ -1185,7 +1185,7 @@ def test_chat_messages_to_responses_input_accepts_call_pipe_fc_ids(monkeypatch):
 
 def test_preflight_codex_api_kwargs_strips_optional_function_call_id(monkeypatch):
     agent = _build_agent(monkeypatch)
-    from agent.codex_responses_adapter import _preflight_codex_api_kwargs
+    from hermes_agent.agent.codex_responses_adapter import _preflight_codex_api_kwargs
     preflight = _preflight_codex_api_kwargs(
         {
             "model": "gpt-5-codex",
@@ -1214,7 +1214,7 @@ def test_preflight_codex_api_kwargs_rejects_function_call_output_without_call_id
     agent = _build_agent(monkeypatch)
 
     with pytest.raises(ValueError, match="function_call_output is missing call_id"):
-        from agent.codex_responses_adapter import _preflight_codex_api_kwargs
+        from hermes_agent.agent.codex_responses_adapter import _preflight_codex_api_kwargs
         _preflight_codex_api_kwargs(
             {
                 "model": "gpt-5-codex",
@@ -1232,7 +1232,7 @@ def test_preflight_codex_api_kwargs_rejects_unsupported_request_fields(monkeypat
     kwargs["some_unknown_field"] = "value"
 
     with pytest.raises(ValueError, match="unsupported field"):
-        from agent.codex_responses_adapter import _preflight_codex_api_kwargs
+        from hermes_agent.agent.codex_responses_adapter import _preflight_codex_api_kwargs
         _preflight_codex_api_kwargs(kwargs)
 
 
@@ -1244,7 +1244,7 @@ def test_preflight_codex_api_kwargs_allows_reasoning_and_temperature(monkeypatch
     kwargs["temperature"] = 0.7
     kwargs["max_output_tokens"] = 4096
 
-    from agent.codex_responses_adapter import _preflight_codex_api_kwargs
+    from hermes_agent.agent.codex_responses_adapter import _preflight_codex_api_kwargs
     result = _preflight_codex_api_kwargs(kwargs)
     assert result["reasoning"] == {"effort": "high", "summary": "auto"}
     assert result["include"] == ["reasoning.encrypted_content"]
@@ -1257,7 +1257,7 @@ def test_preflight_codex_api_kwargs_allows_service_tier(monkeypatch):
     kwargs = _codex_request_kwargs()
     kwargs["service_tier"] = "priority"
 
-    from agent.codex_responses_adapter import _preflight_codex_api_kwargs
+    from hermes_agent.agent.codex_responses_adapter import _preflight_codex_api_kwargs
     result = _preflight_codex_api_kwargs(kwargs)
     assert result["service_tier"] == "priority"
 
@@ -1268,7 +1268,7 @@ def test_preflight_codex_api_kwargs_preserves_positive_timeout(monkeypatch):
     kwargs = _codex_request_kwargs()
     kwargs["timeout"] = 600.0
 
-    from agent.codex_responses_adapter import _preflight_codex_api_kwargs
+    from hermes_agent.agent.codex_responses_adapter import _preflight_codex_api_kwargs
     result = _preflight_codex_api_kwargs(kwargs)
     assert result["timeout"] == 600.0
 
@@ -1276,7 +1276,7 @@ def test_preflight_codex_api_kwargs_preserves_positive_timeout(monkeypatch):
 def test_preflight_codex_api_kwargs_drops_invalid_timeout(monkeypatch):
     """Zero, negative, inf, and booleans are all dropped — not passed to SDK."""
     agent = _build_agent(monkeypatch)
-    from agent.codex_responses_adapter import _preflight_codex_api_kwargs
+    from hermes_agent.agent.codex_responses_adapter import _preflight_codex_api_kwargs
 
     for bad in (0, -1, float("inf"), True, False, "300", None):
         kwargs = _codex_request_kwargs()
@@ -1358,7 +1358,7 @@ def test_run_conversation_codex_continues_after_incomplete_interim_message(monke
 
 def test_normalize_codex_response_marks_commentary_only_message_as_incomplete(monkeypatch):
     agent = _build_agent(monkeypatch)
-    from agent.codex_responses_adapter import _normalize_codex_response
+    from hermes_agent.agent.codex_responses_adapter import _normalize_codex_response
     assistant_message, finish_reason = _normalize_codex_response(
         _codex_commentary_message_response("I'll inspect the repository first.")
     )
@@ -1368,7 +1368,7 @@ def test_normalize_codex_response_marks_commentary_only_message_as_incomplete(mo
 
 
 def test_normalize_codex_response_final_answer_overrides_top_level_incomplete(monkeypatch):
-    from agent.codex_responses_adapter import _normalize_codex_response
+    from hermes_agent.agent.codex_responses_adapter import _normalize_codex_response
 
     assistant_message, finish_reason = _normalize_codex_response(
         _codex_final_answer_with_top_level_incomplete_response(
@@ -1381,7 +1381,7 @@ def test_normalize_codex_response_final_answer_overrides_top_level_incomplete(mo
 
 
 def test_normalize_codex_response_top_level_incomplete_without_final_answer_stays_incomplete(monkeypatch):
-    from agent.codex_responses_adapter import _normalize_codex_response
+    from hermes_agent.agent.codex_responses_adapter import _normalize_codex_response
 
     response = SimpleNamespace(
         output=[
@@ -1405,7 +1405,7 @@ def test_normalize_codex_response_top_level_incomplete_without_final_answer_stay
 def test_normalize_codex_response_final_answer_does_not_override_streaming_status(
     monkeypatch, top_level_status
 ):
-    from agent.codex_responses_adapter import _normalize_codex_response
+    from hermes_agent.agent.codex_responses_adapter import _normalize_codex_response
 
     response = SimpleNamespace(
         output=[
@@ -1427,7 +1427,7 @@ def test_normalize_codex_response_final_answer_does_not_override_streaming_statu
 
 
 def test_normalize_codex_response_final_answer_does_not_override_per_item_in_progress(monkeypatch):
-    from agent.codex_responses_adapter import _normalize_codex_response
+    from hermes_agent.agent.codex_responses_adapter import _normalize_codex_response
 
     response = SimpleNamespace(
         output=[
@@ -1456,7 +1456,7 @@ def test_normalize_codex_response_final_answer_does_not_override_per_item_in_pro
 def test_normalize_codex_response_preserves_message_status_for_replay(monkeypatch):
     """Incomplete Codex output messages must not be replayed as completed."""
     agent = _build_agent(monkeypatch)
-    from agent.codex_responses_adapter import _normalize_codex_response
+    from hermes_agent.agent.codex_responses_adapter import _normalize_codex_response
 
     response = SimpleNamespace(
         output=[
@@ -1489,7 +1489,7 @@ def test_normalize_codex_response_detects_leaked_tool_call_text(monkeypatch):
     tools actually ran, parent can't audit the claim.
     """
     agent = _build_agent(monkeypatch)
-    from agent.codex_responses_adapter import _normalize_codex_response
+    from hermes_agent.agent.codex_responses_adapter import _normalize_codex_response
 
     leaked_content = (
         "I'll check the official page directly.\n"
@@ -1526,7 +1526,7 @@ def test_normalize_codex_response_ignores_tool_call_text_when_real_tool_call_pre
     structured call — don't wipe content that came alongside a real tool use.
     """
     agent = _build_agent(monkeypatch)
-    from agent.codex_responses_adapter import _normalize_codex_response
+    from hermes_agent.agent.codex_responses_adapter import _normalize_codex_response
 
     response = SimpleNamespace(
         output=[
@@ -1562,7 +1562,7 @@ def test_normalize_codex_response_no_leak_passes_through(monkeypatch):
     """Sanity: normal assistant content that doesn't contain the leak pattern
     is returned verbatim with finish_reason=stop."""
     agent = _build_agent(monkeypatch)
-    from agent.codex_responses_adapter import _normalize_codex_response
+    from hermes_agent.agent.codex_responses_adapter import _normalize_codex_response
 
     response = SimpleNamespace(
         output=[
@@ -1993,7 +1993,7 @@ def test_normalize_codex_response_marks_reasoning_only_as_incomplete(monkeypatch
     sends them into the empty-content retry loop (3 retries then failure).
     """
     agent = _build_agent(monkeypatch)
-    from agent.codex_responses_adapter import _normalize_codex_response
+    from hermes_agent.agent.codex_responses_adapter import _normalize_codex_response
     assistant_message, finish_reason = _normalize_codex_response(
         _codex_reasoning_only_response()
     )
@@ -2027,7 +2027,7 @@ def test_normalize_codex_response_reasoning_with_content_is_stop(monkeypatch):
         status="completed",
         model="gpt-5-codex",
     )
-    from agent.codex_responses_adapter import _normalize_codex_response
+    from hermes_agent.agent.codex_responses_adapter import _normalize_codex_response
     assistant_message, finish_reason = _normalize_codex_response(response)
 
     assert finish_reason == "stop"
@@ -2113,7 +2113,7 @@ def test_chat_messages_to_responses_input_reasoning_only_has_following_item(monk
             ],
         },
     ]
-    from agent.codex_responses_adapter import _chat_messages_to_responses_input
+    from hermes_agent.agent.codex_responses_adapter import _chat_messages_to_responses_input
     items = _chat_messages_to_responses_input(messages)
 
     # Find the reasoning item
@@ -2130,7 +2130,7 @@ def test_chat_messages_to_responses_input_reasoning_only_has_following_item(monk
 def test_codex_message_item_status_survives_conversion_and_preflight(monkeypatch):
     """Stored Codex assistant message statuses must survive replay normalization."""
     agent = _build_agent(monkeypatch)
-    from agent.codex_responses_adapter import (
+    from hermes_agent.agent.codex_responses_adapter import (
         _chat_messages_to_responses_input,
         _preflight_codex_input_items,
     )
@@ -2291,7 +2291,7 @@ def test_chat_messages_to_responses_input_deduplicates_reasoning_ids(monkeypatch
             ],
         },
     ]
-    from agent.codex_responses_adapter import _chat_messages_to_responses_input
+    from hermes_agent.agent.codex_responses_adapter import _chat_messages_to_responses_input
     items = _chat_messages_to_responses_input(messages)
 
     reasoning_items = [it for it in items if it.get("type") == "reasoning"]
@@ -2318,7 +2318,7 @@ def test_preflight_codex_input_deduplicates_reasoning_ids(monkeypatch):
         {"type": "reasoning", "id": "rs_zzz", "encrypted_content": "enc_b"},
         {"role": "assistant", "content": "done"},
     ]
-    from agent.codex_responses_adapter import _preflight_codex_input_items
+    from hermes_agent.agent.codex_responses_adapter import _preflight_codex_input_items
     normalized = _preflight_codex_input_items(raw_input)
 
     reasoning_items = [it for it in normalized if it.get("type") == "reasoning"]

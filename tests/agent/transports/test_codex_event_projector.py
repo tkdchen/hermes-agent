@@ -9,7 +9,7 @@ import json
 
 import pytest
 
-from agent.transports.codex_event_projector import (
+from hermes_agent.agent.transports.codex_event_projector import (
     CodexEventProjector,
     _deterministic_call_id,
     _format_tool_args,

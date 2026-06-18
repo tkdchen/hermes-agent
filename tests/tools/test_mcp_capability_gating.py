@@ -15,7 +15,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from tools.mcp_tool import MCPServerTask
+from hermes_agent.tools.mcp_tool import MCPServerTask
 
 
 def _caps(tools=None, prompts=None, resources=None):
@@ -121,7 +121,7 @@ class TestKeepaliveProbe:
                 tasks, timeout=0.5, return_when=return_when or asyncio.FIRST_COMPLETED
             )
 
-        import tools.mcp_tool as mcp_mod
+        import hermes_agent.tools.mcp_tool as mcp_mod
         orig = mcp_mod.asyncio.wait
         mcp_mod.asyncio.wait = fake_wait
         try:

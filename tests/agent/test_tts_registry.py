@@ -20,8 +20,8 @@ from typing import Any, Optional
 
 import pytest
 
-from agent import tts_registry
-from agent.tts_provider import (
+from hermes_agent.agent import tts_registry
+from hermes_agent.agent.tts_provider import (
     DEFAULT_OUTPUT_FORMAT,
     VALID_OUTPUT_FORMATS,
     TTSProvider,
@@ -106,7 +106,7 @@ class TestRegistration:
         but a warning is logged so the operator can see what happened.
         """
         p = _FakeProvider(name=builtin)
-        with caplog.at_level(logging.WARNING, logger="agent.tts_registry"):
+        with caplog.at_level(logging.WARNING, logger="hermes_agent.agent.tts_registry"):
             tts_registry.register_provider(p)
         assert "shadows a built-in name" in caplog.text
         assert builtin in caplog.text
@@ -117,7 +117,7 @@ class TestRegistration:
         """``EDGE``/``Edge``/``  edge  `` all collide with the ``edge`` built-in."""
         for variant in ("EDGE", "Edge", "  edge  ", "eDgE"):
             tts_registry._reset_for_tests()
-            with caplog.at_level(logging.WARNING, logger="agent.tts_registry"):
+            with caplog.at_level(logging.WARNING, logger="hermes_agent.agent.tts_registry"):
                 tts_registry.register_provider(_FakeProvider(name=variant))
             assert tts_registry.list_providers() == [], (
                 f"variant {variant!r} should have been rejected as a built-in shadow"
@@ -127,7 +127,7 @@ class TestRegistration:
         p1 = _FakeProvider(name="cartesia")
         p2 = _FakeProvider(name="cartesia")
         tts_registry.register_provider(p1)
-        with caplog.at_level(logging.DEBUG, logger="agent.tts_registry"):
+        with caplog.at_level(logging.DEBUG, logger="hermes_agent.agent.tts_registry"):
             tts_registry.register_provider(p2)
         assert tts_registry.get_provider("cartesia") is p2
         assert "re-registered" in caplog.text
@@ -299,11 +299,11 @@ class TestBuiltinSync:
     """
 
     def test_registry_builtins_match_dispatcher_builtins(self):
-        from tools.tts_tool import BUILTIN_TTS_PROVIDERS
+        from hermes_agent.tools.tts_tool import BUILTIN_TTS_PROVIDERS
 
         assert tts_registry._BUILTIN_NAMES == BUILTIN_TTS_PROVIDERS, (
-            "agent.tts_registry._BUILTIN_NAMES and "
-            "tools.tts_tool.BUILTIN_TTS_PROVIDERS have drifted!\n"
+            "hermes_agent.agent.tts_registry._BUILTIN_NAMES and "
+            "hermes_agent.tools.tts_tool.BUILTIN_TTS_PROVIDERS have drifted!\n"
             f"  Registry only: {sorted(tts_registry._BUILTIN_NAMES - BUILTIN_TTS_PROVIDERS)}\n"
             f"  Dispatcher only: {sorted(BUILTIN_TTS_PROVIDERS - tts_registry._BUILTIN_NAMES)}\n"
             "Add the missing names to whichever list is incomplete. "

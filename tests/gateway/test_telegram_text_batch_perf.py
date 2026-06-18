@@ -16,7 +16,7 @@ import math
 
 import pytest
 
-from gateway.platforms.telegram import TelegramAdapter
+from hermes_agent.gateway.platforms.telegram import TelegramAdapter
 
 
 @pytest.fixture

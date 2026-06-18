@@ -30,7 +30,7 @@ import socket
 import asyncio
 from urllib.parse import quote, urlparse, urlsplit, urlunsplit
 
-from utils import is_truthy_value
+from hermes_agent.utils import is_truthy_value
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +158,7 @@ def _global_allow_private_urls() -> bool:
 
     # 2. Config file
     try:
-        from hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.config import read_raw_config
         cfg = read_raw_config()
         # security.allow_private_urls (preferred)
         sec = cfg.get("security", {})

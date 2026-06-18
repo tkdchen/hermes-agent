@@ -7,8 +7,8 @@ from typing import Any, Dict, List, Optional
 import pytest
 import yaml
 
-from agent import video_gen_registry
-from agent.video_gen_provider import VideoGenProvider
+from hermes_agent.agent import video_gen_registry
+from hermes_agent.agent.video_gen_provider import VideoGenProvider
 
 
 @pytest.fixture(autouse=True)
@@ -85,7 +85,7 @@ class _ImageOnlyProvider(VideoGenProvider):
 
 class TestDynamicSchemaBuilder:
     def test_no_config_says_so(self, cfg_home):
-        from tools.video_generation_tool import _build_dynamic_video_schema
+        from hermes_agent.tools.video_generation_tool import _build_dynamic_video_schema
 
         desc = _build_dynamic_video_schema()["description"]
         assert "No video backend is configured" in desc
@@ -94,7 +94,7 @@ class TestDynamicSchemaBuilder:
     def test_does_not_mention_edit_or_extend(self, cfg_home):
         """The simplified surface only does text→video and image→video.
         The description must not mention edit/extend anywhere."""
-        from tools.video_generation_tool import _build_dynamic_video_schema, _GENERIC_DESCRIPTION
+        from hermes_agent.tools.video_generation_tool import _build_dynamic_video_schema, _GENERIC_DESCRIPTION
 
         desc = _build_dynamic_video_schema()["description"]
         # Block words that would suggest functionality we removed
@@ -107,12 +107,12 @@ class TestDynamicSchemaBuilder:
             assert forbidden not in _GENERIC_DESCRIPTION.lower()
 
     def test_both_modalities_advertises_auto_routing(self, cfg_home):
-        from tools.video_generation_tool import _build_dynamic_video_schema
+        from hermes_agent.tools.video_generation_tool import _build_dynamic_video_schema
 
         _write_cfg(cfg_home, {"video_gen": {"provider": "both"}})
         video_gen_registry.register_provider(_BothModalitiesProvider())
 
-        import hermes_cli.plugins as plugins_module
+        import hermes_agent.hermes_cli.plugins as plugins_module
         saved = plugins_module._ensure_plugins_discovered
         plugins_module._ensure_plugins_discovered = lambda *a, **k: None
         try:
@@ -127,12 +127,12 @@ class TestDynamicSchemaBuilder:
         assert "operations supported" not in desc
 
     def test_image_only_model_warns_about_required_image_url(self, cfg_home):
-        from tools.video_generation_tool import _build_dynamic_video_schema
+        from hermes_agent.tools.video_generation_tool import _build_dynamic_video_schema
 
         _write_cfg(cfg_home, {"video_gen": {"provider": "img-only"}})
         video_gen_registry.register_provider(_ImageOnlyProvider())
 
-        import hermes_cli.plugins as plugins_module
+        import hermes_agent.hermes_cli.plugins as plugins_module
         saved = plugins_module._ensure_plugins_discovered
         plugins_module._ensure_plugins_discovered = lambda *a, **k: None
         try:
@@ -144,7 +144,7 @@ class TestDynamicSchemaBuilder:
         assert "image_url is REQUIRED" in desc
 
     def test_builder_wired_into_registry(self):
-        from tools.registry import discover_builtin_tools, registry
+        from hermes_agent.tools.registry import discover_builtin_tools, registry
 
         discover_builtin_tools()
         entry = registry._tools["video_generate"]

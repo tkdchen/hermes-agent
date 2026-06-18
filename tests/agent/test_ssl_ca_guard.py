@@ -5,8 +5,8 @@ from pathlib import Path
 import certifi
 import pytest
 
-from agent.errors import SSLConfigurationError
-from agent.ssl_guard import verify_ca_bundle, verify_ca_bundle_with_fallback
+from hermes_agent.agent.errors import SSLConfigurationError
+from hermes_agent.agent.ssl_guard import verify_ca_bundle, verify_ca_bundle_with_fallback
 
 
 def test_healthy_bundle_passes(monkeypatch):

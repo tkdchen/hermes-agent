@@ -39,7 +39,7 @@ import time
 from dataclasses import dataclass
 from typing import Any, Mapping, Optional
 
-from utils import is_truthy_value
+from hermes_agent.utils import is_truthy_value
 
 logger = logging.getLogger(__name__)
 
@@ -223,7 +223,7 @@ def is_free_tier_model(model: str, base_url: str = "") -> bool:
     if not base_url:
         return False
     try:
-        from hermes_cli.models import _is_model_free, _pricing_cache
+        from hermes_agent.hermes_cli.models import _is_model_free, _pricing_cache
 
         # Mirror get_pricing_for_provider's key normalization: the agent's
         # Nous base_url is /v1-suffixed (https://inference-api.nousresearch.com/v1)
@@ -774,7 +774,7 @@ def seed_credits_at_session_start(agent) -> bool:
 
         def _bg_seed() -> None:
             try:
-                from hermes_cli.nous_account import get_nous_portal_account_info
+                from hermes_agent.hermes_cli.nous_account import get_nous_portal_account_info
                 info = get_nous_portal_account_info(force_fresh=True)
                 if getattr(agent, "_credits_state", None) is not None:
                     return  # a live inference header beat us — don't clobber it

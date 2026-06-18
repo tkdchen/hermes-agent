@@ -12,11 +12,11 @@ reasoning configuration, temperature handling, and extra_body assembly.
 import copy
 from typing import Any, Dict
 
-from agent.lmstudio_reasoning import resolve_lmstudio_effort
-from agent.moonshot_schema import is_moonshot_model, sanitize_moonshot_tools
-from agent.prompt_builder import DEVELOPER_ROLE_MODELS
-from agent.transports.base import ProviderTransport
-from agent.transports.types import NormalizedResponse, ToolCall, Usage
+from hermes_agent.agent.lmstudio_reasoning import resolve_lmstudio_effort
+from hermes_agent.agent.moonshot_schema import is_moonshot_model, sanitize_moonshot_tools
+from hermes_agent.agent.prompt_builder import DEVELOPER_ROLE_MODELS
+from hermes_agent.agent.transports.base import ProviderTransport
+from hermes_agent.agent.transports.types import NormalizedResponse, ToolCall, Usage
 
 
 def _build_gemini_thinking_config(model: str, reasoning_config: dict | None) -> dict | None:
@@ -461,7 +461,7 @@ class ChatCompletionsTransport(ProviderTransport):
         This method replaces the entire flag-based kwargs assembly when a
         provider_profile is passed. Every quirk comes from the profile object.
         """
-        from providers.base import OMIT_TEMPERATURE
+        from hermes_agent.providers.base import OMIT_TEMPERATURE
 
         # Message preprocessing
         sanitized = profile.prepare_messages(sanitized)
@@ -583,7 +583,7 @@ class ChatCompletionsTransport(ProviderTransport):
             # a fallback/aux call lands on Gemini. The native client only reads
             # thinking_config from extra_body, so drop everything else here.
             try:
-                from agent.gemini_native_adapter import is_native_gemini_base_url
+                from hermes_agent.agent.gemini_native_adapter import is_native_gemini_base_url
                 _native_gemini = is_native_gemini_base_url(params.get("base_url"))
             except Exception:
                 _native_gemini = False
@@ -734,6 +734,6 @@ class ChatCompletionsTransport(ProviderTransport):
 
 
 # Auto-register on import
-from agent.transports import register_transport  # noqa: E402
+from hermes_agent.agent.transports import register_transport  # noqa: E402
 
 register_transport("chat_completions", ChatCompletionsTransport)

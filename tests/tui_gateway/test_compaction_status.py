@@ -23,12 +23,12 @@ def server():
             "hermes_constants": MagicMock(
                 get_hermes_home=MagicMock(return_value="/tmp/hermes_test_compaction")
             ),
-            "hermes_cli.env_loader": MagicMock(),
-            "hermes_cli.banner": MagicMock(),
+            "hermes_agent.hermes_cli.env_loader": MagicMock(),
+            "hermes_agent.hermes_cli.banner": MagicMock(),
             "hermes_state": MagicMock(),
         },
     ):
-        yield importlib.import_module("tui_gateway.server")
+        yield importlib.import_module("hermes_agent.tui_gateway.server")
 
 
 def _capture(server, monkeypatch):
@@ -40,7 +40,7 @@ def _capture(server, monkeypatch):
 
 
 def test_compaction_lifecycle_is_retagged(server, monkeypatch):
-    from agent.conversation_compression import COMPACTION_STATUS
+    from hermes_agent.agent.conversation_compression import COMPACTION_STATUS
 
     events = _capture(server, monkeypatch)
     server._status_update("sid", "lifecycle", COMPACTION_STATUS)
@@ -65,7 +65,7 @@ def test_manual_compressing_kind_is_preserved(server, monkeypatch):
 def test_compaction_status_contains_marker():
     # Contract: the gateway matches COMPACTION_STATUS_MARKER inside the emitted
     # status text. If the message is reworded, the marker must survive.
-    from agent.conversation_compression import (
+    from hermes_agent.agent.conversation_compression import (
         COMPACTION_STATUS,
         COMPACTION_STATUS_MARKER,
     )

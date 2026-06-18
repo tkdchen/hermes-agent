@@ -17,7 +17,7 @@ class TestPersistentPool:
 
     def test_pool_is_reused(self, monkeypatch):
         """Same pool instance returned when max_workers doesn't change."""
-        import cron.scheduler as sched
+        import hermes_agent.cron.scheduler as sched
 
         # Reset module state.
         sched._parallel_pool = None
@@ -32,7 +32,7 @@ class TestPersistentPool:
 
     def test_pool_is_recreated_on_worker_change(self, monkeypatch):
         """New pool when max_workers changes."""
-        import cron.scheduler as sched
+        import hermes_agent.cron.scheduler as sched
 
         sched._parallel_pool = None
         sched._parallel_pool_max_workers = None
@@ -45,7 +45,7 @@ class TestPersistentPool:
 
     def test_shutdown_clears_pool(self, monkeypatch):
         """_shutdown_parallel_pool resets state."""
-        import cron.scheduler as sched
+        import hermes_agent.cron.scheduler as sched
 
         sched._parallel_pool = None
         sched._parallel_pool_max_workers = None
@@ -61,7 +61,7 @@ class TestRunningJobGuard:
 
     def test_running_set_prevents_double_dispatch(self, tmp_path, monkeypatch):
         """A job already in _running_job_ids is skipped on the next tick."""
-        import cron.scheduler as sched
+        import hermes_agent.cron.scheduler as sched
 
         # Reset state.
         sched._parallel_pool = None
@@ -102,7 +102,7 @@ class TestSyncMode:
 
     def test_sync_true_blocks_and_returns_correct_count(self, tmp_path, monkeypatch):
         """sync=True waits for jobs and returns actual results."""
-        import cron.scheduler as sched
+        import hermes_agent.cron.scheduler as sched
 
         sched._parallel_pool = None
         sched._parallel_pool_max_workers = None
@@ -129,7 +129,7 @@ class TestSyncMode:
 
     def test_sync_false_returns_immediately(self, tmp_path, monkeypatch):
         """sync=False returns before parallel jobs finish (optimistic count)."""
-        import cron.scheduler as sched
+        import hermes_agent.cron.scheduler as sched
 
         sched._parallel_pool = None
         sched._parallel_pool_max_workers = None
@@ -181,7 +181,7 @@ class TestSequentialPool:
 
     def test_sequential_job_does_not_block_ticker(self, tmp_path, monkeypatch):
         """sync=False returns immediately even when a workdir job is slow."""
-        import cron.scheduler as sched
+        import hermes_agent.cron.scheduler as sched
 
         sched._parallel_pool = None
         sched._parallel_pool_max_workers = None
@@ -225,7 +225,7 @@ class TestSequentialPool:
 
     def test_sequential_running_guard_prevents_double_dispatch(self, tmp_path, monkeypatch):
         """A workdir job already in _running_job_ids is skipped on next tick."""
-        import cron.scheduler as sched
+        import hermes_agent.cron.scheduler as sched
 
         sched._parallel_pool = None
         sched._parallel_pool_max_workers = None
@@ -263,7 +263,7 @@ class TestSequentialPool:
 
     def test_get_sequential_pool_is_persistent(self):
         """_get_sequential_pool returns the same single-thread pool."""
-        import cron.scheduler as sched
+        import hermes_agent.cron.scheduler as sched
 
         sched._sequential_pool = None
         pool1 = sched._get_sequential_pool()

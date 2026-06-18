@@ -6,11 +6,11 @@ import os
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from hermes_cli.profiles import _get_default_hermes_home
+from hermes_agent.hermes_cli.profiles import _get_default_hermes_home
 
 import pytest
 
-from plugins.memory.honcho.client import (
+from hermes_agent.plugins.memory.honcho.client import (
     HonchoClientConfig,
     get_honcho_client,
     profile_host_key,
@@ -448,19 +448,19 @@ class TestResolveActiveHost:
     def test_profile_name_derives_host(self):
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("HERMES_HONCHO_HOST", None)
-            with patch("hermes_cli.profiles.get_active_profile_name", return_value="coder"):
+            with patch("hermes_agent.hermes_cli.profiles.get_active_profile_name", return_value="coder"):
                 assert resolve_active_host() == "hermes_coder"
 
     def test_default_profile_returns_hermes(self):
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("HERMES_HONCHO_HOST", None)
-            with patch("hermes_cli.profiles.get_active_profile_name", return_value="default"):
+            with patch("hermes_agent.hermes_cli.profiles.get_active_profile_name", return_value="default"):
                 assert resolve_active_host() == "hermes"
 
     def test_custom_profile_returns_hermes(self):
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("HERMES_HONCHO_HOST", None)
-            with patch("hermes_cli.profiles.get_active_profile_name", return_value="custom"):
+            with patch("hermes_agent.hermes_cli.profiles.get_active_profile_name", return_value="custom"):
                 assert resolve_active_host() == "hermes"
 
     def test_profiles_import_failure_falls_back(self):
@@ -468,15 +468,15 @@ class TestResolveActiveHost:
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("HERMES_HONCHO_HOST", None)
             # Temporarily remove hermes_cli.profiles to simulate import failure
-            saved = sys.modules.get("hermes_cli.profiles")
-            sys.modules["hermes_cli.profiles"] = None  # type: ignore
+            saved = sys.modules.get("hermes_agent.hermes_cli.profiles")
+            sys.modules["hermes_agent.hermes_cli.profiles"] = None  # type: ignore
             try:
                 assert resolve_active_host() == "hermes"
             finally:
                 if saved is not None:
-                    sys.modules["hermes_cli.profiles"] = saved
+                    sys.modules["hermes_agent.hermes_cli.profiles"] = saved
                 else:
-                    sys.modules.pop("hermes_cli.profiles", None)
+                    sys.modules.pop("hermes_agent.hermes_cli.profiles", None)
 
 
 class TestProfileScopedConfig:
@@ -522,7 +522,7 @@ class TestProfileScopedConfig:
                 "hermes_dreamer": {"peerName": "dreamer-user"},
             },
         }))
-        with patch("plugins.memory.honcho.client.resolve_active_host", return_value="hermes_dreamer"):
+        with patch("hermes_agent.plugins.memory.honcho.client.resolve_active_host", return_value="hermes_dreamer"):
             config = HonchoClientConfig.from_global_config(config_path=config_file)
         assert config.host == "hermes_dreamer"
         assert config.peer_name == "dreamer-user"
@@ -644,7 +644,7 @@ class TestGetHonchoClient:
         )
 
         with patch("honcho.Honcho", return_value=fake_honcho) as mock_honcho, \
-             patch("hermes_cli.config.load_config", return_value={"honcho": {"timeout": 88}}):
+             patch("hermes_agent.hermes_cli.config.load_config", return_value={"honcho": {"timeout": 88}}):
             client = get_honcho_client(cfg)
 
         assert client is fake_honcho
@@ -656,7 +656,7 @@ class TestGetHonchoClient:
         reason="honcho SDK not installed"
     )
     def test_defaults_to_30s_when_no_timeout_configured(self):
-        from plugins.memory.honcho.client import _DEFAULT_HTTP_TIMEOUT
+        from hermes_agent.plugins.memory.honcho.client import _DEFAULT_HTTP_TIMEOUT
 
         fake_honcho = MagicMock(name="Honcho")
         cfg = HonchoClientConfig(
@@ -666,7 +666,7 @@ class TestGetHonchoClient:
         )
 
         with patch("honcho.Honcho", return_value=fake_honcho) as mock_honcho, \
-             patch("hermes_cli.config.load_config", return_value={}):
+             patch("hermes_agent.hermes_cli.config.load_config", return_value={}):
             client = get_honcho_client(cfg)
 
         assert client is fake_honcho
@@ -686,7 +686,7 @@ class TestGetHonchoClient:
         )
 
         with patch("honcho.Honcho", return_value=fake_honcho) as mock_honcho, \
-             patch("hermes_cli.config.load_config", return_value={"honcho": {"request_timeout": "77.5"}}):
+             patch("hermes_agent.hermes_cli.config.load_config", return_value={"honcho": {"request_timeout": "77.5"}}):
             client = get_honcho_client(cfg)
 
         assert client is fake_honcho
@@ -818,7 +818,7 @@ class TestResolveSessionNameLengthLimit:
 
 class TestResetHonchoClient:
     def test_reset_clears_singleton(self):
-        import plugins.memory.honcho.client as mod
+        import hermes_agent.plugins.memory.honcho.client as mod
 
         # Seed the cached client through the slot's public surface, then
         # verify reset_honcho_client() clears it. (The client is cached in
@@ -941,7 +941,7 @@ class TestGetHonchoClientBaseUrlDoublePrefixFix:
         )
 
         with patch("honcho.Honcho", return_value=fake_honcho) as mock_honcho, \
-             patch("hermes_cli.config.load_config", return_value={}):
+             patch("hermes_agent.hermes_cli.config.load_config", return_value={}):
             get_honcho_client(cfg)
 
         mock_honcho.assert_called_once()
@@ -965,7 +965,7 @@ class TestGetHonchoClientBaseUrlDoublePrefixFix:
         )
 
         with patch("honcho.Honcho", return_value=fake_honcho) as mock_honcho, \
-             patch("hermes_cli.config.load_config", return_value={}):
+             patch("hermes_agent.hermes_cli.config.load_config", return_value={}):
             get_honcho_client(cfg)
 
         mock_honcho.assert_called_once()
@@ -989,7 +989,7 @@ class TestGetHonchoClientBaseUrlDoublePrefixFix:
         )
 
         with patch("honcho.Honcho", return_value=fake_honcho) as mock_honcho, \
-             patch("hermes_cli.config.load_config", return_value={}):
+             patch("hermes_agent.hermes_cli.config.load_config", return_value={}):
             get_honcho_client(cfg)
 
         mock_honcho.assert_called_once()
@@ -1014,7 +1014,7 @@ class TestGetHonchoClientBaseUrlDoublePrefixFix:
         )
 
         with patch("honcho.Honcho", return_value=fake_honcho) as mock_honcho, \
-             patch("hermes_cli.config.load_config", return_value={}):
+             patch("hermes_agent.hermes_cli.config.load_config", return_value={}):
             get_honcho_client(cfg)
 
         mock_honcho.assert_called_once()
@@ -1057,7 +1057,7 @@ class TestGetHonchoClientBaseUrlDoublePrefixFix:
         )
 
         with patch("honcho.Honcho", return_value=fake_honcho) as mock_honcho, \
-             patch("hermes_cli.config.load_config", return_value={}):
+             patch("hermes_agent.hermes_cli.config.load_config", return_value={}):
             get_honcho_client(cfg)
 
         mock_honcho.assert_called_once()
@@ -1081,7 +1081,7 @@ class TestGetHonchoClientBaseUrlDoublePrefixFix:
         )
 
         with patch("honcho.Honcho", return_value=fake_honcho) as mock_honcho, \
-             patch("hermes_cli.config.load_config", return_value={}):
+             patch("hermes_agent.hermes_cli.config.load_config", return_value={}):
             get_honcho_client(cfg)
 
         mock_honcho.assert_called_once()

@@ -17,7 +17,7 @@ import webbrowser
 
 import pytest
 
-from hermes_cli.auth import _can_open_graphical_browser
+from hermes_agent.hermes_cli.auth import _can_open_graphical_browser
 
 
 class _FakeController:
@@ -37,7 +37,7 @@ def _clean_browser_env(monkeypatch):
 
 
 def _force_platform_linux(monkeypatch):
-    monkeypatch.setattr("hermes_cli.auth.sys.platform", "linux")
+    monkeypatch.setattr("hermes_agent.hermes_cli.auth.sys.platform", "linux")
 
 
 def _force_resolved_browser(monkeypatch, name: str):
@@ -91,6 +91,6 @@ def test_webbrowser_get_raises_refuses(monkeypatch):
 
 def test_non_linux_with_gui_allows(monkeypatch):
     """macOS / Windows always have a usable default GUI browser."""
-    monkeypatch.setattr("hermes_cli.auth.sys.platform", "darwin")
+    monkeypatch.setattr("hermes_agent.hermes_cli.auth.sys.platform", "darwin")
     _force_resolved_browser(monkeypatch, "MacOSX")
     assert _can_open_graphical_browser() is True

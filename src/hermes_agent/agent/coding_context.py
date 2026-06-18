@@ -282,7 +282,7 @@ def _coding_mode(config: Optional[dict[str, Any]]) -> str:
     """Return the normalized ``agent.coding_context`` mode (auto/focus/on/off)."""
     if config is None:
         try:
-            from hermes_cli.config import load_config
+            from hermes_agent.hermes_cli.config import load_config
 
             config = load_config()
         except Exception:
@@ -302,7 +302,7 @@ def _resolve_cwd(cwd: Optional[str | Path]) -> Path:
     if cwd:
         return Path(cwd).expanduser()
     try:
-        from agent.runtime_cwd import resolve_agent_cwd
+        from hermes_agent.agent.runtime_cwd import resolve_agent_cwd
 
         return resolve_agent_cwd()
     except Exception:
@@ -570,8 +570,8 @@ def _enabled_mcp_servers(config: Optional[dict[str, Any]]) -> list[str]:
     of the coding workflow, not noise to strip.
     """
     try:
-        from hermes_cli.config import read_raw_config
-        from hermes_cli.tools_config import _parse_enabled_flag
+        from hermes_agent.hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.tools_config import _parse_enabled_flag
 
         servers = read_raw_config().get("mcp_servers") or {}
         return [

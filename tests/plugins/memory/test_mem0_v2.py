@@ -9,7 +9,7 @@ import stat
 
 import pytest
 
-from plugins.memory.mem0 import Mem0MemoryProvider
+from hermes_agent.plugins.memory.mem0 import Mem0MemoryProvider
 
 
 class FakeClientV2:

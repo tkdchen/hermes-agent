@@ -27,7 +27,7 @@ import json
 import types
 from unittest.mock import MagicMock, patch
 
-import hermes_cli.runtime_provider as rp
+import hermes_agent.hermes_cli.runtime_provider as rp
 
 MIMO_URL = "https://token-plan-cn.xiaomimimo.com/v1"
 MIMO_KEY = "sk-mimo-entry-key"
@@ -68,7 +68,7 @@ class TestRuntimeModelConfigPersistsEntryIdentity:
     def test_persists_menu_key_instead_of_resolved_custom(self, monkeypatch):
         monkeypatch.setattr(rp, "load_config", lambda: LEGACY_LIST_CONFIG)
 
-        from tui_gateway.server import _runtime_model_config
+        from hermes_agent.tui_gateway.server import _runtime_model_config
 
         config = _runtime_model_config(_custom_agent())
 
@@ -81,7 +81,7 @@ class TestRuntimeModelConfigPersistsEntryIdentity:
     def test_persists_menu_key_for_providers_dict_entry(self, monkeypatch):
         monkeypatch.setattr(rp, "load_config", lambda: PROVIDERS_DICT_CONFIG)
 
-        from tui_gateway.server import _runtime_model_config
+        from hermes_agent.tui_gateway.server import _runtime_model_config
 
         config = _runtime_model_config(_custom_agent())
 
@@ -90,7 +90,7 @@ class TestRuntimeModelConfigPersistsEntryIdentity:
     def test_keeps_bare_custom_when_no_entry_matches(self, monkeypatch):
         monkeypatch.setattr(rp, "load_config", lambda: {})
 
-        from tui_gateway.server import _runtime_model_config
+        from hermes_agent.tui_gateway.server import _runtime_model_config
 
         config = _runtime_model_config(_custom_agent())
 
@@ -102,7 +102,7 @@ class TestRuntimeModelConfigPersistsEntryIdentity:
 
         monkeypatch.setattr(rp, "load_config", _boom)
 
-        from tui_gateway.server import _runtime_model_config
+        from hermes_agent.tui_gateway.server import _runtime_model_config
 
         agent = _custom_agent()
         agent.provider = "anthropic"
@@ -121,14 +121,14 @@ def _make_agent_with_override(override, monkeypatch, config):
 
     fake_cfg = {"agent": {"system_prompt": ""}, "model": {"default": "unused"}}
     with (
-        patch("tui_gateway.server._load_cfg", return_value=fake_cfg),
-        patch("tui_gateway.server._get_db", return_value=MagicMock()),
-        patch("tui_gateway.server._load_reasoning_config", return_value=None),
-        patch("tui_gateway.server._load_service_tier", return_value=None),
-        patch("tui_gateway.server._load_enabled_toolsets", return_value=None),
-        patch("run_agent.AIAgent") as mock_agent,
+        patch("hermes_agent.tui_gateway.server._load_cfg", return_value=fake_cfg),
+        patch("hermes_agent.tui_gateway.server._get_db", return_value=MagicMock()),
+        patch("hermes_agent.tui_gateway.server._load_reasoning_config", return_value=None),
+        patch("hermes_agent.tui_gateway.server._load_service_tier", return_value=None),
+        patch("hermes_agent.tui_gateway.server._load_enabled_toolsets", return_value=None),
+        patch("hermes_agent.run_agent.AIAgent") as mock_agent,
     ):
-        from tui_gateway.server import _make_agent
+        from hermes_agent.tui_gateway.server import _make_agent
 
         _make_agent("sid-custom", "key-custom", model_override=override)
 
@@ -142,7 +142,7 @@ class TestResumeRoundTrip:
         configured" before the fix)."""
         monkeypatch.setattr(rp, "load_config", lambda: LEGACY_LIST_CONFIG)
 
-        from tui_gateway.server import (
+        from hermes_agent.tui_gateway.server import (
             _runtime_model_config,
             _stored_session_runtime_overrides,
         )

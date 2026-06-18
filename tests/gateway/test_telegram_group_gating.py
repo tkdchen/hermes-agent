@@ -3,9 +3,9 @@ import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
-from gateway.config import Platform, PlatformConfig, load_gateway_config
-from gateway.platforms.base import MessageType
-from gateway.session import SessionSource
+from hermes_agent.gateway.config import Platform, PlatformConfig, load_gateway_config
+from hermes_agent.gateway.platforms.base import MessageType
+from hermes_agent.gateway.session import SessionSource
 
 
 def _make_adapter(
@@ -23,7 +23,7 @@ def _make_adapter(
     observe_unmentioned_group_messages=None,
     bot_username="hermes_bot",
 ):
-    from gateway.platforms.telegram import TelegramAdapter
+    from hermes_agent.gateway.platforms.telegram import TelegramAdapter
 
     extra = {}
     if require_mention is not None:
@@ -226,7 +226,7 @@ def test_observed_group_context_uses_shared_source_and_prompt_for_later_mentions
 
 
 def test_observed_group_context_replays_as_current_message_context_not_user_turns():
-    from gateway.run import (
+    from hermes_agent.gateway.run import (
         _build_gateway_agent_history,
         _wrap_current_message_with_observed_context,
     )
@@ -256,8 +256,8 @@ def test_observed_group_context_replays_as_current_message_context_not_user_turn
 
 
 def test_observed_group_context_does_not_hide_current_user_turn_behind_history_offset():
-    from agent.agent_runtime_helpers import repair_message_sequence
-    from gateway.run import (
+    from hermes_agent.agent.agent_runtime_helpers import repair_message_sequence
+    from hermes_agent.gateway.run import (
         _build_gateway_agent_history,
         _wrap_current_message_with_observed_context,
     )
@@ -282,7 +282,7 @@ def test_observed_group_context_does_not_hide_current_user_turn_behind_history_o
 
 
 def test_observed_group_context_wraps_multimodal_current_message_without_mutating_parts():
-    from gateway.run import _wrap_current_message_with_observed_context
+    from hermes_agent.gateway.run import _wrap_current_message_with_observed_context
 
     original = [
         {"type": "text", "text": "[Bob|222]\nsee this image"},
@@ -301,7 +301,7 @@ def test_observed_group_context_wraps_multimodal_current_message_without_mutatin
 
 
 def test_observed_group_context_replays_normally_without_telegram_prompt():
-    from gateway.run import _build_gateway_agent_history
+    from hermes_agent.gateway.run import _build_gateway_agent_history
 
     history = [
         {"role": "user", "content": "[Alice|111]\nside chatter", "observed": True},
@@ -314,7 +314,7 @@ def test_observed_group_context_replays_normally_without_telegram_prompt():
 
 
 def test_observed_group_context_preserves_slash_command_text_for_dispatch():
-    from gateway.platforms.base import MessageEvent, MessageType, Platform, SessionSource
+    from hermes_agent.gateway.platforms.base import MessageEvent, MessageType, Platform, SessionSource
 
     adapter = _make_adapter(
         require_mention=True,
@@ -371,7 +371,7 @@ def test_unmentioned_group_observe_requires_chat_allowlist_for_shared_context():
 
 
 def test_shared_group_observe_source_is_authorized_by_group_allowed_chats(monkeypatch):
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = object.__new__(GatewayRunner)
     source = SessionSource(
@@ -776,7 +776,7 @@ def test_top_level_require_mention_bridges_to_telegram(monkeypatch, tmp_path):
 
     # The adapter's extra dict must also carry the setting so that
     # _telegram_require_mention() works even without the env var.
-    tg_cfg = config.platforms.get(__import__("gateway.config", fromlist=["Platform"]).Platform.TELEGRAM)
+    tg_cfg = config.platforms.get(__import__("hermes_agent.gateway.config", fromlist=["Platform"]).Platform.TELEGRAM)
     if tg_cfg is not None:
         assert tg_cfg.extra.get("require_mention") is True
 
@@ -1017,7 +1017,7 @@ def test_text_reply_to_photo_caches_referenced_media(monkeypatch, tmp_path):
         adapter.handle_message = AsyncMock()
         cached_path = tmp_path / "reply_photo.png"
         monkeypatch.setattr(
-            "gateway.platforms.base.cache_image_from_bytes",
+            "hermes_agent.gateway.platforms.base.cache_image_from_bytes",
             lambda _data, ext=".jpg": str(cached_path),
         )
         file_obj = SimpleNamespace(
@@ -1104,7 +1104,7 @@ def test_unmentioned_photo_observed_with_cached_path(monkeypatch, tmp_path):
         adapter._session_store = store
         cached_path = tmp_path / "img_abc_observed.png"
         monkeypatch.setattr(
-            "gateway.platforms.base.cache_image_from_bytes",
+            "hermes_agent.gateway.platforms.base.cache_image_from_bytes",
             lambda _data, ext=".jpg": str(cached_path),
         )
         update = SimpleNamespace(update_id=3003, message=_group_photo_message(), effective_message=None)
@@ -1133,7 +1133,7 @@ def test_unmentioned_document_observed_with_cached_path(monkeypatch, tmp_path):
         adapter._session_store = store
         cached_path = tmp_path / "doc_abc_report.pdf"
         monkeypatch.setattr(
-            "gateway.platforms.base.cache_document_from_bytes",
+            "hermes_agent.gateway.platforms.base.cache_document_from_bytes",
             lambda _data, _filename: str(cached_path),
         )
         update = SimpleNamespace(update_id=3004, message=_group_document_message(), effective_message=None)
@@ -1160,7 +1160,7 @@ def test_unmentioned_large_document_observed_without_download(monkeypatch):
         store = _FakeSessionStore()
         adapter._session_store = store
         cache_doc = Mock(return_value="/tmp/huge.pdf")
-        monkeypatch.setattr("gateway.platforms.base.cache_document_from_bytes", cache_doc)
+        monkeypatch.setattr("hermes_agent.gateway.platforms.base.cache_document_from_bytes", cache_doc)
         document = SimpleNamespace(
             file_name="huge.pdf", mime_type="application/pdf",
             file_size=101, get_file=AsyncMock(),
@@ -1189,7 +1189,7 @@ def test_unmentioned_unsupported_document_observed_without_caching(monkeypatch):
         store = _FakeSessionStore()
         adapter._session_store = store
         cache_doc = Mock(return_value="/tmp/malware.exe")
-        monkeypatch.setattr("gateway.platforms.base.cache_document_from_bytes", cache_doc)
+        monkeypatch.setattr("hermes_agent.gateway.platforms.base.cache_document_from_bytes", cache_doc)
         file_obj = SimpleNamespace(
             file_path="documents/malware.exe",
             download_as_bytearray=AsyncMock(return_value=bytearray(b"MZ")),

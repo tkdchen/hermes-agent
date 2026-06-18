@@ -2,8 +2,8 @@
 
 import json
 
-import plugins.memory.openviking as openviking_plugin
-from plugins.memory.openviking import OpenVikingMemoryProvider
+import hermes_agent.plugins.memory.openviking as openviking_plugin
+from hermes_agent.plugins.memory.openviking import OpenVikingMemoryProvider
 
 
 def _write_skill(skills_dir, name, body="Do the thing."):
@@ -84,9 +84,9 @@ class TestOpenVikingSkillQuerySafety:
         assert openviking_plugin._derive_openviking_user_text(skill_message) == ""
 
     def test_skill_markers_match_hermes_scaffolding(self, tmp_path, monkeypatch):
-        import agent.skill_bundles as skill_bundles
-        import agent.skill_commands as skill_commands
-        import tools.skills_tool as skills_tool
+        import hermes_agent.agent.skill_bundles as skill_bundles
+        import hermes_agent.agent.skill_commands as skill_commands
+        import hermes_agent.tools.skills_tool as skills_tool
 
         skills_dir = tmp_path / "skills"
         bundles_dir = tmp_path / "skill-bundles"

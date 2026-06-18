@@ -37,8 +37,8 @@ import logging
 import re
 from typing import Any, Dict, List, Optional
 
-from agent.web_search_provider import WebSearchProvider
-from tools.xai_http import (
+from hermes_agent.agent.web_search_provider import WebSearchProvider
+from hermes_agent.tools.xai_http import (
     has_xai_credentials,
     hermes_xai_user_agent,
     resolve_xai_http_credentials,
@@ -64,7 +64,7 @@ _JSON_BLOCK_RE = re.compile(r"\{[\s\S]*\}", re.MULTILINE)
 def _load_xai_web_config() -> Dict[str, Any]:
     """Read ``web.xai`` from config.yaml (returns {} on miss)."""
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
 
         cfg = load_config()
         web_section = cfg.get("web") if isinstance(cfg, dict) else None
@@ -152,7 +152,7 @@ class XAIWebSearchProvider(WebSearchProvider):
         on success, ``{"success": False, "error": str}`` on failure.
         """
         try:
-            from tools.interrupt import is_interrupted
+            from hermes_agent.tools.interrupt import is_interrupted
 
             if is_interrupted():
                 return {"success": False, "error": "Interrupted"}

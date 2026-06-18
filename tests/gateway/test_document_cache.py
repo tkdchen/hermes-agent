@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from gateway.platforms.base import (
+from hermes_agent.gateway.platforms.base import (
     SUPPORTED_DOCUMENT_TYPES,
     cache_document_from_bytes,
     cleanup_document_cache,
@@ -26,7 +26,7 @@ from gateway.platforms.base import (
 def _redirect_cache(tmp_path, monkeypatch):
     """Point the module-level DOCUMENT_CACHE_DIR to a fresh tmp_path."""
     monkeypatch.setattr(
-        "gateway.platforms.base.DOCUMENT_CACHE_DIR", tmp_path / "doc_cache"
+        "hermes_agent.gateway.platforms.base.DOCUMENT_CACHE_DIR", tmp_path / "doc_cache"
     )
 
 
@@ -181,7 +181,7 @@ _PNG_1PX = bytes.fromhex(
 
 class TestCacheMediaBytes:
     def test_pdf_routes_to_document(self):
-        from gateway.platforms.base import cache_media_bytes
+        from hermes_agent.gateway.platforms.base import cache_media_bytes
         result = cache_media_bytes(b"%PDF-1.4 body", filename="report.pdf", mime_type="application/pdf")
         assert result is not None
         assert result.kind == "document"
@@ -191,7 +191,7 @@ class TestCacheMediaBytes:
         assert "report.pdf" in result.context_note()
 
     def test_png_routes_to_image(self):
-        from gateway.platforms.base import cache_media_bytes
+        from hermes_agent.gateway.platforms.base import cache_media_bytes
         result = cache_media_bytes(_PNG_1PX, filename="photo.png", mime_type="image/png")
         assert result is not None
         assert result.kind == "image"
@@ -199,31 +199,31 @@ class TestCacheMediaBytes:
         assert os.path.exists(result.path)
 
     def test_native_photo_without_filename_uses_default_kind(self):
-        from gateway.platforms.base import cache_media_bytes
+        from hermes_agent.gateway.platforms.base import cache_media_bytes
         result = cache_media_bytes(_PNG_1PX, filename="", mime_type="", default_kind="image")
         assert result is not None
         assert result.kind == "image"
 
     def test_mp4_routes_to_video(self):
-        from gateway.platforms.base import cache_media_bytes
+        from hermes_agent.gateway.platforms.base import cache_media_bytes
         result = cache_media_bytes(b"\x00\x00\x00\x18ftypmp42", filename="clip.mp4", mime_type="video/mp4")
         assert result is not None
         assert result.kind == "video"
         assert result.media_type == "video/mp4"
 
     def test_mime_only_resolves_extension(self):
-        from gateway.platforms.base import cache_media_bytes
+        from hermes_agent.gateway.platforms.base import cache_media_bytes
         result = cache_media_bytes(b"col1,col2\n1,2", filename="", mime_type="text/csv")
         assert result is not None
         assert result.kind == "document"
         assert result.media_type == "text/csv"
 
     def test_unsupported_document_returns_none(self):
-        from gateway.platforms.base import cache_media_bytes
+        from hermes_agent.gateway.platforms.base import cache_media_bytes
         result = cache_media_bytes(b"MZ", filename="malware.exe", mime_type="application/x-msdownload")
         assert result is None
 
     def test_invalid_image_returns_none(self):
-        from gateway.platforms.base import cache_media_bytes
+        from hermes_agent.gateway.platforms.base import cache_media_bytes
         result = cache_media_bytes(b"<html>not an image</html>", filename="x.png", mime_type="image/png")
         assert result is None

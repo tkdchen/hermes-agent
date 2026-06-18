@@ -4,7 +4,7 @@ import json
 from typing import List, Optional
 
 
-from tools.clarify_tool import (
+from hermes_agent.tools.clarify_tool import (
     clarify_tool,
     check_clarify_requirements,
     MAX_CHOICES,

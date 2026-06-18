@@ -30,10 +30,10 @@ import tempfile
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from hermes_constants import get_hermes_home
+from hermes_agent.hermes_constants import get_hermes_home
 from typing import Dict, Any, List, Optional
 
-from utils import atomic_replace
+from hermes_agent.utils import atomic_replace
 
 # fcntl is Unix-only; on Windows use msvcrt for file locking
 msvcrt = None
@@ -72,7 +72,7 @@ ENTRY_DELIMITER = "\n§\n"
 #    explicitly removed.
 # ---------------------------------------------------------------------------
 
-from tools.threat_patterns import first_threat_message as _first_threat_message
+from hermes_agent.tools.threat_patterns import first_threat_message as _first_threat_message
 
 
 def _scan_memory_content(content: str) -> Optional[str]:
@@ -182,7 +182,7 @@ class MemoryStore:
 
         Empty or already-block-marker entries pass through unchanged.
         """
-        from tools.threat_patterns import scan_for_threats
+        from hermes_agent.tools.threat_patterns import scan_for_threats
 
         sanitized: List[str] = []
         for entry in entries:
@@ -618,7 +618,7 @@ def _apply_write_gate(action: str, target: str, content: Optional[str],
         return None
 
     try:
-        from tools import write_approval as wa
+        from hermes_agent.tools import write_approval as wa
     except Exception:
         # If the gate module can't load, fail open (current behaviour) rather
         # than blocking all memory writes.
@@ -790,7 +790,7 @@ MEMORY_SCHEMA = {
 
 
 # --- Registry ---
-from tools.registry import registry, tool_error
+from hermes_agent.tools.registry import registry, tool_error
 
 registry.register(
     name="memory",

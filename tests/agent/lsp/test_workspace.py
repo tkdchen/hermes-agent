@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from agent.lsp.workspace import (
+from hermes_agent.agent.lsp.workspace import (
     clear_cache,
     find_git_worktree,
     is_inside_workspace,

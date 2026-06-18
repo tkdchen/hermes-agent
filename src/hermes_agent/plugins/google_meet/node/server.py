@@ -30,8 +30,8 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from hermes_constants import get_hermes_home
-from plugins.google_meet.node import protocol as _proto
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.plugins.google_meet.node import protocol as _proto
 
 
 def _default_token_path() -> Path:
@@ -113,7 +113,7 @@ class NodeServer:
         payload = msg["payload"]
 
         # Import lazily so test mocks can monkeypatch freely.
-        from plugins.google_meet import process_manager as pm
+        from hermes_agent.plugins.google_meet import process_manager as pm
 
         try:
             if t == "ping":

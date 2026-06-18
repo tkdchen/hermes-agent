@@ -3,7 +3,7 @@
 import json
 import pytest
 
-from tools.cronjob_tools import (
+from hermes_agent.tools.cronjob_tools import (
     _scan_cron_prompt,
     check_cronjob_requirements,
     cronjob,
@@ -95,7 +95,7 @@ class TestScanCronPrompt:
 # Skill-assembled cron prompt scanning (looser pattern set)
 # =========================================================================
 
-from tools.cronjob_tools import _scan_cron_skill_assembled  # noqa: E402
+from hermes_agent.tools.cronjob_tools import _scan_cron_skill_assembled  # noqa: E402
 
 
 class TestScanCronSkillAssembled:
@@ -243,9 +243,9 @@ class TestCronjobRequirements:
 class TestUnifiedCronjobTool:
     @pytest.fixture(autouse=True)
     def _setup_cron_dir(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("cron.jobs.CRON_DIR", tmp_path / "cron")
-        monkeypatch.setattr("cron.jobs.JOBS_FILE", tmp_path / "cron" / "jobs.json")
-        monkeypatch.setattr("cron.jobs.OUTPUT_DIR", tmp_path / "cron" / "output")
+        monkeypatch.setattr("hermes_agent.cron.jobs.CRON_DIR", tmp_path / "cron")
+        monkeypatch.setattr("hermes_agent.cron.jobs.JOBS_FILE", tmp_path / "cron" / "jobs.json")
+        monkeypatch.setattr("hermes_agent.cron.jobs.OUTPUT_DIR", tmp_path / "cron" / "output")
 
     def test_create_and_list(self):
         created = json.loads(
@@ -265,7 +265,7 @@ class TestUnifiedCronjobTool:
         assert listing["jobs"][0]["state"] == "scheduled"
 
     def test_list_handles_partial_legacy_job_records(self):
-        from cron.jobs import save_jobs
+        from hermes_agent.cron.jobs import save_jobs
 
         save_jobs([
             {
@@ -405,7 +405,7 @@ class TestUnifiedCronjobTool:
         string ``"['telegram']"`` as a platform, failing with
         "no delivery target resolved".
         """
-        from cron.jobs import get_job
+        from hermes_agent.cron.jobs import get_job
 
         created = json.loads(
             cronjob(
@@ -421,7 +421,7 @@ class TestUnifiedCronjobTool:
 
     def test_create_normalizes_multi_element_list_deliver(self):
         """deliver=['telegram', 'discord'] is stored as 'telegram,discord'."""
-        from cron.jobs import get_job
+        from hermes_agent.cron.jobs import get_job
 
         created = json.loads(
             cronjob(
@@ -437,7 +437,7 @@ class TestUnifiedCronjobTool:
 
     def test_update_normalizes_list_form_deliver(self):
         """update with deliver=['telegram'] stores the canonical string."""
-        from cron.jobs import get_job
+        from hermes_agent.cron.jobs import get_job
 
         created = json.loads(
             cronjob(action="create", prompt="x", schedule="every 1h")
@@ -458,7 +458,7 @@ class TestUnifiedCronjobTool:
 # Per-job model/provider override resolution
 # =========================================================================
 
-from tools.cronjob_tools import _resolve_model_override  # noqa: E402
+from hermes_agent.tools.cronjob_tools import _resolve_model_override  # noqa: E402
 
 
 class TestResolveModelOverride:
@@ -468,7 +468,7 @@ class TestResolveModelOverride:
     """
 
     def test_keeps_bare_custom_when_a_named_entry_exists(self, monkeypatch):
-        import hermes_cli.runtime_provider as rp_mod
+        import hermes_agent.hermes_cli.runtime_provider as rp_mod
 
         monkeypatch.setattr(rp_mod, "has_named_custom_provider", lambda name: True)
         provider, model = _resolve_model_override(
@@ -478,8 +478,8 @@ class TestResolveModelOverride:
         assert model == "gpt-5.4"
 
     def test_pins_main_provider_when_bare_custom_unresolvable(self, monkeypatch):
-        import hermes_cli.config as cfg_mod
-        import hermes_cli.runtime_provider as rp_mod
+        import hermes_agent.hermes_cli.config as cfg_mod
+        import hermes_agent.hermes_cli.runtime_provider as rp_mod
 
         monkeypatch.setattr(rp_mod, "has_named_custom_provider", lambda name: False)
         monkeypatch.setattr(
@@ -493,7 +493,7 @@ class TestResolveModelOverride:
         assert model == "gpt-5.4"
 
     def test_keeps_explicit_custom_name_unchanged(self, monkeypatch):
-        import hermes_cli.runtime_provider as rp_mod
+        import hermes_agent.hermes_cli.runtime_provider as rp_mod
 
         # Even if the resolver claims no entry, the canonical "custom:<name>"
         # form is never stripped or pinned.

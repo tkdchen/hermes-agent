@@ -32,7 +32,7 @@ needs to replace the import + call site:
     platform = os.getenv("HERMES_SESSION_PLATFORM", "")
 
     # after
-    from gateway.session_context import get_session_env
+    from hermes_agent.gateway.session_context import get_session_env
     platform = get_session_env("HERMES_SESSION_PLATFORM", "")
 """
 
@@ -132,7 +132,7 @@ def set_session_vars(
         _SESSION_MESSAGE_ID.set(message_id),
     ]
     try:
-        from agent.runtime_cwd import set_session_cwd
+        from hermes_agent.agent.runtime_cwd import set_session_cwd
 
         set_session_cwd(cwd)
     except Exception:
@@ -164,7 +164,7 @@ def clear_session_vars(tokens: list) -> None:
     ):
         var.set("")
     try:
-        from agent.runtime_cwd import clear_session_cwd
+        from hermes_agent.agent.runtime_cwd import clear_session_cwd
 
         clear_session_cwd()
     except Exception:

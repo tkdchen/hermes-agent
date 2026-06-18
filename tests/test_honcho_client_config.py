@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from plugins.memory.honcho.client import HonchoClientConfig
-from plugins.memory.honcho import HonchoMemoryProvider
+from hermes_agent.plugins.memory.honcho.client import HonchoClientConfig
+from hermes_agent.plugins.memory.honcho import HonchoMemoryProvider
 
 
 class TestHonchoClientConfigAutoEnable:
@@ -109,7 +109,7 @@ class TestHonchoClientConfigAutoEnable:
 @pytest.mark.skipif(os.name == "nt", reason="POSIX mode bits not enforced on Windows")
 def test_save_config_sets_owner_only_permissions(tmp_path, monkeypatch):
     """honcho.json is created atomically with 0o600, not chmod-after-write."""
-    import utils
+    import hermes_agent.utils as utils
     calls = []
     real_atomic = utils.atomic_json_write
 

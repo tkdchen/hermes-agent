@@ -25,8 +25,8 @@ except ImportError:
 from pathlib import Path
 from typing import Callable
 
-from hermes_constants import get_hermes_home
-from tools.environments.base import _file_mtime_key
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.tools.environments.base import _file_mtime_key
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ def iter_sync_files(container_base: str = "/root/.hermes") -> list[tuple[str, st
     """
     # Late import: credential_files imports agent modules that create
     # circular dependencies if loaded at file_sync module level.
-    from tools.credential_files import (
+    from hermes_agent.tools.credential_files import (
         get_credential_file_mounts,
         iter_cache_files,
         iter_skills_files,

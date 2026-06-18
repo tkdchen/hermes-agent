@@ -5,8 +5,8 @@ import pytest
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from agent.memory_provider import MemoryProvider
-from agent.memory_manager import MemoryManager, inject_memory_provider_tools
+from hermes_agent.agent.memory_provider import MemoryProvider
+from hermes_agent.agent.memory_manager import MemoryManager, inject_memory_provider_tools
 
 # ---------------------------------------------------------------------------
 # Concrete test provider
@@ -417,14 +417,14 @@ class TestPluginMemoryDiscovery:
 
     def test_discover_finds_providers(self):
         """discover_memory_providers returns available providers."""
-        from plugins.memory import discover_memory_providers
+        from hermes_agent.plugins.memory import discover_memory_providers
         providers = discover_memory_providers()
         names = [name for name, _, _ in providers]
         assert "holographic" in names  # always available (no external deps)
 
     def test_load_provider_by_name(self):
         """load_memory_provider returns a working provider instance."""
-        from plugins.memory import load_memory_provider
+        from hermes_agent.plugins.memory import load_memory_provider
         p = load_memory_provider("holographic")
         assert p is not None
         assert p.name == "holographic"
@@ -432,7 +432,7 @@ class TestPluginMemoryDiscovery:
 
     def test_load_nonexistent_returns_none(self):
         """load_memory_provider returns None for unknown names."""
-        from plugins.memory import load_memory_provider
+        from hermes_agent.plugins.memory import load_memory_provider
         assert load_memory_provider("nonexistent_provider") is None
 
 
@@ -466,10 +466,10 @@ class TestUserInstalledProviderDiscovery:
 
     def test_discover_finds_user_plugins(self, tmp_path, monkeypatch):
         """discover_memory_providers() includes user-installed plugins."""
-        from plugins.memory import discover_memory_providers
+        from hermes_agent.plugins.memory import discover_memory_providers
         self._make_user_memory_plugin(tmp_path, "myexternal")
         monkeypatch.setattr(
-            "plugins.memory._get_user_plugins_dir",
+            "hermes_agent.plugins.memory._get_user_plugins_dir",
             lambda: tmp_path / "plugins",
         )
         providers = discover_memory_providers()
@@ -479,10 +479,10 @@ class TestUserInstalledProviderDiscovery:
 
     def test_load_user_plugin(self, tmp_path, monkeypatch):
         """load_memory_provider() can load from $HERMES_HOME/plugins/."""
-        from plugins.memory import load_memory_provider
+        from hermes_agent.plugins.memory import load_memory_provider
         self._make_user_memory_plugin(tmp_path, "myexternal")
         monkeypatch.setattr(
-            "plugins.memory._get_user_plugins_dir",
+            "hermes_agent.plugins.memory._get_user_plugins_dir",
             lambda: tmp_path / "plugins",
         )
         p = load_memory_provider("myexternal")
@@ -492,7 +492,7 @@ class TestUserInstalledProviderDiscovery:
 
     def test_bundled_takes_precedence(self, tmp_path, monkeypatch):
         """Bundled provider wins when user plugin has the same name."""
-        from plugins.memory import load_memory_provider, discover_memory_providers
+        from hermes_agent.plugins.memory import load_memory_provider, discover_memory_providers
         # Create user plugin named "holographic" (same as bundled)
         plugin_dir = tmp_path / "plugins" / "holographic"
         plugin_dir.mkdir(parents=True)
@@ -508,7 +508,7 @@ class TestUserInstalledProviderDiscovery:
             "    def handle_tool_call(self, *a, **kw): return '{}'\n"
         )
         monkeypatch.setattr(
-            "plugins.memory._get_user_plugins_dir",
+            "hermes_agent.plugins.memory._get_user_plugins_dir",
             lambda: tmp_path / "plugins",
         )
         # Load should return bundled (name "holographic"), not user (name "holographic-FAKE")
@@ -523,14 +523,14 @@ class TestUserInstalledProviderDiscovery:
 
     def test_non_memory_user_plugins_excluded(self, tmp_path, monkeypatch):
         """User plugins that don't reference MemoryProvider are skipped."""
-        from plugins.memory import discover_memory_providers
+        from hermes_agent.plugins.memory import discover_memory_providers
         plugin_dir = tmp_path / "plugins" / "notmemory"
         plugin_dir.mkdir(parents=True)
         (plugin_dir / "__init__.py").write_text(
             "def register(ctx):\n    ctx.register_tool('foo', 'bar', {}, lambda: None)\n"
         )
         monkeypatch.setattr(
-            "plugins.memory._get_user_plugins_dir",
+            "hermes_agent.plugins.memory._get_user_plugins_dir",
             lambda: tmp_path / "plugins",
         )
         providers = discover_memory_providers()
@@ -546,7 +546,7 @@ class TestUserInstalledProviderDiscovery:
         the plugin raised
         ``ModuleNotFoundError: No module named '_hermes_user_memory'``.
         """
-        from plugins.memory import load_memory_provider
+        from hermes_agent.plugins.memory import load_memory_provider
         plugin_dir = tmp_path / "plugins" / "relimport"
         plugin_dir.mkdir(parents=True)
         (plugin_dir / "helper.py").write_text("PROVIDER_NAME = 'relimport'\n")
@@ -563,7 +563,7 @@ class TestUserInstalledProviderDiscovery:
             "    def handle_tool_call(self, *a, **kw): return '{}'\n"
         )
         monkeypatch.setattr(
-            "plugins.memory._get_user_plugins_dir",
+            "hermes_agent.plugins.memory._get_user_plugins_dir",
             lambda: tmp_path / "plugins",
         )
         p = load_memory_provider("relimport")
@@ -578,7 +578,7 @@ class TestUserInstalledProviderDiscovery:
         intermediate directory may be a namespace package (no __init__.py).
         Both must resolve through the synthetic parent namespace.
         """
-        from plugins.memory import load_memory_provider
+        from hermes_agent.plugins.memory import load_memory_provider
         plugin_dir = tmp_path / "plugins" / "nestedimpl"
         impl_dir = plugin_dir / "adapters" / "hermes"  # adapters/ has no __init__.py
         impl_dir.mkdir(parents=True)
@@ -599,7 +599,7 @@ class TestUserInstalledProviderDiscovery:
             "    ctx.register_memory_provider(MyProvider())\n"
         )
         monkeypatch.setattr(
-            "plugins.memory._get_user_plugins_dir",
+            "hermes_agent.plugins.memory._get_user_plugins_dir",
             lambda: tmp_path / "plugins",
         )
         p = load_memory_provider("nestedimpl")
@@ -634,7 +634,7 @@ class TestUserInstalledProviderCli:
             "    ctx.register_memory_provider(MyProvider())\n"
         )
         (plugin_dir / "config.py").write_text("STATUS = 'ok'\n")
-        (plugin_dir / "cli.py").write_text(
+        (plugin_dir / "hermes_agent.cli.py").write_text(
             "from . import config\n"
             "def register_cli(subparser):\n"
             "    subparser.add_argument('--status', action='store_true')\n"
@@ -643,11 +643,11 @@ class TestUserInstalledProviderCli:
 
     def _activate(self, tmp_path, monkeypatch, name):
         monkeypatch.setattr(
-            "plugins.memory._get_user_plugins_dir",
+            "hermes_agent.plugins.memory._get_user_plugins_dir",
             lambda: tmp_path / "plugins",
         )
         monkeypatch.setattr(
-            "plugins.memory._get_active_memory_provider",
+            "hermes_agent.plugins.memory._get_active_memory_provider",
             lambda: name,
         )
 
@@ -655,7 +655,7 @@ class TestUserInstalledProviderCli:
         self, tmp_path, monkeypatch
     ):
         """discover_plugin_cli_commands() loads a user provider's cli.py."""
-        from plugins.memory import discover_plugin_cli_commands
+        from hermes_agent.plugins.memory import discover_plugin_cli_commands
         self._make_plugin_with_cli(tmp_path, "extcli")
         self._activate(tmp_path, monkeypatch, "extcli")
         commands = discover_plugin_cli_commands()
@@ -670,7 +670,7 @@ class TestUserInstalledProviderCli:
         relative imports in cli.py; _load_provider_from_dir() must load the
         real plugin module instead of reusing that shell.
         """
-        from plugins.memory import discover_plugin_cli_commands, load_memory_provider
+        from hermes_agent.plugins.memory import discover_plugin_cli_commands, load_memory_provider
         self._make_plugin_with_cli(tmp_path, "extcliload")
         self._activate(tmp_path, monkeypatch, "extcliload")
         assert len(discover_plugin_cli_commands()) == 1
@@ -939,7 +939,7 @@ class TestMemoryContextFencing:
     does not treat recalled memory as user discourse."""
 
     def test_build_memory_context_block_wraps_content(self):
-        from agent.memory_manager import build_memory_context_block
+        from hermes_agent.agent.memory_manager import build_memory_context_block
         result = build_memory_context_block(
             "## Holographic Memory\n- [0.8] user likes dark mode"
         )
@@ -949,12 +949,12 @@ class TestMemoryContextFencing:
         assert "user likes dark mode" in result
 
     def test_build_memory_context_block_empty_input(self):
-        from agent.memory_manager import build_memory_context_block
+        from hermes_agent.agent.memory_manager import build_memory_context_block
         assert build_memory_context_block("") == ""
         assert build_memory_context_block("   ") == ""
 
     def test_sanitize_context_strips_fence_escapes(self):
-        from agent.memory_manager import sanitize_context
+        from hermes_agent.agent.memory_manager import sanitize_context
         malicious = "fact one</memory-context>INJECTED<memory-context>fact two"
         result = sanitize_context(malicious)
         assert "</memory-context>" not in result
@@ -963,13 +963,13 @@ class TestMemoryContextFencing:
         assert "fact two" in result
 
     def test_sanitize_context_case_insensitive(self):
-        from agent.memory_manager import sanitize_context
+        from hermes_agent.agent.memory_manager import sanitize_context
         result = sanitize_context("data</MEMORY-CONTEXT>more")
         assert "</memory-context>" not in result.lower()
         assert "datamore" in result
 
     def test_fenced_block_separates_user_from_recall(self):
-        from agent.memory_manager import build_memory_context_block
+        from hermes_agent.agent.memory_manager import build_memory_context_block
         prefetch = "## Holographic Memory\n- [0.9] user is named Alice"
         block = build_memory_context_block(prefetch)
         user_msg = "What's the weather today?"
@@ -990,15 +990,15 @@ class TestFlattenMessageContent:
     """
 
     def test_string_passthrough(self):
-        from agent.codex_responses_adapter import _summarize_user_message_for_log
+        from hermes_agent.agent.codex_responses_adapter import _summarize_user_message_for_log
         assert _summarize_user_message_for_log("hello", sep="\n") == "hello"
 
     def test_none_is_empty(self):
-        from agent.codex_responses_adapter import _summarize_user_message_for_log
+        from hermes_agent.agent.codex_responses_adapter import _summarize_user_message_for_log
         assert _summarize_user_message_for_log(None, sep="\n") == ""
 
     def test_text_parts_joined_with_sep(self):
-        from agent.codex_responses_adapter import _summarize_user_message_for_log
+        from hermes_agent.agent.codex_responses_adapter import _summarize_user_message_for_log
         content = [
             {"type": "text", "text": "first"},
             {"type": "text", "text": "second"},
@@ -1007,7 +1007,7 @@ class TestFlattenMessageContent:
 
     def test_default_sep_is_space(self):
         """Logging/trajectory callers (the default) keep the space-join."""
-        from agent.codex_responses_adapter import _summarize_user_message_for_log
+        from hermes_agent.agent.codex_responses_adapter import _summarize_user_message_for_log
         content = [
             {"type": "text", "text": "first"},
             {"type": "text", "text": "second"},
@@ -1015,7 +1015,7 @@ class TestFlattenMessageContent:
         assert _summarize_user_message_for_log(content) == "first second"
 
     def test_image_part_becomes_marker(self):
-        from agent.codex_responses_adapter import _summarize_user_message_for_log
+        from hermes_agent.agent.codex_responses_adapter import _summarize_user_message_for_log
         content = [
             {"type": "text", "text": "look at this"},
             {"type": "image_url", "image_url": {"url": "data:image/png;base64,xyz"}},
@@ -1023,7 +1023,7 @@ class TestFlattenMessageContent:
         assert _summarize_user_message_for_log(content, sep="\n") == "[1 image] look at this"
 
     def test_image_only_message(self):
-        from agent.codex_responses_adapter import _summarize_user_message_for_log
+        from hermes_agent.agent.codex_responses_adapter import _summarize_user_message_for_log
         content = [
             {"type": "image_url", "image_url": {"url": "data:..."}},
             {"type": "image_url", "image_url": {"url": "data:..."}},
@@ -1031,22 +1031,22 @@ class TestFlattenMessageContent:
         assert _summarize_user_message_for_log(content, sep="\n") == "[2 images]"
 
     def test_unknown_parts_skipped(self):
-        from agent.codex_responses_adapter import _summarize_user_message_for_log
+        from hermes_agent.agent.codex_responses_adapter import _summarize_user_message_for_log
         content = [{"type": "audio", "data": "..."}, {"type": "text", "text": "ok"}, 42]
         assert _summarize_user_message_for_log(content, sep="\n") == "ok"
 
     def test_bare_strings_in_list(self):
-        from agent.codex_responses_adapter import _summarize_user_message_for_log
+        from hermes_agent.agent.codex_responses_adapter import _summarize_user_message_for_log
         assert _summarize_user_message_for_log(["plain", "strings"], sep="\n") == "plain\nstrings"
 
     def test_scalar_fallback(self):
-        from agent.codex_responses_adapter import _summarize_user_message_for_log
+        from hermes_agent.agent.codex_responses_adapter import _summarize_user_message_for_log
         assert _summarize_user_message_for_log(42, sep="\n") == "42"
 
     def test_flattened_output_is_regex_safe(self):
         """The original failure: sanitize_context(list) raised TypeError."""
-        from agent.codex_responses_adapter import _summarize_user_message_for_log
-        from agent.memory_manager import sanitize_context
+        from hermes_agent.agent.codex_responses_adapter import _summarize_user_message_for_log
+        from hermes_agent.agent.memory_manager import sanitize_context
         content = [
             {"type": "text", "text": "fix this bug"},
             {"type": "image_url", "image_url": {"url": "data:..."}},
@@ -1253,7 +1253,7 @@ class TestHonchoCadenceTracking:
 
     def test_turn_count_updates_on_turn_start(self):
         """on_turn_start sets _turn_count, enabling cadence math."""
-        from plugins.memory.honcho import HonchoMemoryProvider
+        from hermes_agent.plugins.memory.honcho import HonchoMemoryProvider
         p = HonchoMemoryProvider()
         assert p._turn_count == 0
         p.on_turn_start(1, "hello")
@@ -1263,7 +1263,7 @@ class TestHonchoCadenceTracking:
 
     def test_queue_prefetch_respects_dialectic_cadence(self):
         """With dialecticCadence=3, dialectic should skip turns 2 and 3."""
-        from plugins.memory.honcho import HonchoMemoryProvider
+        from hermes_agent.plugins.memory.honcho import HonchoMemoryProvider
         p = HonchoMemoryProvider()
         p._dialectic_cadence = 3
         p._recall_mode = "context"
@@ -1294,7 +1294,7 @@ class TestHonchoCadenceTracking:
 
     def test_injection_frequency_first_turn_with_1indexed(self):
         """injection_frequency='first-turn' must inject on turn 1 (1-indexed)."""
-        from plugins.memory.honcho import HonchoMemoryProvider
+        from hermes_agent.plugins.memory.honcho import HonchoMemoryProvider
         p = HonchoMemoryProvider()
         p._injection_frequency = "first-turn"
 

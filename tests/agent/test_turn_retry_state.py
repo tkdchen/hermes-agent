@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from dataclasses import fields
 
-from agent.turn_retry_state import TurnRetryState
+from hermes_agent.agent.turn_retry_state import TurnRetryState
 
 
 EXPECTED_FIELDS = {

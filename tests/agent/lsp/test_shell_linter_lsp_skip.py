@@ -38,8 +38,8 @@ import pytest
 
 
 def _make_fops():
-    from tools.environments.local import LocalEnvironment
-    from tools.file_operations import ShellFileOperations
+    from hermes_agent.tools.environments.local import LocalEnvironment
+    from hermes_agent.tools.file_operations import ShellFileOperations
     return ShellFileOperations(LocalEnvironment())
 
 
@@ -128,7 +128,7 @@ def test_lsp_will_handle_returns_false_when_service_is_none(tmp_path):
     src.write_text("const x = 1\n")
 
     with patch.object(fops, "_lsp_local_only", return_value=True), \
-         patch("agent.lsp.get_service", return_value=None):
+         patch("hermes_agent.agent.lsp.get_service", return_value=None):
         assert fops._lsp_will_handle(str(src)) is False
 
 
@@ -142,7 +142,7 @@ def test_lsp_will_handle_returns_false_on_remote_backend(tmp_path):
     src.write_text("const x = 1\n")
 
     with patch.object(fops, "_lsp_local_only", return_value=False), \
-         patch("agent.lsp.get_service") as get_service_mock:
+         patch("hermes_agent.agent.lsp.get_service") as get_service_mock:
         result = fops._lsp_will_handle(str(src))
 
     assert result is False
@@ -162,7 +162,7 @@ def test_lsp_will_handle_swallows_enabled_for_exception(tmp_path):
     fake_svc.enabled_for.side_effect = RuntimeError("server crashed")
 
     with patch.object(fops, "_lsp_local_only", return_value=True), \
-         patch("agent.lsp.get_service", return_value=fake_svc):
+         patch("hermes_agent.agent.lsp.get_service", return_value=fake_svc):
         assert fops._lsp_will_handle(str(src)) is False
 
 
@@ -181,7 +181,7 @@ def test_tsx_stays_out_of_linters_table_for_default_compatibility():
     ``.tsx`` in its extensions list) — the diagnostics show up in the
     ``lsp_diagnostics`` field, not the ``lint`` field.
     """
-    from tools.file_operations import LINTERS, _SHELL_LINTER_LSP_REDUNDANT
+    from hermes_agent.tools.file_operations import LINTERS, _SHELL_LINTER_LSP_REDUNDANT
 
     assert ".tsx" not in LINTERS
     assert ".tsx" not in _SHELL_LINTER_LSP_REDUNDANT

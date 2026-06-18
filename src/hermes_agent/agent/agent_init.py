@@ -30,27 +30,27 @@ from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional
 from urllib.parse import urlparse, parse_qs, urlunparse
 
-from agent.context_compressor import ContextCompressor
-from agent.iteration_budget import IterationBudget
-from agent.memory_manager import StreamingContextScrubber
-from agent.model_metadata import (
+from hermes_agent.agent.context_compressor import ContextCompressor
+from hermes_agent.agent.iteration_budget import IterationBudget
+from hermes_agent.agent.memory_manager import StreamingContextScrubber
+from hermes_agent.agent.model_metadata import (
     MINIMUM_CONTEXT_LENGTH,
     fetch_model_metadata,
     is_local_endpoint,
     query_ollama_num_ctx,
 )
-from agent.process_bootstrap import _install_safe_stdio
-from agent.subdirectory_hints import SubdirectoryHintTracker
-from agent.think_scrubber import StreamingThinkScrubber
-from agent.tool_guardrails import (
+from hermes_agent.agent.process_bootstrap import _install_safe_stdio
+from hermes_agent.agent.subdirectory_hints import SubdirectoryHintTracker
+from hermes_agent.agent.think_scrubber import StreamingThinkScrubber
+from hermes_agent.agent.tool_guardrails import (
     ToolCallGuardrailConfig,
     ToolCallGuardrailController,
     ToolGuardrailDecision,
 )
-from hermes_cli.config import cfg_get
-from hermes_cli.timeouts import get_provider_request_timeout
-from hermes_constants import get_hermes_home
-from utils import base_url_host_matches
+from hermes_agent.hermes_cli.config import cfg_get
+from hermes_agent.hermes_cli.timeouts import get_provider_request_timeout
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.utils import base_url_host_matches
 
 # Use the same logger name as run_agent so tests patching ``run_agent.logger``
 # capture our warnings.  (run_agent.py also does
@@ -64,7 +64,7 @@ def _ra():
     ``run_agent.OpenAI`` / ``run_agent.cleanup_vm`` / ... and have those
     patches reach this code path.
     """
-    import run_agent
+    import hermes_agent.run_agent as run_agent
     return run_agent
 
 
@@ -354,7 +354,7 @@ def init_agent(
         pass  # Non-fatal — transport may not exist for all modes yet
 
     try:
-        from hermes_cli.model_normalize import (
+        from hermes_agent.hermes_cli.model_normalize import (
             _AGGREGATOR_PROVIDERS,
             normalize_model_for_provider,
         )
@@ -505,7 +505,7 @@ def init_agent(
     # sessions with >5-minute pauses between turns (#14971).
     agent._cache_ttl = "5m"
     try:
-        from hermes_cli.config import load_config as _load_pc_cfg
+        from hermes_agent.hermes_cli.config import load_config as _load_pc_cfg
 
         _pc_cfg = _load_pc_cfg().get("prompt_caching", {}) or {}
         _ttl = _pc_cfg.get("cache_ttl", "5m")
@@ -552,7 +552,7 @@ def init_agent(
     # Centralized logging — agent.log (INFO+) and errors.log (WARNING+)
     # both live under ~/.hermes/logs/.  Idempotent, so gateway mode
     # (which creates a new AIAgent per message) won't duplicate handlers.
-    from hermes_logging import setup_logging, setup_verbose_logging
+    from hermes_agent.hermes_logging import setup_logging, setup_verbose_logging
     setup_logging(hermes_home=_ra()._hermes_home)
 
     if agent.verbose_logging:
@@ -621,12 +621,12 @@ def init_agent(
     _provider_timeout = get_provider_request_timeout(agent.provider, agent.model)
 
     if agent.api_mode == "anthropic_messages":
-        from agent.anthropic_adapter import build_anthropic_client, resolve_anthropic_token
+        from hermes_agent.agent.anthropic_adapter import build_anthropic_client, resolve_anthropic_token
         # Bedrock + Claude → use AnthropicBedrock SDK for full feature parity
         # (prompt caching, thinking budgets, adaptive thinking).
         _is_bedrock_anthropic = agent.provider == "bedrock"
         if _is_bedrock_anthropic:
-            from agent.anthropic_adapter import build_anthropic_bedrock_client
+            from hermes_agent.agent.anthropic_adapter import build_anthropic_bedrock_client
             _region_match = re.search(r"bedrock-runtime\.([a-z0-9-]+)\.", base_url or "")
             _br_region = _region_match.group(1) if _region_match else "us-east-1"
             agent._bedrock_region = _br_region
@@ -660,7 +660,7 @@ def init_agent(
             # state cost is one file read + one timestamp compare per request.
             if agent.provider == "minimax-oauth" and isinstance(effective_key, str) and effective_key:
                 try:
-                    from hermes_cli.auth import build_minimax_oauth_token_provider
+                    from hermes_agent.hermes_cli.auth import build_minimax_oauth_token_provider
                     effective_key = build_minimax_oauth_token_provider()
                 except Exception as _mm_exc:  # noqa: BLE001 — never block startup on this
                     import logging as _logging
@@ -680,7 +680,7 @@ def init_agent(
             # so injects Claude-Code identity headers and system prompts
             # that cause 401/403 on their endpoints.  Guards #1739 and
             # the third-party identity-injection bug.
-            from agent.anthropic_adapter import _is_oauth_token as _is_oat
+            from hermes_agent.agent.anthropic_adapter import _is_oauth_token as _is_oat
             agent._is_anthropic_oauth = _is_oat(effective_key) if (_is_native_anthropic and isinstance(effective_key, str)) else False
             agent._anthropic_client = build_anthropic_client(effective_key, base_url, timeout=_provider_timeout)
             # No OpenAI client needed for Anthropic mode
@@ -693,7 +693,7 @@ def init_agent(
                 # The Anthropic adapter installs an httpx event hook
                 # that mints a fresh JWT per request — we never
                 # invoke or inspect the callable in the banner.
-                from agent.azure_identity_adapter import is_token_provider
+                from hermes_agent.agent.azure_identity_adapter import is_token_provider
 
                 if is_token_provider(effective_key):
                     print("🔑 Using credentials: Microsoft Entra ID")
@@ -707,7 +707,7 @@ def init_agent(
         # Guardrail config — read from config.yaml at init time.
         agent._bedrock_guardrail_config = None
         try:
-            from hermes_cli.config import load_config as _load_br_cfg
+            from hermes_agent.hermes_cli.config import load_config as _load_br_cfg
             _gr = _load_br_cfg().get("bedrock", {}).get("guardrail", {})
             if _gr.get("guardrail_identifier") and _gr.get("guardrail_version"):
                 agent._bedrock_guardrail_config = {
@@ -752,15 +752,15 @@ def init_agent(
                 client_kwargs["args"] = agent.acp_args
             effective_base = base_url
             if base_url_host_matches(effective_base, "openrouter.ai"):
-                from agent.auxiliary_client import build_or_headers
+                from hermes_agent.agent.auxiliary_client import build_or_headers
                 client_kwargs["default_headers"] = build_or_headers()
             elif base_url_host_matches(effective_base, "integrate.api.nvidia.com"):
-                from agent.auxiliary_client import build_nvidia_nim_headers
+                from hermes_agent.agent.auxiliary_client import build_nvidia_nim_headers
                 client_kwargs["default_headers"] = build_nvidia_nim_headers(effective_base)
             elif base_url_host_matches(effective_base, "api.routermint.com"):
                 client_kwargs["default_headers"] = _ra()._routermint_headers()
             elif base_url_host_matches(effective_base, "api.githubcopilot.com"):
-                from hermes_cli.models import copilot_default_headers
+                from hermes_agent.hermes_cli.models import copilot_default_headers
 
                 client_kwargs["default_headers"] = copilot_default_headers()
             elif base_url_host_matches(effective_base, "api.kimi.com"):
@@ -770,14 +770,14 @@ def init_agent(
             elif base_url_host_matches(effective_base, "portal.qwen.ai"):
                 client_kwargs["default_headers"] = _ra()._qwen_portal_headers()
             elif base_url_host_matches(effective_base, "chatgpt.com"):
-                from agent.auxiliary_client import _codex_cloudflare_headers
+                from hermes_agent.agent.auxiliary_client import _codex_cloudflare_headers
                 client_kwargs["default_headers"] = _codex_cloudflare_headers(api_key)
             elif "default_headers" not in client_kwargs:
                 # Fall back to profile.default_headers for providers that
                 # declare custom headers (e.g. Kimi User-Agent on non-kimi.com
                 # endpoints).
                 try:
-                    from providers import get_provider_profile as _gpf
+                    from hermes_agent.providers import get_provider_profile as _gpf
                     _ph = _gpf(agent.provider)
                     if _ph and _ph.default_headers:
                         client_kwargs["default_headers"] = dict(_ph.default_headers)
@@ -785,7 +785,7 @@ def init_agent(
                     pass
         else:
             # No explicit creds — use the centralized provider router
-            from agent.auxiliary_client import resolve_provider_client
+            from hermes_agent.agent.auxiliary_client import resolve_provider_client
             _routed_client, _ = resolve_provider_client(
                 agent.provider or "auto", model=agent.model, raw_codex=True)
             if _routed_client is not None:
@@ -815,7 +815,7 @@ def init_agent(
                     # (e.g. alibaba → DASHSCOPE_API_KEY, not ALIBABA_API_KEY).
                     _env_hint = f"{_explicit.upper()}_API_KEY"
                     try:
-                        from hermes_cli.auth import PROVIDER_REGISTRY
+                        from hermes_agent.hermes_cli.auth import PROVIDER_REGISTRY
                         _pcfg = PROVIDER_REGISTRY.get(_explicit)
                         if _pcfg and _pcfg.api_key_env_vars:
                             _env_hint = _pcfg.api_key_env_vars[0]
@@ -904,7 +904,7 @@ def init_agent(
         agent.api_key = client_kwargs.get("api_key", "")
         agent.base_url = client_kwargs.get("base_url", agent.base_url)
         try:
-            from agent.ssl_guard import verify_ca_bundle_with_fallback
+            from hermes_agent.agent.ssl_guard import verify_ca_bundle_with_fallback
 
             verify_ca_bundle_with_fallback()
             agent.client = agent._create_openai_client(client_kwargs, reason="agent_init", shared=True)
@@ -916,7 +916,7 @@ def init_agent(
                 # provider (Azure Foundry). The OpenAI SDK mints a
                 # fresh JWT per request internally — the banner
                 # never invokes or inspects the callable.
-                from agent.azure_identity_adapter import is_token_provider
+                from hermes_agent.agent.azure_identity_adapter import is_token_provider
 
                 key_used = client_kwargs.get("api_key", "none")
                 if is_token_provider(key_used):
@@ -981,7 +981,7 @@ def init_agent(
     # Resolving the ~835-token block once here avoids re-running the
     # membership test + reference on every system-prompt rebuild
     # (init + each context compression).
-    from agent.prompt_builder import KANBAN_GUIDANCE
+    from hermes_agent.agent.prompt_builder import KANBAN_GUIDANCE
     agent._kanban_worker_guidance = (
         KANBAN_GUIDANCE if "kanban_show" in agent.valid_tool_names else ""
     )
@@ -1028,7 +1028,7 @@ def init_agent(
     # coordination, and logging. Keep the ContextVar and os.environ
     # fallback synchronized because different tool paths still read both.
     try:
-        from gateway.session_context import set_current_session_id
+        from hermes_agent.gateway.session_context import set_current_session_id
 
         set_current_session_id(agent.session_id)
     except Exception:
@@ -1044,7 +1044,7 @@ def init_agent(
     # reads the JSON files directly.  See run_agent._save_session_log.
     agent._session_json_enabled = False
     try:
-        from hermes_cli.config import load_config as _load_sess_cfg
+        from hermes_agent.hermes_cli.config import load_config as _load_sess_cfg
         _sess_cfg = (_load_sess_cfg().get("sessions") or {})
         agent._session_json_enabled = bool(_sess_cfg.get("write_json_snapshots", False))
     except Exception:
@@ -1068,7 +1068,7 @@ def init_agent(
     agent._cached_system_prompt: Optional[str] = None
     
     # Filesystem checkpoint manager (transparent — not a tool)
-    from tools.checkpoint_manager import CheckpointManager
+    from hermes_agent.tools.checkpoint_manager import CheckpointManager
     agent._checkpoint_mgr = CheckpointManager(
         enabled=checkpoints_enabled,
         max_snapshots=checkpoint_max_snapshots,
@@ -1088,12 +1088,12 @@ def init_agent(
     }
     
     # In-memory todo list for task planning (one per agent/session)
-    from tools.todo_tool import TodoStore
+    from hermes_agent.tools.todo_tool import TodoStore
     agent._todo_store = TodoStore()
     
     # Load config once for memory, skills, and compression sections
     try:
-        from hermes_cli.config import load_config as _load_agent_config
+        from hermes_agent.hermes_cli.config import load_config as _load_agent_config
         _agent_cfg = _load_agent_config()
     except Exception:
         _agent_cfg = {}
@@ -1124,7 +1124,7 @@ def init_agent(
             agent._user_profile_enabled = mem_config.get("user_profile_enabled", False)
             agent._memory_nudge_interval = int(mem_config.get("nudge_interval", 10))
             if agent._memory_enabled or agent._user_profile_enabled:
-                from tools.memory_tool import MemoryStore
+                from hermes_agent.tools.memory_tool import MemoryStore
                 agent._memory_store = MemoryStore(
                     memory_char_limit=mem_config.get("memory_char_limit", 2200),
                     user_char_limit=mem_config.get("user_char_limit", 1375),
@@ -1143,8 +1143,8 @@ def init_agent(
             _mem_provider_name = mem_config.get("provider", "") if mem_config else ""
 
             if _mem_provider_name and _mem_provider_name.strip():
-                from agent.memory_manager import MemoryManager as _MemoryManager
-                from plugins.memory import load_memory_provider as _load_mem
+                from hermes_agent.agent.memory_manager import MemoryManager as _MemoryManager
+                from hermes_agent.plugins.memory import load_memory_provider as _load_mem
                 agent._memory_manager = _MemoryManager()
                 _mp = _load_mem(_mem_provider_name)
                 if _mp and _mp.is_available():
@@ -1185,7 +1185,7 @@ def init_agent(
                         _init_kwargs["gateway_session_key"] = agent._gateway_session_key
                     # Profile identity for per-profile provider scoping
                     try:
-                        from hermes_cli.profiles import get_active_profile_name
+                        from hermes_agent.hermes_cli.profiles import get_active_profile_name
                         _profile = get_active_profile_name()
                         _init_kwargs["agent_identity"] = _profile
                         _init_kwargs["agent_workspace"] = "hermes"
@@ -1200,7 +1200,7 @@ def init_agent(
             _ra().logger.warning("Memory provider plugin init failed: %s", _mpe)
             agent._memory_manager = None
 
-    from agent.memory_manager import inject_memory_provider_tools as _inject_memory_provider_tools
+    from hermes_agent.agent.memory_manager import inject_memory_provider_tools as _inject_memory_provider_tools
     _inject_memory_provider_tools(agent)
 
     # Skills config: nudge interval for skill creation reminders
@@ -1258,7 +1258,7 @@ def init_agent(
     ).lower() in {"true", "1", "yes"}
     agent._compression_threshold_autoraised = None
     try:
-        from agent.auxiliary_client import (
+        from hermes_agent.agent.auxiliary_client import (
             _compression_threshold_for_model as _cthresh_fn,
             _is_codex_gpt55 as _is_codex_gpt55_fn,
         )
@@ -1372,7 +1372,7 @@ def init_agent(
     # Resolve custom_providers list once for reuse below (startup
     # context-length override and plugin context-engine init).
     try:
-        from hermes_cli.config import get_compatible_custom_providers
+        from hermes_agent.hermes_cli.config import get_compatible_custom_providers
         _custom_providers = get_compatible_custom_providers(_agent_cfg)
     except Exception:
         _custom_providers = _agent_cfg.get("custom_providers")
@@ -1387,7 +1387,7 @@ def init_agent(
     # Check custom_providers per-model context_length
     if _config_context_length is None and _custom_providers:
         try:
-            from hermes_cli.config import get_custom_provider_context_length
+            from hermes_agent.hermes_cli.config import get_custom_provider_context_length
             _cp_ctx_resolved = get_custom_provider_context_length(
                 model=agent.model,
                 base_url=agent.base_url,
@@ -1457,7 +1457,7 @@ def init_agent(
     if _engine_name != "compressor":
         # Try loading from plugins/context_engine/<name>/
         try:
-            from plugins.context_engine import load_context_engine
+            from hermes_agent.plugins.context_engine import load_context_engine
             _selected_engine = load_context_engine(_engine_name)
         except Exception as _ce_load_err:
             _ra().logger.debug("Context engine load from plugins/context_engine/: %s", _ce_load_err)
@@ -1465,7 +1465,7 @@ def init_agent(
         # Try general plugin system as fallback
         if _selected_engine is None:
             try:
-                from hermes_cli.plugins import get_plugin_context_engine
+                from hermes_agent.hermes_cli.plugins import get_plugin_context_engine
                 _candidate = get_plugin_context_engine()
                 if _candidate and _candidate.name == _engine_name:
                     _selected_engine = _candidate
@@ -1482,7 +1482,7 @@ def init_agent(
     if _selected_engine is not None:
         agent.context_compressor = _selected_engine
         # Resolve context_length for plugin engines — mirrors switch_model() path
-        from agent.model_metadata import get_model_context_length
+        from hermes_agent.agent.model_metadata import get_model_context_length
         _plugin_ctx_len = get_model_context_length(
             agent.model,
             base_url=agent.base_url,

@@ -13,7 +13,7 @@ chats) from spawning daemons they don't need.
 
 Public API:
 
-    from agent.lsp import get_service
+    from hermes_agent.agent.lsp import get_service
 
     svc = get_service()
     if svc and svc.enabled_for(path):
@@ -33,9 +33,9 @@ import logging
 import threading
 from typing import Optional
 
-from agent.lsp.manager import LSPService
+from hermes_agent.agent.lsp.manager import LSPService
 
-logger = logging.getLogger("agent.lsp")
+logger = logging.getLogger("hermes_agent.agent.lsp")
 
 _service: Optional[LSPService] = None
 _atexit_registered = False

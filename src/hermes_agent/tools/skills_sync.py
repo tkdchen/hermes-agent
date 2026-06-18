@@ -28,10 +28,10 @@ import os
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
-from hermes_constants import get_bundled_skills_dir, get_hermes_home, get_optional_skills_dir
-from agent.skill_utils import is_excluded_skill_path
+from hermes_agent.hermes_constants import get_bundled_skills_dir, get_hermes_home, get_optional_skills_dir
+from hermes_agent.agent.skill_utils import is_excluded_skill_path
 from typing import Dict, List, Tuple
-from utils import atomic_replace
+from hermes_agent.utils import atomic_replace
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +100,7 @@ def _read_suppressed_names() -> set:
     is unavailable in a packaged/update context.
     """
     try:
-        from tools.skill_usage import read_suppressed_names
+        from hermes_agent.tools.skill_usage import read_suppressed_names
 
         return read_suppressed_names()
     except Exception:
@@ -237,7 +237,7 @@ def _skill_file_list(skill_dir: Path) -> List[str]:
 def _content_hash(directory: Path) -> str:
     """Return the same hash style the skills hub lock uses, falling back locally."""
     try:
-        from tools.skills_guard import content_hash
+        from hermes_agent.tools.skills_guard import content_hash
 
         return content_hash(directory)
     except Exception:

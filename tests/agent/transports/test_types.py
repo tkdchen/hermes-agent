@@ -2,7 +2,7 @@
 
 import json
 
-from agent.transports.types import (
+from hermes_agent.agent.transports.types import (
     NormalizedResponse,
     ToolCall,
     Usage,
@@ -193,7 +193,7 @@ class TestToolCallBackwardCompat:
         assert tc.response_item_id is None
 
     def test_getattr_pattern_matches_agent_loop(self):
-        """run_agent.py uses getattr(tool_call, 'call_id', None) — verify it works."""
+        """hermes_agent.run_agent.py uses getattr(tool_call, 'call_id', None) — verify it works."""
         tc = ToolCall(id="1", name="fn", arguments="{}", provider_data={"call_id": "c1"})
         assert getattr(tc, "call_id", None) == "c1"
         tc_no_pd = ToolCall(id="1", name="fn", arguments="{}")

@@ -6,10 +6,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from gateway.config import GatewayConfig, Platform, PlatformConfig
-from gateway.platforms.base import MessageEvent, MessageType
-from gateway.run import GatewayRunner, _AGENT_PENDING_SENTINEL
-from gateway.session import SessionSource, build_session_key
+from hermes_agent.gateway.config import GatewayConfig, Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import MessageEvent, MessageType
+from hermes_agent.gateway.run import GatewayRunner, _AGENT_PENDING_SENTINEL
+from hermes_agent.gateway.session import SessionSource, build_session_key
 
 
 @pytest.fixture(autouse=True)
@@ -93,10 +93,10 @@ def _occupy_session(runner: GatewayRunner, chat_id: str = "busy"):
 
 
 def _silence_global_gateway_hooks(monkeypatch):
-    monkeypatch.setattr("hermes_cli.plugins.invoke_hook", lambda *args, **kwargs: [])
-    monkeypatch.setattr("tools.slash_confirm.get_pending", lambda *args, **kwargs: None)
-    monkeypatch.setattr("tools.slash_confirm.clear_if_stale", lambda *args, **kwargs: None)
-    monkeypatch.setattr("tools.approval.has_blocking_approval", lambda *args, **kwargs: False)
+    monkeypatch.setattr("hermes_agent.hermes_cli.plugins.invoke_hook", lambda *args, **kwargs: [])
+    monkeypatch.setattr("hermes_agent.tools.slash_confirm.get_pending", lambda *args, **kwargs: None)
+    monkeypatch.setattr("hermes_agent.tools.slash_confirm.clear_if_stale", lambda *args, **kwargs: None)
+    monkeypatch.setattr("hermes_agent.tools.approval.has_blocking_approval", lambda *args, **kwargs: False)
 
 
 def test_new_session_gets_clean_error_at_active_session_limit(monkeypatch):
@@ -178,19 +178,19 @@ def test_skill_command_that_would_start_agent_is_blocked_at_limit(monkeypatch):
     _occupy_session(runner, "busy")
 
     monkeypatch.setattr(
-        "agent.skill_commands.get_skill_commands",
+        "hermes_agent.agent.skill_commands.get_skill_commands",
         lambda: {"demo": {"name": "demo-skill"}},
     )
     monkeypatch.setattr(
-        "agent.skill_commands.resolve_skill_command_key",
+        "hermes_agent.agent.skill_commands.resolve_skill_command_key",
         lambda command: "demo" if command == "demo" else None,
     )
     monkeypatch.setattr(
-        "agent.skill_commands.build_skill_invocation_message",
+        "hermes_agent.agent.skill_commands.build_skill_invocation_message",
         lambda *args, **kwargs: "invoke demo skill",
     )
     monkeypatch.setattr(
-        "agent.skill_utils.get_disabled_skill_names",
+        "hermes_agent.agent.skill_utils.get_disabled_skill_names",
         lambda *args, **kwargs: [],
     )
 

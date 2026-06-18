@@ -19,8 +19,8 @@ from typing import Any, Optional
 
 import pytest
 
-from agent import transcription_registry
-from agent.transcription_provider import TranscriptionProvider
+from hermes_agent.agent import transcription_registry
+from hermes_agent.agent.transcription_provider import TranscriptionProvider
 
 
 class _FakeProvider(TranscriptionProvider):
@@ -95,7 +95,7 @@ class TestRegistration:
     )
     def test_rejects_builtin_shadow_with_warning(self, builtin, caplog):
         p = _FakeProvider(name=builtin)
-        with caplog.at_level(logging.WARNING, logger="agent.transcription_registry"):
+        with caplog.at_level(logging.WARNING, logger="hermes_agent.agent.transcription_registry"):
             transcription_registry.register_provider(p)
         assert "shadows a built-in name" in caplog.text
         assert builtin in caplog.text
@@ -105,7 +105,7 @@ class TestRegistration:
     def test_builtin_shadow_case_insensitive(self, caplog):
         for variant in ("OPENAI", "OpenAi", "  openai  ", "oPeNaI"):
             transcription_registry._reset_for_tests()
-            with caplog.at_level(logging.WARNING, logger="agent.transcription_registry"):
+            with caplog.at_level(logging.WARNING, logger="hermes_agent.agent.transcription_registry"):
                 transcription_registry.register_provider(_FakeProvider(name=variant))
             assert transcription_registry.list_providers() == [], (
                 f"variant {variant!r} should have been rejected as a built-in shadow"
@@ -115,7 +115,7 @@ class TestRegistration:
         p1 = _FakeProvider(name="openrouter")
         p2 = _FakeProvider(name="openrouter")
         transcription_registry.register_provider(p1)
-        with caplog.at_level(logging.DEBUG, logger="agent.transcription_registry"):
+        with caplog.at_level(logging.DEBUG, logger="hermes_agent.agent.transcription_registry"):
             transcription_registry.register_provider(p2)
         assert transcription_registry.get_provider("openrouter") is p2
         assert "re-registered" in caplog.text
@@ -230,11 +230,11 @@ class TestBuiltinSync:
     """
 
     def test_registry_builtins_match_dispatcher_builtins(self):
-        from tools.transcription_tools import BUILTIN_STT_PROVIDERS
+        from hermes_agent.tools.transcription_tools import BUILTIN_STT_PROVIDERS
 
         assert transcription_registry._BUILTIN_NAMES == BUILTIN_STT_PROVIDERS, (
-            "agent.transcription_registry._BUILTIN_NAMES and "
-            "tools.transcription_tools.BUILTIN_STT_PROVIDERS have drifted!\n"
+            "hermes_agent.agent.transcription_registry._BUILTIN_NAMES and "
+            "hermes_agent.tools.transcription_tools.BUILTIN_STT_PROVIDERS have drifted!\n"
             f"  Registry only: {sorted(transcription_registry._BUILTIN_NAMES - BUILTIN_STT_PROVIDERS)}\n"
             f"  Dispatcher only: {sorted(BUILTIN_STT_PROVIDERS - transcription_registry._BUILTIN_NAMES)}\n"
             "Add the missing names to whichever list is incomplete. "

@@ -31,13 +31,13 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
-from agent.codex_responses_adapter import _format_responses_error
-from agent.redact import redact_sensitive_text
-from agent.transports.codex_app_server import (
+from hermes_agent.agent.codex_responses_adapter import _format_responses_error
+from hermes_agent.agent.redact import redact_sensitive_text
+from hermes_agent.agent.transports.codex_app_server import (
     CodexAppServerClient,
     CodexAppServerError,
 )
-from agent.transports.codex_event_projector import CodexEventProjector
+from hermes_agent.agent.transports.codex_event_projector import CodexEventProjector
 
 logger = logging.getLogger(__name__)
 

@@ -1,8 +1,8 @@
 from decimal import Decimal
 
-from agent.models_dev import ModelInfo
-from agent.usage_pricing import PricingEntry
-from hermes_cli.model_cost_guard import expensive_model_warning
+from hermes_agent.agent.models_dev import ModelInfo
+from hermes_agent.agent.usage_pricing import PricingEntry
+from hermes_agent.hermes_cli.model_cost_guard import expensive_model_warning
 
 
 def test_no_warning_when_known_prices_are_at_threshold():
@@ -41,9 +41,9 @@ def test_warns_when_models_dev_input_price_exceeds_threshold():
 
 
 def test_warns_when_pricing_entry_output_price_exceeds_threshold(monkeypatch):
-    monkeypatch.setattr("agent.models_dev.get_model_info", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("hermes_agent.agent.models_dev.get_model_info", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
-        "agent.usage_pricing.get_pricing_entry",
+        "hermes_agent.agent.usage_pricing.get_pricing_entry",
         lambda *_args, **_kwargs: PricingEntry(
             input_cost_per_million=Decimal("1.00"),
             output_cost_per_million=Decimal("100.01"),
@@ -59,9 +59,9 @@ def test_warns_when_pricing_entry_output_price_exceeds_threshold(monkeypatch):
 
 
 def test_openai_gpt55_pro_adds_suggestion(monkeypatch):
-    monkeypatch.setattr("agent.models_dev.get_model_info", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("hermes_agent.agent.models_dev.get_model_info", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
-        "agent.usage_pricing.get_pricing_entry",
+        "hermes_agent.agent.usage_pricing.get_pricing_entry",
         lambda *_args, **_kwargs: PricingEntry(
             input_cost_per_million=Decimal("25"),
             output_cost_per_million=Decimal("125"),
@@ -76,9 +76,9 @@ def test_openai_gpt55_pro_adds_suggestion(monkeypatch):
 
 
 def test_openai_gpt55_pro_warns_for_nous_portal_pricing(monkeypatch):
-    monkeypatch.setattr("agent.models_dev.get_model_info", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("hermes_agent.agent.models_dev.get_model_info", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
-        "agent.usage_pricing.fetch_endpoint_model_metadata",
+        "hermes_agent.agent.usage_pricing.fetch_endpoint_model_metadata",
         lambda base_url, api_key="": {
             "openai/gpt-5.5-pro": {
                 "pricing": {

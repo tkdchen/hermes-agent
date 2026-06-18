@@ -13,10 +13,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-from hermes_cli.config import get_hermes_home, get_env_path, get_project_root, load_config
-from hermes_cli.env_loader import load_hermes_dotenv
-from hermes_constants import display_hermes_home
-from agent.skill_utils import is_excluded_skill_path
+from hermes_agent.hermes_cli.config import get_hermes_home, get_env_path, get_project_root, load_config
+from hermes_agent.hermes_cli.env_loader import load_hermes_dotenv
+from hermes_agent.hermes_constants import display_hermes_home
+from hermes_agent.agent.skill_utils import is_excluded_skill_path
 
 
 def _get_git_commit(project_root: Path) -> str:
@@ -46,7 +46,7 @@ def _get_git_commit(project_root: Path) -> str:
     # images, absent otherwise).  Defers the import so the dump module
     # stays cheap on non-dump code paths.
     try:
-        from hermes_cli.build_info import get_build_sha
+        from hermes_agent.hermes_cli.build_info import get_build_sha
         baked = get_build_sha(short=8)
         if baked:
             return baked
@@ -63,14 +63,14 @@ def _redact(value: str) -> str:
     an empty value (matches the historical behavior of this helper —
     ``hermes dump`` formats empty values as blank, not as ``"(not set)"``).
     """
-    from agent.redact import mask_secret
+    from hermes_agent.agent.redact import mask_secret
     return mask_secret(value)
 
 
 def _gateway_status() -> str:
     """Return a short gateway status string."""
     try:
-        from hermes_cli.gateway import get_gateway_runtime_snapshot
+        from hermes_agent.hermes_cli.gateway import get_gateway_runtime_snapshot
 
         snapshot = get_gateway_runtime_snapshot()
         if snapshot.running:
@@ -170,7 +170,7 @@ def _config_overrides(config: dict) -> dict[str, str]:
     
     Returns a flat dict of dotpath -> value for interesting overrides.
     """
-    from hermes_cli.config import DEFAULT_CONFIG
+    from hermes_agent.hermes_cli.config import DEFAULT_CONFIG
 
     overrides = {}
 
@@ -231,7 +231,7 @@ def run_dump(args):
     hermes_home = get_hermes_home()
 
     try:
-        from hermes_cli import __version__, __release_date__
+        from hermes_agent.hermes_cli import __version__, __release_date__
     except ImportError:
         __version__ = "(unknown)"
         __release_date__ = ""
@@ -247,7 +247,7 @@ def run_dump(args):
 
     # Profile
     try:
-        from hermes_cli.profiles import get_active_profile_name
+        from hermes_agent.hermes_cli.profiles import get_active_profile_name
         profile = get_active_profile_name() or "(default)"
     except Exception:
         profile = "(default)"
@@ -338,7 +338,7 @@ def run_dump(args):
         # misleadingly read "not set" while `hermes auth list` shows it (#42130).
         if not val and label == "openrouter":
             try:
-                from agent.credential_pool import load_pool as _load_pool
+                from hermes_agent.agent.credential_pool import load_pool as _load_pool
 
                 if _load_pool("openrouter").has_credentials():
                     display = "set (auth pool)"

@@ -15,7 +15,7 @@ import io
 import os
 import sys
 
-import hermes_cli
+import hermes_agent.hermes_cli
 
 
 # The exact glyphs the setup wizard / banners print (setup.py ~line 2962+).

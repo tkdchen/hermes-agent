@@ -8,7 +8,7 @@ import time
 from types import SimpleNamespace
 import uuid
 
-from agent.credential_pool import (
+from hermes_agent.agent.credential_pool import (
     AUTH_TYPE_API_KEY,
     AUTH_TYPE_OAUTH,
     CUSTOM_POOL_PREFIX,
@@ -27,10 +27,10 @@ from agent.credential_pool import (
     list_custom_pool_providers,
     load_pool,
 )
-import hermes_cli.auth as auth_mod
-from hermes_cli.auth import PROVIDER_REGISTRY
-from hermes_constants import OPENROUTER_BASE_URL
-from hermes_cli.secret_prompt import masked_secret_prompt
+import hermes_agent.hermes_cli.auth as auth_mod
+from hermes_agent.hermes_cli.auth import PROVIDER_REGISTRY
+from hermes_agent.hermes_constants import OPENROUTER_BASE_URL
+from hermes_agent.hermes_cli.secret_prompt import masked_secret_prompt
 
 
 # Providers that support OAuth login in addition to API keys.
@@ -40,7 +40,7 @@ _OAUTH_CAPABLE_PROVIDERS = {"anthropic", "nous", "openai-codex", "xai-oauth", "q
 def _get_custom_provider_names() -> list:
     """Return list of (display_name, pool_key, provider_key) tuples."""
     try:
-        from hermes_cli.config import get_compatible_custom_providers, load_config
+        from hermes_agent.hermes_cli.config import get_compatible_custom_providers, load_config
 
         config = load_config()
     except Exception:
@@ -91,7 +91,7 @@ def _provider_base_url(provider: str) -> str:
     if provider == "openrouter":
         return OPENROUTER_BASE_URL
     if provider.startswith(CUSTOM_POOL_PREFIX):
-        from agent.credential_pool import _get_custom_provider_config
+        from hermes_agent.agent.credential_pool import _get_custom_provider_config
 
         cp_config = _get_custom_provider_config(provider)
         if cp_config:
@@ -184,7 +184,7 @@ def auth_add_command(args) -> None:
     # Matches the Codex device_code re-link pattern that predates this.
     if not provider.startswith(CUSTOM_POOL_PREFIX):
         try:
-            from hermes_cli.auth import (
+            from hermes_agent.hermes_cli.auth import (
                 _load_auth_store,
                 unsuppress_credential_source,
             )
@@ -222,7 +222,7 @@ def auth_add_command(args) -> None:
         return
 
     if provider == "anthropic":
-        from agent import anthropic_adapter as anthropic_mod
+        from hermes_agent.agent import anthropic_adapter as anthropic_mod
 
         creds = anthropic_mod.run_hermes_oauth_login_pure()
         if not creds:
@@ -365,7 +365,7 @@ def auth_add_command(args) -> None:
         return
 
     if provider == "google-gemini-cli":
-        from agent.google_oauth import run_gemini_oauth_login_pure
+        from hermes_agent.agent.google_oauth import run_gemini_oauth_login_pure
 
         creds = run_gemini_oauth_login_pure()
         auth_mod._mark_google_gemini_cli_active(creds)
@@ -481,8 +481,8 @@ def auth_remove_command(args) -> None:
     # handles its source-specific cleanup and we centralise suppression +
     # user-facing output here so every source behaves identically from
     # the user's perspective.
-    from agent.credential_sources import find_removal_step
-    from hermes_cli.auth import suppress_credential_source
+    from hermes_agent.agent.credential_sources import find_removal_step
+    from hermes_agent.hermes_cli.auth import suppress_credential_source
 
     step = find_removal_step(provider, removed.source)
     if step is None:
@@ -554,7 +554,7 @@ def _interactive_auth() -> None:
 
     # Show AWS Bedrock credential status (not in the pool — uses boto3 chain)
     try:
-        from agent.bedrock_adapter import has_aws_credentials, resolve_aws_auth_env_var, resolve_bedrock_region
+        from hermes_agent.agent.bedrock_adapter import has_aws_credentials, resolve_aws_auth_env_var, resolve_bedrock_region
         if has_aws_credentials():
             auth_source = resolve_aws_auth_env_var() or "unknown"
             region = resolve_bedrock_region()
@@ -575,14 +575,14 @@ def _interactive_auth() -> None:
 
     # Show Azure Foundry Entra ID status
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         _cfg = load_config()
         _model_cfg = _cfg.get("model") if isinstance(_cfg, dict) else None
         if isinstance(_model_cfg, dict):
             _cfg_provider = str(_model_cfg.get("provider") or "").strip().lower()
             _cfg_auth_mode = str(_model_cfg.get("auth_mode") or "").strip().lower()
             if _cfg_provider == "azure-foundry" and _cfg_auth_mode == "entra_id":
-                from agent.azure_identity_adapter import (
+                from hermes_agent.agent.azure_identity_adapter import (
                     EntraIdentityConfig,
                     SCOPE_AI_AZURE_DEFAULT,
                     describe_active_credential,
@@ -764,7 +764,7 @@ def _interactive_strategy() -> None:
         print("Invalid choice.")
         return
 
-    from hermes_cli.config import load_config, save_config
+    from hermes_agent.hermes_cli.config import load_config, save_config
     cfg = load_config()
     pool_strategies = cfg.get("credential_pool_strategies") or {}
     if not isinstance(pool_strategies, dict):

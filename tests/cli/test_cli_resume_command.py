@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from cli import HermesCLI
+from hermes_agent.cli import HermesCLI
 
 
 def _make_cli():
@@ -53,8 +53,8 @@ class TestCliResumeCommand:
         cli_obj._session_db.resolve_resume_session_id.return_value = "sess_001"
 
         with (
-            patch("hermes_cli.main._resolve_session_by_name_or_id", return_value=None),
-            patch("cli._cprint") as mock_cprint,
+            patch("hermes_agent.hermes_cli.main._resolve_session_by_name_or_id", return_value=None),
+            patch("hermes_agent.cli._cprint") as mock_cprint,
         ):
             cli_obj._handle_resume_command("/resume 2")
 
@@ -69,7 +69,7 @@ class TestCliResumeCommand:
             {"id": "sess_002", "title": "Coding"},
         ])
 
-        with patch("cli._cprint") as mock_cprint:
+        with patch("hermes_agent.cli._cprint") as mock_cprint:
             cli_obj._handle_resume_command("/resume 9")
 
         printed = " ".join(str(call) for call in mock_cprint.call_args_list)
@@ -91,8 +91,8 @@ class TestCliResumeCommand:
         for raw in ("<sess_alpha>", "[sess_alpha]", '"sess_alpha"', "'sess_alpha'"):
             cli_obj.session_id = "current_session"
             with (
-                patch("hermes_cli.main._resolve_session_by_name_or_id", return_value="sess_alpha"),
-                patch("cli._cprint"),
+                patch("hermes_agent.hermes_cli.main._resolve_session_by_name_or_id", return_value="sess_alpha"),
+                patch("hermes_agent.cli._cprint"),
             ):
                 cli_obj._handle_resume_command(f"/resume {raw}")
             assert cli_obj.session_id == "sess_alpha", (
@@ -110,8 +110,8 @@ class TestCliResumeCommand:
         cli_obj._session_db.get_session.return_value = None
 
         with (
-            patch("hermes_cli.main._resolve_session_by_name_or_id", return_value=None),
-            patch("cli._cprint") as mock_cprint,
+            patch("hermes_agent.hermes_cli.main._resolve_session_by_name_or_id", return_value=None),
+            patch("hermes_agent.cli._cprint") as mock_cprint,
         ):
             cli_obj._handle_resume_command("/resume <half")
 
@@ -137,7 +137,7 @@ class TestPendingResumeNumberedSelection:
         cli_obj._list_recent_sessions = MagicMock(return_value=sessions)
         cli_obj._show_recent_sessions = MagicMock(return_value=True)
 
-        with patch("cli._cprint"):
+        with patch("hermes_agent.cli._cprint"):
             cli_obj._handle_resume_command("/resume")
 
         assert cli_obj._pending_resume_sessions == sessions
@@ -147,7 +147,7 @@ class TestPendingResumeNumberedSelection:
         cli_obj._show_recent_sessions = MagicMock(return_value=False)
         cli_obj._list_recent_sessions = MagicMock(return_value=[])
 
-        with patch("cli._cprint"):
+        with patch("hermes_agent.cli._cprint"):
             cli_obj._handle_resume_command("/resume")
 
         assert cli_obj._pending_resume_sessions is None
@@ -169,8 +169,8 @@ class TestPendingResumeNumberedSelection:
         cli_obj._session_db.resolve_resume_session_id.return_value = "sess_001"
 
         with (
-            patch("hermes_cli.main._resolve_session_by_name_or_id", return_value=None),
-            patch("cli._cprint"),
+            patch("hermes_agent.hermes_cli.main._resolve_session_by_name_or_id", return_value=None),
+            patch("hermes_agent.cli._cprint"),
         ):
             consumed = cli_obj._consume_pending_resume_selection("2")
 
@@ -183,7 +183,7 @@ class TestPendingResumeNumberedSelection:
         cli_obj = _make_cli()
         cli_obj._pending_resume_sessions = [{"id": "sess_002", "title": "Coding"}]
 
-        with patch("cli._cprint") as mock_cprint:
+        with patch("hermes_agent.cli._cprint") as mock_cprint:
             consumed = cli_obj._consume_pending_resume_selection("9")
 
         printed = " ".join(str(call) for call in mock_cprint.call_args_list)
@@ -198,7 +198,7 @@ class TestPendingResumeNumberedSelection:
         cli_obj = _make_cli()
         cli_obj._pending_resume_sessions = [{"id": "sess_002", "title": "Coding"}]
 
-        with patch("cli._cprint"):
+        with patch("hermes_agent.cli._cprint"):
             consumed = cli_obj._consume_pending_resume_selection("hello there")
 
         # Free text is NOT consumed (caller treats it as chat), but the

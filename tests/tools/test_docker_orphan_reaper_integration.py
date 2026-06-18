@@ -13,7 +13,7 @@ opt-out would silently do nothing.
 import os
 from unittest.mock import patch
 
-import tools.terminal_tool as terminal_tool
+import hermes_agent.tools.terminal_tool as terminal_tool
 
 
 def _reset_reaper_gate():
@@ -33,7 +33,7 @@ def test_maybe_reap_runs_once_per_process(monkeypatch):
         call_count["reap"] += 1
         return 0
 
-    with patch("tools.environments.docker.reap_orphan_containers", _fake_reap):
+    with patch("hermes_agent.tools.environments.docker.reap_orphan_containers", _fake_reap):
         config = {"docker_orphan_reaper": True}
         terminal_tool._maybe_reap_docker_orphans(config)
         terminal_tool._maybe_reap_docker_orphans(config)
@@ -56,7 +56,7 @@ def test_maybe_reap_respects_disable_flag(monkeypatch):
         call_count["reap"] += 1
         return 0
 
-    with patch("tools.environments.docker.reap_orphan_containers", _fake_reap):
+    with patch("hermes_agent.tools.environments.docker.reap_orphan_containers", _fake_reap):
         terminal_tool._maybe_reap_docker_orphans({"docker_orphan_reaper": False})
 
     assert call_count["reap"] == 0, "disabled reaper must not run any docker calls"
@@ -77,7 +77,7 @@ def test_maybe_reap_doubles_lifetime_for_max_age(monkeypatch):
         return 0
 
     monkeypatch.setenv("TERMINAL_LIFETIME_SECONDS", "300")
-    with patch("tools.environments.docker.reap_orphan_containers", _fake_reap):
+    with patch("hermes_agent.tools.environments.docker.reap_orphan_containers", _fake_reap):
         terminal_tool._maybe_reap_docker_orphans({"docker_orphan_reaper": True})
 
     assert captured_args.get("max_age_seconds") == 600, (
@@ -97,7 +97,7 @@ def test_maybe_reap_floors_at_60_seconds(monkeypatch):
         return 0
 
     monkeypatch.setenv("TERMINAL_LIFETIME_SECONDS", "0")
-    with patch("tools.environments.docker.reap_orphan_containers", _fake_reap):
+    with patch("hermes_agent.tools.environments.docker.reap_orphan_containers", _fake_reap):
         terminal_tool._maybe_reap_docker_orphans({"docker_orphan_reaper": True})
 
     assert captured_args.get("max_age_seconds") == 120, (
@@ -116,8 +116,8 @@ def test_maybe_reap_passes_current_profile_as_filter(monkeypatch):
         captured_args.update(kwargs)
         return 0
 
-    with patch("tools.environments.docker.reap_orphan_containers", _fake_reap), \
-         patch("tools.environments.docker._get_active_profile_name", return_value="research-bot"):
+    with patch("hermes_agent.tools.environments.docker.reap_orphan_containers", _fake_reap), \
+         patch("hermes_agent.tools.environments.docker._get_active_profile_name", return_value="research-bot"):
         terminal_tool._maybe_reap_docker_orphans({"docker_orphan_reaper": True})
 
     assert captured_args.get("profile_filter") == "research-bot", (
@@ -134,6 +134,6 @@ def test_maybe_reap_swallows_exceptions(monkeypatch):
     def _exploding_reap(**kwargs):
         raise RuntimeError("docker daemon ate the cat")
 
-    with patch("tools.environments.docker.reap_orphan_containers", _exploding_reap):
+    with patch("hermes_agent.tools.environments.docker.reap_orphan_containers", _exploding_reap):
         # Must not raise
         terminal_tool._maybe_reap_docker_orphans({"docker_orphan_reaper": True})

@@ -117,7 +117,7 @@ def _build_server() -> Any:
         ) from exc
 
     # Discover Hermes tools so dispatch works.
-    from model_tools import (
+    from hermes_agent.model_tools import (
         get_tool_definitions,
         handle_function_call,
     )

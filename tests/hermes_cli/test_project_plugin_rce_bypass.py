@@ -37,7 +37,7 @@ from unittest.mock import patch
 
 import pytest
 
-from hermes_cli import web_server
+from hermes_agent.hermes_cli import web_server
 
 
 @pytest.fixture(autouse=True)

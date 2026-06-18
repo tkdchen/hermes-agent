@@ -50,8 +50,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
-from tools.registry import registry, tool_error
-from tools.xai_http import hermes_xai_user_agent, resolve_xai_http_credentials
+from hermes_agent.tools.registry import registry, tool_error
+from hermes_agent.tools.xai_http import hermes_xai_user_agent, resolve_xai_http_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ MAX_HANDLES = 10
 
 def _load_x_search_config() -> Dict[str, Any]:
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
 
         return load_config().get("x_search", {}) or {}
     except Exception:

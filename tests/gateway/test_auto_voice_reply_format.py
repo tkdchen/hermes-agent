@@ -6,10 +6,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from gateway.config import Platform
-from gateway.platforms.base import MessageEvent
-from gateway.run import GatewayRunner
-from gateway.session import SessionSource
+from hermes_agent.gateway.config import Platform
+from hermes_agent.gateway.platforms.base import MessageEvent
+from hermes_agent.gateway.run import GatewayRunner
+from hermes_agent.gateway.session import SessionSource
 
 
 class TestAutoVoiceReplyFormat:
@@ -34,7 +34,7 @@ class TestAutoVoiceReplyFormat:
                 "voice_compatible": True,
             })
 
-        with patch("tools.tts_tool.text_to_speech_tool", side_effect=fake_tts):
+        with patch("hermes_agent.tools.tts_tool.text_to_speech_tool", side_effect=fake_tts):
             await runner._send_voice_reply(event, "hello from auto tts")
 
         assert requested_paths
@@ -63,7 +63,7 @@ class TestAutoVoiceReplyFormat:
                 "voice_compatible": False,
             })
 
-        with patch("tools.tts_tool.text_to_speech_tool", side_effect=fake_tts):
+        with patch("hermes_agent.tools.tts_tool.text_to_speech_tool", side_effect=fake_tts):
             await runner._send_voice_reply(event, "hello from auto tts")
 
         assert requested_paths
@@ -73,7 +73,7 @@ class TestAutoVoiceReplyFormat:
 
 
 def _make_runner() -> GatewayRunner:
-    with patch("gateway.run.GatewayRunner._load_voice_modes", return_value={}):
+    with patch("hermes_agent.gateway.run.GatewayRunner._load_voice_modes", return_value={}):
         runner = GatewayRunner.__new__(GatewayRunner)
         runner._voice_mode = {}
         runner.adapters = {}

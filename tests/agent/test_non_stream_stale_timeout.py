@@ -21,7 +21,7 @@ def _write_config(tmp_path: Path, body: str) -> None:
 
 
 def _make_agent(tmp_path: Path, **overrides):
-    from run_agent import AIAgent
+    from hermes_agent.run_agent import AIAgent
     kwargs = dict(
         model="gpt-5.5",
         provider="openai-codex",
@@ -40,7 +40,7 @@ def _make_agent(tmp_path: Path, **overrides):
 
 
 def test_estimator_chat_completions_messages():
-    from agent.chat_completion_helpers import estimate_request_context_tokens
+    from hermes_agent.agent.chat_completion_helpers import estimate_request_context_tokens
     payload = {
         "model": "gpt-5.4",
         "messages": [
@@ -53,7 +53,7 @@ def test_estimator_chat_completions_messages():
 
 
 def test_estimator_responses_api_input():
-    from agent.chat_completion_helpers import estimate_request_context_tokens
+    from hermes_agent.agent.chat_completion_helpers import estimate_request_context_tokens
     payload = {
         "model": "gpt-5.5",
         "instructions": "i" * 1000,
@@ -67,7 +67,7 @@ def test_estimator_responses_api_input():
 
 def test_estimator_responses_api_long_session_triggers_tier():
     """A real long Codex session (large ``input``) should clear the 50k boundary."""
-    from agent.chat_completion_helpers import estimate_request_context_tokens
+    from hermes_agent.agent.chat_completion_helpers import estimate_request_context_tokens
     payload = {
         "model": "gpt-5.5",
         "input": "x" * 240_000,  # ~60k tokens (240k chars / 4)
@@ -77,7 +77,7 @@ def test_estimator_responses_api_long_session_triggers_tier():
 
 
 def test_estimator_bare_list_back_compat():
-    from agent.chat_completion_helpers import estimate_request_context_tokens
+    from hermes_agent.agent.chat_completion_helpers import estimate_request_context_tokens
     messages = [
         {"role": "user", "content": "x" * 800},
     ]
@@ -85,14 +85,14 @@ def test_estimator_bare_list_back_compat():
 
 
 def test_estimator_empty_inputs():
-    from agent.chat_completion_helpers import estimate_request_context_tokens
+    from hermes_agent.agent.chat_completion_helpers import estimate_request_context_tokens
     assert estimate_request_context_tokens({}) == 0
     assert estimate_request_context_tokens([]) == 0
     assert estimate_request_context_tokens(None) == 0
 
 
 def test_estimator_unknown_dict_fallback():
-    from agent.chat_completion_helpers import estimate_request_context_tokens
+    from hermes_agent.agent.chat_completion_helpers import estimate_request_context_tokens
     payload = {"random_field": "z" * 400}
     assert estimate_request_context_tokens(payload) > 50
 
@@ -183,7 +183,7 @@ providers:
     monkeypatch.delenv("HERMES_API_CALL_STALE_TIMEOUT", raising=False)
 
     import importlib
-    from hermes_cli import timeouts as to_mod
+    from hermes_agent.hermes_cli import timeouts as to_mod
     importlib.reload(to_mod)
 
     agent = _make_agent(tmp_path)

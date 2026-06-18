@@ -17,7 +17,7 @@ These tests pin the expanded whitelist so it doesn't regress.
 from __future__ import annotations
 
 
-from gateway.run import _ASSISTANT_REPLAY_FIELDS, _build_replay_entry
+from hermes_agent.gateway.run import _ASSISTANT_REPLAY_FIELDS, _build_replay_entry
 
 
 class TestBuildReplayEntry:

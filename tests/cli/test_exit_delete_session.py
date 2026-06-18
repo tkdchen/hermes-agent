@@ -15,7 +15,7 @@ def _make_cli():
     Uses ``__new__`` to skip the heavy __init__; only sets the attributes
     the /exit branch touches.
     """
-    from cli import HermesCLI
+    from hermes_agent.cli import HermesCLI
     cli = HermesCLI.__new__(HermesCLI)
     cli.config = {}
     cli.console = MagicMock()
@@ -106,13 +106,13 @@ class TestCommandRegistry:
     def test_quit_command_advertises_delete_flag(self):
         """The CommandDef args_hint should surface `--delete` in /help and
         CLI autocomplete."""
-        from hermes_cli.commands import resolve_command
+        from hermes_agent.hermes_cli.commands import resolve_command
         cmd = resolve_command("quit")
         assert cmd is not None
         assert cmd.args_hint == "[--delete]"
 
     def test_exit_alias_resolves_to_quit_with_hint(self):
-        from hermes_cli.commands import resolve_command
+        from hermes_agent.hermes_cli.commands import resolve_command
         cmd = resolve_command("exit")
         assert cmd is not None
         assert cmd.name == "quit"

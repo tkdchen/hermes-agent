@@ -12,7 +12,7 @@ import json
 import os
 from typing import Callable, Optional
 
-from tools.registry import registry, tool_error
+from hermes_agent.tools.registry import registry, tool_error
 
 
 def read_terminal_tool(

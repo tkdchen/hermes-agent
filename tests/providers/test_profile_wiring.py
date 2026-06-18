@@ -5,8 +5,8 @@ and asserts the output is identical. This catches any behavioral drift between t
 """
 
 import pytest
-from agent.transports.chat_completions import ChatCompletionsTransport
-from providers import get_provider_profile
+from hermes_agent.agent.transports.chat_completions import ChatCompletionsTransport
+from hermes_agent.providers import get_provider_profile
 
 
 @pytest.fixture
@@ -278,7 +278,7 @@ class TestRequestOverridesParity:
 
     def test_extra_body_override_merges_with_provider_body(self, transport):
         """Override extra_body merges WITH provider extra_body, not replaces."""
-        from agent.portal_tags import nous_portal_tags
+        from hermes_agent.agent.portal_tags import nous_portal_tags
         kw = transport.build_kwargs(
             model="hermes-3", messages=_msgs(), tools=None,
             provider_profile=get_provider_profile("nous"),

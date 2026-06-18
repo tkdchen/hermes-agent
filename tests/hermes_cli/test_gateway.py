@@ -6,13 +6,13 @@ from types import ModuleType, SimpleNamespace
 
 import pytest
 
-import hermes_cli.gateway as gateway
+import hermes_agent.hermes_cli.gateway as gateway
 
 
 def _install_fake_gateway_run(monkeypatch, start_gateway):
-    module = ModuleType("gateway.run")
+    module = ModuleType("hermes_agent.gateway.run")
     module.start_gateway = start_gateway
-    monkeypatch.setitem(sys.modules, "gateway.run", module)
+    monkeypatch.setitem(sys.modules, "hermes_agent.gateway.run", module)
     # ``run_gateway()`` calls ``refresh_systemd_unit_if_needed()`` on every
     # invocation so that restart settings stay current after exit-code-75
     # respawns. That helper writes to ``Path.home() / ".config/systemd/user
@@ -223,7 +223,7 @@ def test_run_gateway_refuses_existing_process_before_importing_gateway_run(monke
 
     _install_fake_gateway_run(monkeypatch, fake_start_gateway)
     _clear_supervisor_markers(monkeypatch)
-    monkeypatch.setattr("gateway.status.get_running_pid", lambda: 17907)
+    monkeypatch.setattr("hermes_agent.gateway.status.get_running_pid", lambda: 17907)
 
     with pytest.raises(SystemExit) as exc_info:
         gateway.run_gateway()
@@ -244,7 +244,7 @@ def test_run_gateway_replace_skips_existing_process_preflight(monkeypatch):
 
     _install_fake_gateway_run(monkeypatch, fake_start_gateway)
     _clear_supervisor_markers(monkeypatch)
-    monkeypatch.setattr("gateway.status.get_running_pid", lambda: 17907)
+    monkeypatch.setattr("hermes_agent.gateway.status.get_running_pid", lambda: 17907)
     monkeypatch.setattr(gateway.asyncio, "run", lambda coro: True)
 
     gateway.run_gateway(replace=True)
@@ -264,9 +264,9 @@ def test_s6_runtime_snapshot_reports_supervised_service(monkeypatch, tmp_path):
             return True
 
     monkeypatch.setattr(gateway, "is_linux", lambda: True)
-    monkeypatch.setattr("hermes_constants.is_container", lambda: True)
-    monkeypatch.setattr("hermes_cli.service_manager.detect_service_manager", lambda: "s6")
-    monkeypatch.setattr("hermes_cli.service_manager.get_service_manager", lambda: FakeS6Manager())
+    monkeypatch.setattr("hermes_agent.hermes_constants.is_container", lambda: True)
+    monkeypatch.setattr("hermes_agent.hermes_cli.service_manager.detect_service_manager", lambda: "s6")
+    monkeypatch.setattr("hermes_agent.hermes_cli.service_manager.get_service_manager", lambda: FakeS6Manager())
     monkeypatch.setattr(gateway, "find_gateway_pids", lambda: [123])
     monkeypatch.setattr(gateway, "_profile_suffix", lambda: "")
 
@@ -296,7 +296,7 @@ def test_running_under_gateway_supervisor_markers(monkeypatch):
 
 
 def test_gateway_run_force_flag_survives_parser_extraction():
-    from hermes_cli.subcommands.gateway import build_gateway_parser
+    from hermes_agent.hermes_cli.subcommands.gateway import build_gateway_parser
 
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command")
@@ -506,7 +506,7 @@ def test_gateway_restart_on_windows_without_service_uses_detached_backend(monkey
     down. The Windows backend restarts via detached pythonw.exe even when no
     Scheduled Task / Startup item is installed.
     """
-    import hermes_cli.gateway_windows as gateway_windows
+    import hermes_agent.hermes_cli.gateway_windows as gateway_windows
 
     calls = []
 
@@ -534,7 +534,7 @@ def test_gateway_restart_on_windows_without_service_uses_detached_backend(monkey
 
 def test_gateway_restart_on_windows_preserves_failure_fallback(monkeypatch):
     """If the Windows backend cannot launch, keep the existing fallback."""
-    import hermes_cli.gateway_windows as gateway_windows
+    import hermes_agent.hermes_cli.gateway_windows as gateway_windows
 
     calls = []
 
@@ -795,7 +795,7 @@ def test_gateway_install_can_decline_start_now_and_startup(monkeypatch):
 def test_find_gateway_pids_falls_back_to_pid_file_when_process_scan_fails(monkeypatch):
     monkeypatch.setattr(gateway, "_get_service_pids", lambda: set())
     monkeypatch.setattr(gateway, "is_windows", lambda: False)
-    monkeypatch.setattr("gateway.status.get_running_pid", lambda: 321)
+    monkeypatch.setattr("hermes_agent.gateway.status.get_running_pid", lambda: 321)
 
     # /proc walk is the first path tried (#22693). Force os.listdir on /proc
     # to raise so the function falls back to ps, where fake_run takes over.
@@ -852,7 +852,7 @@ class TestWaitForGatewayExit:
 
     def test_returns_immediately_when_no_pid(self, monkeypatch):
         """If get_running_pid returns None, exit instantly."""
-        monkeypatch.setattr("gateway.status.get_running_pid", lambda: None)
+        monkeypatch.setattr("hermes_agent.gateway.status.get_running_pid", lambda: None)
         # Should return without sleeping at all.
         gateway._wait_for_gateway_exit(timeout=1.0, force_after=0.5)
 
@@ -865,7 +865,7 @@ class TestWaitForGatewayExit:
             poll_count += 1
             return 12345 if poll_count <= 2 else None
 
-        monkeypatch.setattr("gateway.status.get_running_pid", mock_get_running_pid)
+        monkeypatch.setattr("hermes_agent.gateway.status.get_running_pid", mock_get_running_pid)
         monkeypatch.setattr("time.sleep", lambda _: None)
 
         gateway._wait_for_gateway_exit(timeout=10.0, force_after=999.0)
@@ -894,7 +894,7 @@ class TestWaitForGatewayExit:
 
         monkeypatch.setattr("time.monotonic", fake_monotonic)
         monkeypatch.setattr("time.sleep", lambda _: None)
-        monkeypatch.setattr("gateway.status.get_running_pid", mock_get_running_pid)
+        monkeypatch.setattr("hermes_agent.gateway.status.get_running_pid", mock_get_running_pid)
         monkeypatch.setattr(gateway, "terminate_pid", mock_terminate)
 
         gateway._wait_for_gateway_exit(timeout=10.0, force_after=5.0)
@@ -914,7 +914,7 @@ class TestWaitForGatewayExit:
 
         monkeypatch.setattr("time.monotonic", fake_monotonic)
         monkeypatch.setattr("time.sleep", lambda _: None)
-        monkeypatch.setattr("gateway.status.get_running_pid", lambda: 99)
+        monkeypatch.setattr("hermes_agent.gateway.status.get_running_pid", lambda: 99)
         monkeypatch.setattr(gateway, "terminate_pid", mock_terminate)
 
         # Should not raise — ProcessLookupError means it's already gone.
@@ -936,7 +936,7 @@ class TestStopProfileGateway:
     def test_stop_profile_gateway_keeps_pid_file_when_process_still_running(self, monkeypatch):
         calls = {"kill": 0, "alive_probes": 0, "remove": 0}
 
-        monkeypatch.setattr("gateway.status.get_running_pid", lambda: 12345)
+        monkeypatch.setattr("hermes_agent.gateway.status.get_running_pid", lambda: 12345)
         # Post-#21561: the stop loop sends one SIGTERM via ``os.kill`` then
         # polls liveness via ``gateway.status._pid_exists`` (safe on
         # Windows — bpo-14484). Instrument both seams separately.
@@ -946,12 +946,12 @@ class TestStopProfileGateway:
             lambda pid, sig: calls.__setitem__("kill", calls["kill"] + 1),
         )
         monkeypatch.setattr(
-            "gateway.status._pid_exists",
+            "hermes_agent.gateway.status._pid_exists",
             lambda pid: calls.__setitem__("alive_probes", calls["alive_probes"] + 1) or True,
         )
         monkeypatch.setattr("time.sleep", lambda _: None)
         monkeypatch.setattr(
-            "gateway.status.remove_pid_file",
+            "hermes_agent.gateway.status.remove_pid_file",
             lambda: calls.__setitem__("remove", calls["remove"] + 1),
         )
 
@@ -964,4 +964,4 @@ class TestStopProfileGateway:
 def test_module_has_logger():
     """Verify module has a logger instance (regression guard for #27154)."""
     assert hasattr(gateway, "logger")
-    assert gateway.logger.name == "hermes_cli.gateway"
+    assert gateway.logger.name == "hermes_agent.hermes_cli.gateway"

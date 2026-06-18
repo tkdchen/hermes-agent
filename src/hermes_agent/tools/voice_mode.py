@@ -49,7 +49,7 @@ def _audio_available() -> bool:
         return False
 
 
-from hermes_constants import is_termux as _is_termux_environment
+from hermes_agent.hermes_constants import is_termux as _is_termux_environment
 
 
 def _voice_capture_install_hint() -> str:
@@ -176,7 +176,7 @@ def detect_audio_environment() -> dict:
     # When the user mounts a PulseAudio/PipeWire socket into the container
     # and points PULSE_SERVER / PIPEWIRE_REMOTE at it, audio works fine
     # (issue #21203).  Only block when no forwarding is configured.
-    from hermes_constants import is_container
+    from hermes_agent.hermes_constants import is_container
     if is_container():
         if has_forwarded_audio:
             notices.append("Running inside container (Docker/Podman/LXC) with host audio forwarding")
@@ -888,7 +888,7 @@ def transcribe_recording(wav_path: str, model: Optional[str] = None) -> Dict[str
     Returns:
         Dict with ``success``, ``transcript``, and optionally ``error``.
     """
-    from tools.transcription_tools import MAX_FILE_SIZE, transcribe_audio
+    from hermes_agent.tools.transcription_tools import MAX_FILE_SIZE, transcribe_audio
 
     if _should_chunk_for_transcription(wav_path, MAX_FILE_SIZE):
         result = _transcribe_wav_in_chunks(wav_path, model=model, max_file_size=MAX_FILE_SIZE)
@@ -920,7 +920,7 @@ def _transcribe_wav_in_chunks(
     max_file_size: int,
 ) -> Dict[str, Any]:
     """Split an oversized WAV into provider-sized chunks and join transcripts."""
-    from tools.transcription_tools import transcribe_audio
+    from hermes_agent.tools.transcription_tools import transcribe_audio
 
     chunk_paths: List[str] = []
     transcripts: List[str] = []
@@ -1129,7 +1129,7 @@ def check_voice_requirements() -> Dict[str, Any]:
         ``missing_packages``, and ``details``.
     """
     # Determine STT provider availability
-    from tools.transcription_tools import _get_provider, _load_stt_config, is_stt_enabled
+    from hermes_agent.tools.transcription_tools import _get_provider, _load_stt_config, is_stt_enabled
     stt_config = _load_stt_config()
     stt_enabled = is_stt_enabled(stt_config)
     stt_provider = _get_provider(stt_config)

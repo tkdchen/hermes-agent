@@ -31,7 +31,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
 
-from agent.video_gen_provider import (
+from hermes_agent.agent.video_gen_provider import (
     VideoGenProvider,
     error_response,
     success_response,
@@ -91,7 +91,7 @@ def _resolve_xai_credentials() -> Tuple[str, str]:
     credential source is available; callers must check before using it.
     """
     try:
-        from tools.xai_http import resolve_xai_http_credentials
+        from hermes_agent.tools.xai_http import resolve_xai_http_credentials
 
         creds = resolve_xai_http_credentials() or {}
     except Exception as exc:
@@ -109,7 +109,7 @@ def _resolve_xai_credentials() -> Tuple[str, str]:
 
 def _xai_user_agent() -> str:
     try:
-        from tools.xai_http import hermes_xai_user_agent
+        from hermes_agent.tools.xai_http import hermes_xai_user_agent
 
         return hermes_xai_user_agent()
     except Exception:

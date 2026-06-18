@@ -46,19 +46,19 @@ def cron_env(tmp_path, monkeypatch):
     # Patch the module-level SKILLS_DIR snapshots that `skill_view()`
     # uses. Without this, the tool resolves against the real
     # `~/.hermes/skills/` and our planted skills are invisible.
-    import tools.skills_tool as _skills_tool
+    import hermes_agent.tools.skills_tool as _skills_tool
     monkeypatch.setattr(_skills_tool, "SKILLS_DIR", skills_dir)
     monkeypatch.setattr(_skills_tool, "HERMES_HOME", hermes_home)
 
     # Reset bundle cache and make bundle discovery hit this test home.
-    import agent.skill_bundles as _skill_bundles
+    import hermes_agent.agent.skill_bundles as _skill_bundles
     _skill_bundles._bundles_cache = {}
     _skill_bundles._bundles_cache_mtime = None
 
     # Return both the home dir and the scheduler module so tests use the
     # CURRENT module object (post any reload that happened in fixtures of
     # previously-executed tests in the same worker).
-    import cron.scheduler as _scheduler
+    import hermes_agent.cron.scheduler as _scheduler
     return hermes_home, _scheduler
 
 
@@ -82,7 +82,7 @@ def _plant_bundle(hermes_home: Path, name: str, skills: list[str], instruction: 
         lines.append("instruction: |")
         lines.extend(f"  {line}" for line in instruction.splitlines())
     (bundles_dir / f"{name}.yaml").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    import agent.skill_bundles as _skill_bundles
+    import hermes_agent.agent.skill_bundles as _skill_bundles
     _skill_bundles.scan_bundles()
 
 
@@ -419,7 +419,7 @@ class TestScriptOutputNotStrictScanned:
     def test_command_shapes_in_context_from_output_not_blocked(self, cron_env, monkeypatch):
         """context_from injects a prior job's output — also runtime data."""
         hermes_home, scheduler = cron_env
-        import cron.jobs as cron_jobs
+        import hermes_agent.cron.jobs as cron_jobs
         output_root = hermes_home / "cron" / "output"
         monkeypatch.setattr(cron_jobs, "OUTPUT_DIR", output_root)
         upstream_dir = output_root / "abcdef123456"

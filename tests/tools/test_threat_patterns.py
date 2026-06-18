@@ -7,7 +7,7 @@ helpers `scan_for_threats()` / `first_threat_message()`.
 
 import pytest
 
-from tools.threat_patterns import (
+from hermes_agent.tools.threat_patterns import (
     INVISIBLE_CHARS,
     first_threat_message,
     scan_for_threats,

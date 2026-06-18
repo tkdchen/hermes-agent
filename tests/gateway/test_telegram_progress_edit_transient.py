@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import pytest
 
-from gateway.platforms.base import SendResult
+from hermes_agent.gateway.platforms.base import SendResult
 
 
 # ---------------------------------------------------------------------------

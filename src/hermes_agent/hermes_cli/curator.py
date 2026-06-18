@@ -37,8 +37,8 @@ def _fmt_ts(ts: Optional[str]) -> str:
 
 
 def _cmd_status(args) -> int:
-    from agent import curator
-    from tools import skill_usage
+    from hermes_agent.agent import curator
+    from hermes_agent.tools import skill_usage
 
     state = curator.load_state()
     enabled = curator.is_enabled()
@@ -170,7 +170,7 @@ def _cmd_status(args) -> int:
 
 
 def _cmd_run(args) -> int:
-    from agent import curator
+    from hermes_agent.agent import curator
     if not curator.is_enabled():
         print("curator: disabled via config; enable with `curator.enabled: true`")
         return 1
@@ -233,21 +233,21 @@ def _cmd_run(args) -> int:
 
 
 def _cmd_pause(args) -> int:
-    from agent import curator
+    from hermes_agent.agent import curator
     curator.set_paused(True)
     print("curator: paused")
     return 0
 
 
 def _cmd_resume(args) -> int:
-    from agent import curator
+    from hermes_agent.agent import curator
     curator.set_paused(False)
     print("curator: resumed")
     return 0
 
 
 def _cmd_pin(args) -> int:
-    from tools import skill_usage
+    from hermes_agent.tools import skill_usage
     if not skill_usage.is_agent_created(args.skill):
         print(
             f"curator: '{args.skill}' is bundled or hub-installed — cannot pin "
@@ -260,7 +260,7 @@ def _cmd_pin(args) -> int:
 
 
 def _cmd_unpin(args) -> int:
-    from tools import skill_usage
+    from hermes_agent.tools import skill_usage
     if not skill_usage.is_agent_created(args.skill):
         print(
             f"curator: '{args.skill}' is bundled or hub-installed — "
@@ -273,7 +273,7 @@ def _cmd_unpin(args) -> int:
 
 
 def _cmd_restore(args) -> int:
-    from tools import skill_usage
+    from hermes_agent.tools import skill_usage
     ok, msg = skill_usage.restore_skill(args.skill)
     print(f"curator: {msg}")
     return 0 if ok else 1
@@ -285,7 +285,7 @@ def _cmd_archive(args) -> int:
     The auto-curator archives stale skills on its own schedule; this verb is
     for the user who wants to archive *now* without waiting for a run.
     """
-    from tools import skill_usage
+    from hermes_agent.tools import skill_usage
     if skill_usage.get_record(args.skill).get("pinned"):
         print(
             f"curator: '{args.skill}' is pinned — unpin first with "
@@ -323,7 +323,7 @@ def _cmd_prune(args) -> int:
     ``--days 90`` matches a conservative read of the curator's own archive
     threshold; adjust with ``--days``. Use ``--dry-run`` to preview.
     """
-    from tools import skill_usage
+    from hermes_agent.tools import skill_usage
     days = getattr(args, "days", 90)
     if days < 1:
         print(f"curator: --days must be >= 1 (got {days})", file=sys.stderr)
@@ -387,7 +387,7 @@ def _cmd_prune(args) -> int:
 def _cmd_backup(args) -> int:
     """Take a manual snapshot of the skills tree. Same mechanism as the
     automatic pre-run snapshot, just user-initiated."""
-    from agent import curator_backup
+    from hermes_agent.agent import curator_backup
     if not curator_backup.is_enabled():
         print(
             "curator: backups are disabled via config "
@@ -411,7 +411,7 @@ def _cmd_rollback(args) -> int:
     snapshot of the current tree is always taken first, so rollbacks are
     themselves undoable.
     """
-    from agent import curator_backup
+    from hermes_agent.agent import curator_backup
 
     if getattr(args, "list", False):
         print(curator_backup.summarize_backups())
@@ -478,7 +478,7 @@ def _cmd_rollback(args) -> int:
 
 def _cmd_list_archived(args) -> int:
     """List archived (recoverable) skills."""
-    from tools import skill_usage
+    from hermes_agent.tools import skill_usage
     names = skill_usage.list_archived_skill_names()
     if not names:
         print("curator: no archived skills")

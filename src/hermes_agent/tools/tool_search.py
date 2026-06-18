@@ -34,7 +34,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-logger = logging.getLogger("tools.tool_search")
+logger = logging.getLogger("hermes_agent.tools.tool_search")
 
 
 # Bridge tool names. These names are reserved and may not collide with a
@@ -131,7 +131,7 @@ def _safe_float(value: Any, fallback: float) -> float:
 def load_config() -> ToolSearchConfig:
     """Load tool-search config from the user config file."""
     try:
-        from hermes_cli.config import load_config as _load
+        from hermes_agent.hermes_cli.config import load_config as _load
         cfg = _load() or {}
         tools_cfg = cfg.get("tools") if isinstance(cfg.get("tools"), dict) else {}
         if not isinstance(tools_cfg, dict):
@@ -154,7 +154,7 @@ def _core_tool_names() -> frozenset[str]:
     and we don't want a hard cycle.
     """
     try:
-        from toolsets import _HERMES_CORE_TOOLS
+        from hermes_agent.toolsets import _HERMES_CORE_TOOLS
         return frozenset(_HERMES_CORE_TOOLS)
     except Exception:
         return frozenset()
@@ -174,7 +174,7 @@ def is_deferrable_tool_name(name: str) -> bool:
         return False
     # Check registry toolset for MCP prefix.
     try:
-        from tools.registry import registry
+        from hermes_agent.tools.registry import registry
         entry = registry.get_entry(name)
         if entry is None:
             return False
@@ -307,7 +307,7 @@ def _entry_search_text(td: Dict[str, Any]) -> str:
 def _classify_source(name: str) -> Tuple[str, str]:
     """Return (source_kind, source_name) for a registered tool name."""
     try:
-        from tools.registry import registry
+        from hermes_agent.tools.registry import registry
         entry = registry.get_entry(name)
         if entry is None:
             return ("other", "")

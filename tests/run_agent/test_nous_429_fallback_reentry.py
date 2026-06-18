@@ -50,7 +50,7 @@ class TestSourceUsesReentrantAssignment:
     revert (e.g. a stale-branch merge resolving in favor of the old code)."""
 
     def test_genuine_branch_does_not_skip_to_max_retries(self):
-        from agent import conversation_loop
+        from hermes_agent.agent import conversation_loop
 
         src = inspect.getsource(conversation_loop)
         # Locate the genuine-rate-limit branch.

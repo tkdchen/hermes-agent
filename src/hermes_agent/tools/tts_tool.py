@@ -29,7 +29,7 @@ Configuration is loaded from ~/.hermes/config.yaml under the 'tts:' key.
 The user chooses the provider and voice; the model just sends text.
 
 Usage:
-    from tools.tts_tool import text_to_speech_tool, check_tts_requirements
+    from hermes_agent.tools.tts_tool import text_to_speech_tool, check_tts_requirements
 
     result = text_to_speech_tool(text="Hello world")
 """
@@ -52,7 +52,7 @@ from pathlib import Path
 from typing import Callable, Dict, Any, Optional
 from urllib.parse import urljoin
 
-from hermes_constants import display_hermes_home
+from hermes_agent.hermes_constants import display_hermes_home
 
 logger = logging.getLogger(__name__)
 def get_env_value(name, default=None):
@@ -63,19 +63,19 @@ def get_env_value(name, default=None):
     not keep a stale imported function for the rest of the test process.
     """
     try:
-        from hermes_cli.config import get_env_value as _get_env_value
+        from hermes_agent.hermes_cli.config import get_env_value as _get_env_value
     except ImportError:
         return os.getenv(name, default)
     value = _get_env_value(name)
     return default if value is None else value
-from tools.managed_tool_gateway import resolve_managed_tool_gateway
-from tools.tool_backend_helpers import (
+from hermes_agent.tools.managed_tool_gateway import resolve_managed_tool_gateway
+from hermes_agent.tools.tool_backend_helpers import (
     managed_nous_tools_enabled,
     nous_tool_gateway_unavailable_message,
     prefers_gateway,
     resolve_openai_audio_api_key,
 )
-from tools.xai_http import hermes_xai_user_agent
+from hermes_agent.tools.xai_http import hermes_xai_user_agent
 
 # ---------------------------------------------------------------------------
 # Lazy imports -- providers are imported only when actually used to avoid
@@ -85,7 +85,7 @@ from tools.xai_http import hermes_xai_user_agent
 def _import_edge_tts():
     """Lazy import edge_tts. Returns the module or raises ImportError."""
     try:
-        from tools.lazy_deps import ensure as _lazy_ensure
+        from hermes_agent.tools.lazy_deps import ensure as _lazy_ensure
         _lazy_ensure("tts.edge", prompt=False)
     except ImportError:
         pass
@@ -104,7 +104,7 @@ def _import_elevenlabs():
     error-handling paths keep working.
     """
     try:
-        from tools.lazy_deps import FeatureUnavailable, ensure
+        from hermes_agent.tools.lazy_deps import FeatureUnavailable, ensure
         ensure("tts.elevenlabs", prompt=False)
     except ImportError:
         # lazy_deps module itself missing — fall through to the raw import
@@ -129,7 +129,7 @@ def _import_mistral_client():
     directly). Mirrors the ElevenLabs lazy-import path.
     """
     try:
-        from tools.lazy_deps import ensure
+        from hermes_agent.tools.lazy_deps import ensure
         ensure("tts.mistral", prompt=False)
     except ImportError:
         pass
@@ -198,7 +198,7 @@ GEMINI_TTS_CHANNELS = 1
 GEMINI_TTS_SAMPLE_WIDTH = 2  # 16-bit PCM (L16)
 
 def _get_default_output_dir() -> str:
-    from hermes_constants import get_hermes_dir
+    from hermes_agent.hermes_constants import get_hermes_dir
     return str(get_hermes_dir("cache/audio", "audio_cache"))
 
 DEFAULT_OUTPUT_DIR = _get_default_output_dir()
@@ -326,11 +326,11 @@ def _load_tts_config() -> Dict[str, Any]:
     for any missing fields.
     """
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         config = load_config()
         return config.get("tts", {})
     except ImportError:
-        logger.debug("hermes_cli.config not available, using default TTS config")
+        logger.debug("hermes_agent.hermes_cli.config not available, using default TTS config")
         return {}
     except Exception as e:
         logger.warning("Failed to load TTS config: %s", e, exc_info=True)
@@ -498,8 +498,8 @@ def _dispatch_to_plugin_provider(
     if _is_command_provider_config(_get_named_provider_config(tts_config, key)):
         return None
     try:
-        from agent.tts_registry import get_provider
-        from hermes_cli.plugins import _ensure_plugins_discovered
+        from hermes_agent.agent.tts_registry import get_provider
+        from hermes_agent.hermes_cli.plugins import _ensure_plugins_discovered
 
         _ensure_plugins_discovered()
         plugin_provider = get_provider(key)
@@ -560,7 +560,7 @@ def _plugin_provider_is_voice_compatible(provider: str) -> bool:
     if key in BUILTIN_TTS_PROVIDERS:
         return False
     try:
-        from agent.tts_registry import get_provider
+        from hermes_agent.agent.tts_registry import get_provider
 
         plugin_provider = get_provider(key)
         if plugin_provider is None:
@@ -1119,7 +1119,7 @@ def _generate_xai_tts(text: str, output_path: str, tts_config: Dict[str, Any]) -
     """
     import requests
 
-    from tools.xai_http import resolve_xai_http_credentials
+    from hermes_agent.tools.xai_http import resolve_xai_http_credentials
 
     creds = resolve_xai_http_credentials()
     api_key = str(creds.get("api_key") or "").strip()
@@ -1410,7 +1410,7 @@ def _resolve_gemini_persona_prompt_path(gemini_config: Dict[str, Any]) -> Option
     path = Path(expanded).expanduser()
     if not path.is_absolute():
         try:
-            from hermes_constants import get_hermes_home
+            from hermes_agent.hermes_constants import get_hermes_home
             path = get_hermes_home() / path
         except Exception:
             path = Path.cwd() / path
@@ -1506,7 +1506,7 @@ def _rewrite_gemini_tts_audio_tags(text: str, persona_prompt: str = "") -> str:
         f"{transcript}"
     )
     try:
-        from agent.auxiliary_client import call_llm
+        from hermes_agent.agent.auxiliary_client import call_llm
 
         response = call_llm(
             task=GEMINI_AUDIO_TAG_REWRITE_TASK,
@@ -1812,7 +1812,7 @@ def _get_piper_voices_dir() -> Path:
     Resolves to ``~/.hermes/cache/piper-voices/`` under the active
     HERMES_HOME so voice downloads follow profile boundaries.
     """
-    from hermes_constants import get_hermes_dir
+    from hermes_agent.hermes_constants import get_hermes_dir
     root = Path(get_hermes_dir("cache/piper-voices", "piper_voices_cache"))
     root.mkdir(parents=True, exist_ok=True)
     return root
@@ -2062,7 +2062,7 @@ def text_to_speech_tool(
     # Telegram voice bubbles require Opus (.ogg); OpenAI and ElevenLabs can
     # produce Opus natively (no ffmpeg needed).  Edge TTS always outputs MP3
     # and needs ffmpeg for conversion.
-    from gateway.session_context import get_session_env
+    from hermes_agent.gateway.session_context import get_session_env
     platform = get_session_env("HERMES_SESSION_PLATFORM", "").lower()
     want_opus = (platform == "telegram")
 
@@ -2076,7 +2076,7 @@ def text_to_speech_tool(
         # ``output_path="audio/../../etc/cron.d/x"``. The terminal tool
         # can still write anywhere with approval; this just keeps the
         # unattended TTS surface from materializing files via traversal.
-        from tools.path_security import has_traversal_component
+        from hermes_agent.tools.path_security import has_traversal_component
         if has_traversal_component(output_path):
             return json.dumps({
                 "success": False,
@@ -2364,7 +2364,7 @@ def check_tts_requirements() -> bool:
     if get_env_value("MINIMAX_API_KEY"):
         return True
     try:
-        from tools.xai_http import resolve_xai_http_credentials
+        from hermes_agent.tools.xai_http import resolve_xai_http_credentials
 
         if resolve_xai_http_credentials().get("api_key"):
             return True
@@ -2585,7 +2585,7 @@ def stream_tts_to_speaker(
                         if stop_evt.is_set():
                             break
                         wf.writeframes(chunk)
-                from tools.voice_mode import play_audio_file
+                from hermes_agent.tools.voice_mode import play_audio_file
                 play_audio_file(tmp_path)
             except Exception as exc:
                 logger.warning("Temp-file TTS fallback failed: %s", exc)
@@ -2698,7 +2698,7 @@ if __name__ == "__main__":
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
-from tools.registry import registry, tool_error
+from hermes_agent.tools.registry import registry, tool_error
 
 TTS_SCHEMA = {
     "name": "text_to_speech",

@@ -3,7 +3,7 @@
 import json
 from types import SimpleNamespace
 
-import tools.terminal_tool as terminal_tool
+import hermes_agent.tools.terminal_tool as terminal_tool
 
 
 def _minimal_terminal_config(cwd="/default"):
@@ -123,7 +123,7 @@ def test_background_command_prefers_live_env_cwd_over_init_time_cwd(monkeypatch)
             self.calls.append(kwargs)
             return SimpleNamespace(id="proc_test", pid=1234)
 
-    import tools.process_registry as process_registry_mod
+    import hermes_agent.tools.process_registry as process_registry_mod
 
     registry = FakeRegistry()
     task_id = "session-live-cwd-bg"

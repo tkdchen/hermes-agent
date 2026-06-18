@@ -51,11 +51,11 @@ class TestCreateOpenAIClientCallable:
             return MagicMock(api_key=kwargs.get("api_key"))
 
         # Patch the module-level OpenAI proxy used by ``_create_openai_client``.
-        monkeypatch.setattr("run_agent.OpenAI", fake_openai)
+        monkeypatch.setattr("hermes_agent.run_agent.OpenAI", fake_openai)
 
         # Build a minimal stand-in for AIAgent so we can call the bound
         # method directly without paying the full __init__ cost.
-        from run_agent import AIAgent
+        from hermes_agent.run_agent import AIAgent
 
         agent = AIAgent.__new__(AIAgent)
         # Attributes consulted by _create_openai_client / _client_log_context.
@@ -94,7 +94,7 @@ class TestNormalizeMainRuntimePreservesCallable:
     inherit Entra ID auth from the main agent."""
 
     def test_callable_api_key_survives_normalization(self):
-        from agent.auxiliary_client import _normalize_main_runtime
+        from hermes_agent.agent.auxiliary_client import _normalize_main_runtime
 
         def provider():
             return "jwt"
@@ -111,7 +111,7 @@ class TestNormalizeMainRuntimePreservesCallable:
         assert normalized["auth_mode"] == "entra_id"
 
     def test_string_api_key_still_works(self):
-        from agent.auxiliary_client import _normalize_main_runtime
+        from hermes_agent.agent.auxiliary_client import _normalize_main_runtime
         normalized = _normalize_main_runtime({
             "provider": "azure-foundry",
             "api_key": "sk-static",
@@ -119,7 +119,7 @@ class TestNormalizeMainRuntimePreservesCallable:
         assert normalized["api_key"] == "sk-static"
 
     def test_normalization_drops_empty_string_but_preserves_callable(self):
-        from agent.auxiliary_client import _normalize_main_runtime
+        from hermes_agent.agent.auxiliary_client import _normalize_main_runtime
 
         def provider():
             return ""
@@ -136,7 +136,7 @@ class TestNormalizeMainRuntimePreservesCallable:
         assert "model" not in normalized
 
     def test_unknown_field_dropped(self):
-        from agent.auxiliary_client import _normalize_main_runtime, _MAIN_RUNTIME_FIELDS
+        from hermes_agent.agent.auxiliary_client import _normalize_main_runtime, _MAIN_RUNTIME_FIELDS
         normalized = _normalize_main_runtime({
             "provider": "azure-foundry",
             "api_key": "k",
@@ -156,7 +156,7 @@ class TestTruncateTokenCallable:
     def test_callable_returns_placeholder(self):
         """Dashboard preview must render the Entra placeholder, NOT
         ``"<function ...>"``."""
-        from hermes_cli.web_server import _truncate_token
+        from hermes_agent.hermes_cli.web_server import _truncate_token
 
         invoked = {"count": 0}
 
@@ -170,13 +170,13 @@ class TestTruncateTokenCallable:
         assert invoked["count"] == 0
 
     def test_string_jwt_still_truncated_to_signature_tail(self):
-        from hermes_cli.web_server import _truncate_token
+        from hermes_agent.hermes_cli.web_server import _truncate_token
         # JWT shape: header.payload.signature → only signature tail shown.
         out = _truncate_token("aaaa.bbbb.cccccccsig", visible=4)
         assert out == "…csig"
 
     def test_empty_returns_empty(self):
-        from hermes_cli.web_server import _truncate_token
+        from hermes_agent.hermes_cli.web_server import _truncate_token
         assert _truncate_token(None) == ""
         assert _truncate_token("") == ""
 
@@ -247,7 +247,7 @@ class TestBatchRunnerCallableHandling:
         importing avoids spinning up the full BatchRunner."""
         from pathlib import Path
         src = (Path(__file__).resolve().parent.parent.parent
-               / "batch_runner.py").read_text()
+               / "hermes_agent.batch_runner.py").read_text()
         assert "callable(self.api_key) and not isinstance(self.api_key, str)" in src, (
             "BatchRunner.api_key callable check changed — update test or "
             "verify the new predicate still routes Entra token providers "
@@ -327,14 +327,14 @@ class TestInlinedDisplayMasks:
         run_agent banners."""
         from pathlib import Path
         src = (Path(__file__).resolve().parent.parent.parent
-               / "cli.py").read_text()
+               / "hermes_agent.cli.py").read_text()
         assert "is_token_provider(self.api_key)" in src, (
-            "cli.HermesCLI.show_config must guard self.api_key via "
+            "hermes_agent.cli.HermesCLI.show_config must guard self.api_key via "
             "is_token_provider so callable Entra ID providers don't "
             "crash /config."
         )
         assert '"Microsoft Entra ID"' in src, (
-            "cli.HermesCLI.show_config must print the static "
+            "hermes_agent.cli.HermesCLI.show_config must print the static "
             "'Microsoft Entra ID' label (matching run_agent banners) "
             "instead of attempting to slice the callable."
         )
@@ -348,13 +348,13 @@ class TestInlinedDisplayMasks:
         ``len(callable)``."""
         from pathlib import Path
         src = (Path(__file__).resolve().parent.parent.parent
-               / "run_agent.py").read_text()
+               / "hermes_agent.run_agent.py").read_text()
         # The function now starts with a callable check.
         assert (
             "if callable(key) and not isinstance(key, str):" in src
             and '"<entra-id-bearer>"' in src
         ), (
-            "run_agent._mask_api_key_for_logs must short-circuit for "
+            "hermes_agent.run_agent._mask_api_key_for_logs must short-circuit for "
             "callable api_keys to avoid len(callable) crashes in "
             "request-dump paths."
         )

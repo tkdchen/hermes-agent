@@ -303,7 +303,7 @@ def _lookup_supports_vision(
     if not provider or not model:
         return None
     try:
-        from agent.models_dev import get_model_capabilities
+        from hermes_agent.agent.models_dev import get_model_capabilities
         caps = get_model_capabilities(provider, model)
     except Exception as exc:  # pragma: no cover - defensive
         logger.debug("image_routing: caps lookup failed for %s:%s — %s", provider, model, exc)

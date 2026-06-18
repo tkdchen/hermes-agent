@@ -10,7 +10,7 @@ once that provider is active.
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from hermes_cli import memory_setup
+from hermes_agent.hermes_cli import memory_setup
 
 
 class TestMemorySetupProviderRouting:
@@ -69,7 +69,7 @@ class TestInstallDependenciesRunner:
             captured["cmd"] = cmd
             return SimpleNamespace()
 
-        with patch("plugins.memory.find_provider_dir", return_value=tmp_path), \
+        with patch("hermes_agent.plugins.memory.find_provider_dir", return_value=tmp_path), \
              patch("shutil.which", side_effect=which_side_effect), \
              patch("subprocess.run", fake_run):
             memory_setup._install_dependencies("x")

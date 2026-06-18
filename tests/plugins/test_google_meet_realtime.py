@@ -84,7 +84,7 @@ def _install_fake_websockets(monkeypatch, fake_ws):
 
 
 def test_connect_sends_session_update_with_voice_and_instructions(monkeypatch):
-    from plugins.google_meet.realtime.openai_client import RealtimeSession
+    from hermes_agent.plugins.google_meet.realtime.openai_client import RealtimeSession
 
     ws = _FakeWS(recv_frames=[])
     captured = _install_fake_websockets(monkeypatch, ws)
@@ -123,7 +123,7 @@ def test_connect_sends_session_update_with_voice_and_instructions(monkeypatch):
 
 
 def test_speak_sends_create_and_response_and_writes_audio(monkeypatch, tmp_path):
-    from plugins.google_meet.realtime.openai_client import RealtimeSession
+    from hermes_agent.plugins.google_meet.realtime.openai_client import RealtimeSession
 
     audio_bytes = b"\x01\x02\x03\x04PCM!"
     b64 = base64.b64encode(audio_bytes).decode()
@@ -163,7 +163,7 @@ def test_speak_sends_create_and_response_and_writes_audio(monkeypatch, tmp_path)
 
 
 def test_speak_raises_on_error_frame(monkeypatch, tmp_path):
-    from plugins.google_meet.realtime.openai_client import RealtimeSession
+    from hermes_agent.plugins.google_meet.realtime.openai_client import RealtimeSession
 
     ws = _FakeWS(recv_frames=[
         {"type": "response.created"},
@@ -178,7 +178,7 @@ def test_speak_raises_on_error_frame(monkeypatch, tmp_path):
 
 
 def test_speak_without_connect_raises(monkeypatch):
-    from plugins.google_meet.realtime.openai_client import RealtimeSession
+    from hermes_agent.plugins.google_meet.realtime.openai_client import RealtimeSession
 
     sess = RealtimeSession(api_key="sk-test")
     with pytest.raises(RuntimeError, match="connect"):
@@ -186,7 +186,7 @@ def test_speak_without_connect_raises(monkeypatch):
 
 
 def test_close_is_idempotent_and_closes_ws(monkeypatch):
-    from plugins.google_meet.realtime.openai_client import RealtimeSession
+    from hermes_agent.plugins.google_meet.realtime.openai_client import RealtimeSession
 
     ws = _FakeWS(recv_frames=[])
     _install_fake_websockets(monkeypatch, ws)
@@ -205,7 +205,7 @@ def test_close_is_idempotent_and_closes_ws(monkeypatch):
 
 
 def test_connect_raises_clean_error_when_websockets_missing(monkeypatch):
-    from plugins.google_meet.realtime.openai_client import RealtimeSession
+    from hermes_agent.plugins.google_meet.realtime.openai_client import RealtimeSession
 
     # Make `import websockets.sync.client` fail.
     monkeypatch.setitem(sys.modules, "websockets", None)
@@ -232,7 +232,7 @@ class _StubSession:
 
 
 def test_speaker_run_until_stopped_processes_queue(tmp_path):
-    from plugins.google_meet.realtime.openai_client import RealtimeSpeaker
+    from hermes_agent.plugins.google_meet.realtime.openai_client import RealtimeSpeaker
 
     queue = tmp_path / "queue.jsonl"
     processed = tmp_path / "processed.jsonl"
@@ -262,7 +262,7 @@ def test_speaker_run_until_stopped_processes_queue(tmp_path):
 
 
 def test_speaker_exits_immediately_when_stop_fn_true(tmp_path):
-    from plugins.google_meet.realtime.openai_client import RealtimeSpeaker
+    from hermes_agent.plugins.google_meet.realtime.openai_client import RealtimeSpeaker
 
     queue = tmp_path / "q.jsonl"
     queue.write_text(json.dumps({"id": "x", "text": "never spoken"}) + "\n")
@@ -274,7 +274,7 @@ def test_speaker_exits_immediately_when_stop_fn_true(tmp_path):
 
 
 def test_speaker_drops_line_without_processed_path_when_none(tmp_path):
-    from plugins.google_meet.realtime.openai_client import RealtimeSpeaker
+    from hermes_agent.plugins.google_meet.realtime.openai_client import RealtimeSpeaker
 
     queue = tmp_path / "q.jsonl"
     queue.write_text(json.dumps({"id": "only", "text": "once"}) + "\n")

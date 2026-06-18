@@ -2,7 +2,7 @@
 
 import json
 
-from agent.tool_result_classification import file_mutation_result_landed
+from hermes_agent.agent.tool_result_classification import file_mutation_result_landed
 
 
 def test_write_file_with_nested_lint_error_counts_as_landed():

@@ -59,7 +59,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
-from hermes_constants import get_hermes_home, secure_parent_dir
+from hermes_agent.hermes_constants import get_hermes_home, secure_parent_dir
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +97,7 @@ _DEFAULT_CLIENT_SECRET = f"GOCSPX-{_PUBLIC_CLIENT_SECRET_SUFFIX}"
 
 # Regex patterns for fallback scraping from an installed gemini-cli.
 import re as _re
-from utils import atomic_replace
+from hermes_agent.utils import atomic_replace
 _CLIENT_ID_PATTERN = _re.compile(
     r"OAUTH_CLIENT_ID\s*=\s*['\"]([0-9]+-[a-z0-9]+\.apps\.googleusercontent\.com)['\"]"
 )
@@ -900,7 +900,7 @@ def start_oauth_flow(
             import webbrowser
 
             try:
-                from hermes_cli.auth import (
+                from hermes_agent.hermes_cli.auth import (
                     _can_open_graphical_browser as _can_open_gui,
                 )
             except Exception:

@@ -4,8 +4,8 @@ import asyncio
 
 import pytest
 
-from gateway.config import GatewayConfig, Platform, PlatformConfig, _apply_env_overrides
-from gateway.platforms.msgraph_webhook import AIOHTTP_AVAILABLE, MSGraphWebhookAdapter
+from hermes_agent.gateway.config import GatewayConfig, Platform, PlatformConfig, _apply_env_overrides
+from hermes_agent.gateway.platforms.msgraph_webhook import AIOHTTP_AVAILABLE, MSGraphWebhookAdapter
 
 
 def _make_adapter(**extra_overrides) -> MSGraphWebhookAdapter:
@@ -225,7 +225,7 @@ class TestMSGraphNotifications:
             return real_compare(a, b)
 
         monkeypatch.setattr(
-            "gateway.platforms.msgraph_webhook.hmac.compare_digest", _spy
+            "hermes_agent.gateway.platforms.msgraph_webhook.hmac.compare_digest", _spy
         )
 
         adapter = _make_adapter()

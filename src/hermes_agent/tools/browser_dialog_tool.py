@@ -19,8 +19,8 @@ import json
 import logging
 from typing import Any, Dict, Optional
 
-from tools.browser_supervisor import SUPERVISOR_REGISTRY
-from tools.registry import registry
+from hermes_agent.tools.browser_supervisor import SUPERVISOR_REGISTRY
+from hermes_agent.tools.registry import registry
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +126,7 @@ def _browser_dialog_check() -> bool:
     CDP URL is enough to commit to showing the tool.
     """
     try:
-        from tools.browser_cdp_tool import _browser_cdp_check  # type: ignore[import-not-found]
+        from hermes_agent.tools.browser_cdp_tool import _browser_cdp_check  # type: ignore[import-not-found]
     except Exception as exc:  # pragma: no cover — defensive
         logger.debug("browser_dialog check: browser_cdp_tool import failed: %s", exc)
         return False

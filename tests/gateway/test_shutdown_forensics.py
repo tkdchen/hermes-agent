@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from gateway import shutdown_forensics as sf
+from hermes_agent.gateway import shutdown_forensics as sf
 
 
 # ---------------------------------------------------------------------------

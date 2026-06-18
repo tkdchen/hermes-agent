@@ -10,7 +10,7 @@ from a known-untrusted source.
 
 import pytest
 
-from agent.tool_dispatch_helpers import (
+from hermes_agent.agent.tool_dispatch_helpers import (
     _is_untrusted_tool,
     _maybe_wrap_untrusted,
     make_tool_result_message,

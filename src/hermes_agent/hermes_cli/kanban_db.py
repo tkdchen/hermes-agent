@@ -88,7 +88,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
-from toolsets import get_toolset_names
+from hermes_agent.toolsets import get_toolset_names
 
 _log = logging.getLogger(__name__)
 
@@ -280,7 +280,7 @@ def kanban_home() -> Path:
     override = os.environ.get("HERMES_KANBAN_HOME", "").strip()
     if override:
         return Path(override).expanduser()
-    from hermes_constants import get_default_hermes_root
+    from hermes_agent.hermes_constants import get_default_hermes_root
     return get_default_hermes_root()
 
 
@@ -1460,7 +1460,7 @@ def connect(
                 # WAL doesn't work on network filesystems (NFS/SMB/FUSE). Shared helper
                 # falls back to DELETE with one WARNING so kanban stays usable there.
                 # See hermes_state._WAL_INCOMPAT_MARKERS for detection logic.
-                from hermes_state import apply_wal_with_fallback
+                from hermes_agent.hermes_state import apply_wal_with_fallback
                 apply_wal_with_fallback(conn, db_label=f"kanban.db ({path.name})")
                 # FULL (was NORMAL): fsync before each checkpoint to narrow the
                 # crash window that can leave a b-tree page header torn.
@@ -2044,7 +2044,7 @@ def _canonical_assignee(assignee: Optional[str]) -> Optional[str]:
     """Lowercase-assignee normalization for Kanban rows (dashboard/CLI parity)."""
     if assignee is None:
         return None
-    from hermes_cli.profiles import normalize_profile_name
+    from hermes_agent.hermes_cli.profiles import normalize_profile_name
 
     return normalize_profile_name(assignee)
 
@@ -5041,7 +5041,7 @@ def _pid_alive(pid: Optional[int]) -> bool:
     """
     if not pid or pid <= 0:
         return False
-    from gateway.status import _pid_exists
+    from hermes_agent.gateway.status import _pid_exists
     if not _pid_exists(int(pid)):
         return False
     # Still here → process exists. Check for zombie on platforms
@@ -5987,7 +5987,7 @@ def has_spawnable_ready(conn: sqlite3.Connection) -> bool:
     if not rows:
         return False
     try:
-        from hermes_cli.profiles import profile_exists  # local import: avoids cycle
+        from hermes_agent.hermes_cli.profiles import profile_exists  # local import: avoids cycle
     except Exception:
         # Can't introspect — assume spawnable, preserve legacy behavior.
         return True
@@ -6013,7 +6013,7 @@ def has_spawnable_review(conn: sqlite3.Connection) -> bool:
     if not rows:
         return False
     try:
-        from hermes_cli.profiles import profile_exists  # local import: avoids cycle
+        from hermes_agent.hermes_cli.profiles import profile_exists  # local import: avoids cycle
     except Exception:
         return True
     for row in rows:
@@ -6155,7 +6155,7 @@ def dispatch_once(
     _default_assignee_resolved = False
     if _default_assignee:
         try:
-            from hermes_cli.profiles import profile_exists as _pe
+            from hermes_agent.hermes_cli.profiles import profile_exists as _pe
             _default_assignee_resolved = bool(_pe(_default_assignee))
         except Exception:
             # Profiles module not importable (test stubs, exotic envs).
@@ -6222,7 +6222,7 @@ def dispatch_once(
         # the task would loop back to ``ready`` on next tick, and we'd
         # burn CPU forever (#kanban-dispatcher-crash-loop 2026-05-05).
         try:
-            from hermes_cli.profiles import profile_exists  # local import: avoids cycle
+            from hermes_agent.hermes_cli.profiles import profile_exists  # local import: avoids cycle
         except Exception:
             profile_exists = None  # type: ignore[assignment]
         if profile_exists is not None and not profile_exists(row_assignee):
@@ -6356,7 +6356,7 @@ def dispatch_once(
             result.skipped_unassigned.append(row["id"])
             continue
         try:
-            from hermes_cli.profiles import profile_exists
+            from hermes_agent.hermes_cli.profiles import profile_exists
         except Exception:
             profile_exists = None  # type: ignore[assignment]
         if profile_exists is not None and not profile_exists(row["assignee"]):
@@ -6429,7 +6429,7 @@ def worker_log_rotation_config(kanban_cfg: Optional[dict] = None) -> tuple[int, 
     """
     if kanban_cfg is None:
         try:
-            from hermes_cli.config import load_config
+            from hermes_agent.hermes_cli.config import load_config
 
             kanban_cfg = (load_config().get("kanban") or {})
         except Exception:
@@ -6499,7 +6499,7 @@ def _module_hermes_argv() -> list[str]:
     # ``hermes_cli.main`` is the console-script target declared in
     # pyproject.toml, NOT a top-level ``hermes`` package — there is no
     # ``hermes`` package to import.
-    return [sys.executable, "-m", "hermes_cli.main"]
+    return [sys.executable, "-m", "hermes_agent.hermes_cli.main"]
 
 
 def _absolute_hermes_path(path: str) -> str:
@@ -6689,9 +6689,9 @@ def _resolve_worker_cli_toolsets(hermes_home: Optional[str]) -> Optional[list[st
     if not hermes_home:
         return None
     try:
-        from hermes_constants import reset_hermes_home_override, set_hermes_home_override
-        from hermes_cli.config import load_config
-        from hermes_cli.tools_config import _get_platform_tools
+        from hermes_agent.hermes_constants import reset_hermes_home_override, set_hermes_home_override
+        from hermes_agent.hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.tools_config import _get_platform_tools
 
         token = set_hermes_home_override(hermes_home)
         try:
@@ -6731,7 +6731,7 @@ def _default_spawn(
     if not task.assignee:
         raise ValueError(f"task {task.id} has no assignee")
 
-    from hermes_cli.profiles import normalize_profile_name
+    from hermes_agent.hermes_cli.profiles import normalize_profile_name
 
     profile_arg = normalize_profile_name(task.assignee)
 
@@ -6747,7 +6747,7 @@ def _default_spawn(
     # back to Path.home() / ".hermes" (the DEFAULT profile root), ignoring the
     # profile-specific config entirely.  Fixes profile-scoped fallback_providers
     # being invisible to kanban workers.
-    from hermes_cli.profiles import resolve_profile_env
+    from hermes_agent.hermes_cli.profiles import resolve_profile_env
     try:
         env["HERMES_HOME"] = resolve_profile_env(profile_arg)
     except FileNotFoundError:
@@ -7578,7 +7578,7 @@ def list_profiles_on_disk() -> list[str]:
     path).
     """
     try:
-        from hermes_constants import get_default_hermes_root
+        from hermes_agent.hermes_constants import get_default_hermes_root
         default_root = get_default_hermes_root()
         profiles_dir = default_root / "profiles"
     except Exception:

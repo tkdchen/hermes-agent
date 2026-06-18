@@ -8,8 +8,8 @@ and the dev-fixture marker.
 """
 from __future__ import annotations
 
-from agent.account_usage import _snapshot_from_credits_state
-from agent.credits_tracker import CreditsState
+from hermes_agent.agent.account_usage import _snapshot_from_credits_state
+from hermes_agent.agent.credits_tracker import CreditsState
 
 
 def _state(**kw) -> CreditsState:

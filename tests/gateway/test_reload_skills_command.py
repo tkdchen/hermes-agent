@@ -19,9 +19,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from gateway.config import GatewayConfig, Platform, PlatformConfig
-from gateway.platforms.base import MessageEvent
-from gateway.session import SessionEntry, SessionSource, build_session_key
+from hermes_agent.gateway.config import GatewayConfig, Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import MessageEvent
+from hermes_agent.gateway.session import SessionEntry, SessionSource, build_session_key
 
 
 def _make_source() -> SessionSource:
@@ -39,7 +39,7 @@ def _make_event(text: str) -> MessageEvent:
 
 
 def _make_runner():
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = object.__new__(GatewayRunner)
     runner.config = GatewayConfig(
@@ -83,7 +83,7 @@ def _make_runner():
     runner._should_send_voice_reply = lambda *_args, **_kwargs: False
     # Use the real _session_key_for_source binding so the key matches what
     # the agent-loop consumer will look up later.
-    from gateway.run import GatewayRunner as _GR
+    from hermes_agent.gateway.run import GatewayRunner as _GR
     runner._session_key_for_source = _GR._session_key_for_source.__get__(runner, _GR)
     return runner
 
@@ -104,7 +104,7 @@ async def test_reload_skills_handler_queues_note_on_diff(monkeypatch):
         "commands": 3,
     }
 
-    import agent.skill_commands as skill_commands_mod
+    import hermes_agent.agent.skill_commands as skill_commands_mod
     monkeypatch.setattr(skill_commands_mod, "reload_skills", lambda: fake_result)
 
     runner = _make_runner()
@@ -141,7 +141,7 @@ async def test_reload_skills_handler_queues_note_on_diff(monkeypatch):
 @pytest.mark.asyncio
 async def test_reload_skills_handler_reports_no_changes(monkeypatch):
     """No diff → no queued note, no transcript write."""
-    import agent.skill_commands as skill_commands_mod
+    import hermes_agent.agent.skill_commands as skill_commands_mod
 
     monkeypatch.setattr(
         skill_commands_mod,
@@ -169,7 +169,7 @@ async def test_reload_skills_handler_reports_no_changes(monkeypatch):
 @pytest.mark.asyncio
 async def test_dispatcher_routes_reload_skills(monkeypatch):
     """``/reload-skills`` must reach ``_handle_reload_skills_command``."""
-    import gateway.run as gateway_run
+    import hermes_agent.gateway.run as gateway_run
 
     runner = _make_runner()
     sentinel = "reload-skills handler reached"
@@ -186,7 +186,7 @@ async def test_dispatcher_routes_reload_skills(monkeypatch):
 @pytest.mark.asyncio
 async def test_underscored_alias_not_flagged_unknown(monkeypatch):
     """Telegram autocomplete sends ``/reload_skills`` for ``/reload-skills``."""
-    import gateway.run as gateway_run
+    import hermes_agent.gateway.run as gateway_run
 
     runner = _make_runner()
     runner._handle_reload_skills_command = AsyncMock(return_value="ok")  # type: ignore[attr-defined]

@@ -131,7 +131,7 @@ def _get_mcp_stderr_log() -> Any:
         if _mcp_stderr_log_fh is not None:
             return _mcp_stderr_log_fh
         try:
-            from hermes_constants import get_hermes_home
+            from hermes_agent.hermes_constants import get_hermes_home
             log_dir = get_hermes_home() / "logs"
             log_dir.mkdir(parents=True, exist_ok=True)
             log_path = log_dir / "mcp-stderr.log"
@@ -522,7 +522,7 @@ def _cache_mcp_image_block(block) -> str:
         return ""
 
     try:
-        from gateway.platforms.base import cache_image_from_bytes
+        from hermes_agent.gateway.platforms.base import cache_image_from_bytes
 
         image_path = cache_image_from_bytes(
             raw_bytes,
@@ -1036,7 +1036,7 @@ class SamplingHandler:
         model = self._resolve_model(getattr(params, "modelPreferences", None))
 
         # Get auxiliary LLM client via centralized router
-        from agent.auxiliary_client import call_llm
+        from hermes_agent.agent.auxiliary_client import call_llm
 
         # Model whitelist check (we need to resolve model before calling)
         resolved_model = model or self.model_override or ""
@@ -1292,7 +1292,7 @@ class MCPServerTask:
         After the initial ``await`` (list_tools), all mutations are synchronous
         — atomic from the event loop's perspective.
         """
-        from tools.registry import registry
+        from hermes_agent.tools.registry import registry
 
         if not self._advertises_tools():
             # A server that doesn't implement tools/* should never send
@@ -1449,7 +1449,7 @@ class MCPServerTask:
         command, safe_env = _resolve_stdio_command(command, safe_env)
 
         # Check package against OSV malware database before spawning
-        from tools.osv_check import check_package_for_malware
+        from hermes_agent.tools.osv_check import check_package_for_malware
         malware_error = check_package_for_malware(command, args)
         if malware_error:
             raise ValueError(
@@ -1517,7 +1517,7 @@ class MCPServerTask:
             # on Linux, where setsid() children escape the parent cgroup).
             # Mark them as orphans so the next cleanup sweep can reap them.
             if new_pids:
-                from gateway.status import _pid_exists
+                from hermes_agent.gateway.status import _pid_exists
                 _killpg = getattr(os, "killpg", None)
                 with _lock:
                     for _pid in new_pids:
@@ -1655,7 +1655,7 @@ class MCPServerTask:
         _oauth_auth = None
         if self._auth_type == "oauth":
             try:
-                from tools.mcp_oauth_manager import get_manager
+                from hermes_agent.tools.mcp_oauth_manager import get_manager
                 _oauth_auth = get_manager().get_or_build_provider(
                     self.name, url, config.get("oauth"),
                 )
@@ -2036,7 +2036,7 @@ class MCPServerTask:
 
     async def shutdown(self):
         """Signal the Task to exit and wait for clean resource teardown."""
-        from tools.registry import registry
+        from hermes_agent.tools.registry import registry
 
         self._shutdown_event.set()
         # Defensive: if _wait_for_lifecycle_event is blocking, we need ANY
@@ -2162,7 +2162,7 @@ def _get_auth_error_types() -> tuple:
     except ImportError:
         pass
     try:
-        from tools.mcp_oauth import OAuthNonInteractiveError
+        from hermes_agent.tools.mcp_oauth import OAuthNonInteractiveError
         types.append(OAuthNonInteractiveError)
     except ImportError:
         pass
@@ -2231,7 +2231,7 @@ def _handle_auth_error_and_retry(
     if not _is_auth_error(exc):
         return None
 
-    from tools.mcp_oauth_manager import get_manager
+    from hermes_agent.tools.mcp_oauth_manager import get_manager
     manager = get_manager()
 
     async def _recover():
@@ -2560,7 +2560,7 @@ def _wrap_with_home_override(coro: "Coroutine") -> "Coroutine":
     carrying different scopes don't interfere.
     """
     try:
-        from hermes_constants import (
+        from hermes_agent.hermes_constants import (
             get_hermes_home_override,
             reset_hermes_home_override,
             set_hermes_home_override,
@@ -2593,8 +2593,8 @@ def _run_on_mcp_loop(coro_or_factory, timeout: float = 30):
     Poll in short intervals so the calling agent thread can honor user
     interrupts while the MCP work is still running on the background loop.
     """
-    from tools.interrupt import is_interrupted
-    from agent.async_utils import safe_schedule_threadsafe
+    from hermes_agent.tools.interrupt import is_interrupted
+    from hermes_agent.agent.async_utils import safe_schedule_threadsafe
 
     with _lock:
         loop = _mcp_loop
@@ -2677,7 +2677,7 @@ def _interpolate_env_vars(value):
 def _filter_suspicious_mcp_servers(servers: Dict[str, dict]) -> Dict[str, dict]:
     """Drop exfiltration-shaped MCP configs before any stdio spawn path."""
     try:
-        from hermes_cli.mcp_security import validate_mcp_server_entry as _validate_mcp_server_entry
+        from hermes_agent.hermes_cli.mcp_security import validate_mcp_server_entry as _validate_mcp_server_entry
     except Exception:
         _validate_mcp_server_entry: Callable[[str, dict[str, Any]], list[str]] | None = None
 
@@ -2713,10 +2713,10 @@ def _load_mcp_config() -> Dict[str, dict]:
     ``os.environ`` (which includes ``~/.hermes/.env`` loaded at startup).
     """
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         # Safe mode (--safe-mode / HERMES_SAFE_MODE=1): troubleshooting run
         # with all customizations disabled — no MCP servers connect.
-        from utils import env_var_enabled as _env_enabled
+        from hermes_agent.utils import env_var_enabled as _env_enabled
         if _env_enabled("HERMES_SAFE_MODE"):
             return {}
         config = load_config()
@@ -2725,7 +2725,7 @@ def _load_mcp_config() -> Dict[str, dict]:
             return {}
         # Ensure .env vars are available for interpolation
         try:
-            from hermes_cli.env_loader import load_hermes_dotenv
+            from hermes_agent.hermes_cli.env_loader import load_hermes_dotenv
             load_hermes_dotenv()
         except Exception:
             pass
@@ -2970,7 +2970,7 @@ def _make_read_resource_handler(server_name: str, tool_timeout: float):
     """Return a sync handler that reads a resource by URI from an MCP server."""
 
     def _handler(args: dict, **kwargs) -> str:
-        from tools.registry import tool_error
+        from hermes_agent.tools.registry import tool_error
 
         with _lock:
             server = _servers.get(server_name)
@@ -3093,7 +3093,7 @@ def _make_get_prompt_handler(server_name: str, tool_timeout: float):
     """Return a sync handler that gets a prompt by name from an MCP server."""
 
     def _handler(args: dict, **kwargs) -> str:
-        from tools.registry import tool_error
+        from hermes_agent.tools.registry import tool_error
 
         with _lock:
             server = _servers.get(server_name)
@@ -3228,7 +3228,7 @@ def _normalize_mcp_input_schema(schema: dict | None) -> dict:
         coercion can still map a model-emitted ``"null"`` string to Python
         ``None`` for this optional field.
         """
-        from tools.schema_sanitizer import strip_nullable_unions
+        from hermes_agent.tools.schema_sanitizer import strip_nullable_unions
 
         return strip_nullable_unions(node, keep_nullable_hint=True)
 
@@ -3536,7 +3536,7 @@ def _register_server_tools(name: str, server: MCPServerTask, config: dict) -> Li
     Returns:
         List of registered prefixed tool names.
     """
-    from tools.registry import registry
+    from hermes_agent.tools.registry import registry
 
     registered_names: List[str] = []
     toolset_name = f"mcp-{name}"
@@ -3745,7 +3745,7 @@ def register_mcp_servers(servers: Dict[str, dict]) -> List[str]:
     # Temporarily clear the interrupt flag on the current thread so that MCP
     # discovery is never cancelled by a stale interrupt from a prior agent
     # session (executor threads get reused and may carry old interrupt state).
-    from tools.interrupt import is_interrupted as _is_interrupted, set_interrupt as _set_interrupt
+    from hermes_agent.tools.interrupt import is_interrupted as _is_interrupted, set_interrupt as _set_interrupt
     _was_interrupted = _is_interrupted()
     if _was_interrupted:
         _set_interrupt(False)
@@ -4016,7 +4016,7 @@ def shutdown_mcp_servers():
     with _lock:
         loop = _mcp_loop
     if loop is not None and loop.is_running():
-        from agent.async_utils import safe_schedule_threadsafe
+        from hermes_agent.agent.async_utils import safe_schedule_threadsafe
         future = safe_schedule_threadsafe(
             _shutdown(), loop,
             logger=logger,
@@ -4107,7 +4107,7 @@ def _kill_orphaned_mcp_children(include_active: bool = False) -> None:
     _sigkill = getattr(_signal, "SIGKILL", _signal.SIGTERM)
     # ``os.kill(pid, 0)`` is NOT a no-op on Windows. Use the cross-platform
     # existence check before escalating to SIGKILL.
-    from gateway.status import _pid_exists
+    from hermes_agent.gateway.status import _pid_exists
     for pid, server_name in pids.items():
         if not _pid_exists(pid):
             continue  # Good — exited after SIGTERM

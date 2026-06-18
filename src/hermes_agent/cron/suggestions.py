@@ -36,9 +36,9 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from hermes_constants import get_hermes_home
-from hermes_time import now as _hermes_now
-from utils import atomic_replace
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.hermes_time import now as _hermes_now
+from hermes_agent.utils import atomic_replace
 
 logger = logging.getLogger(__name__)
 
@@ -229,7 +229,7 @@ def accept_suggestion(ref: str, *, origin: Optional[Dict[str, Any]] = None) -> O
     if not s or s.get("status") != _STATUS_PENDING:
         return None
 
-    from cron.jobs import create_job
+    from hermes_agent.cron.jobs import create_job
 
     spec = dict(s.get("job_spec") or {})
     if origin is not None and "origin" not in spec:

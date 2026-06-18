@@ -61,7 +61,7 @@ class TestIgnoreUserConfigEnvGate:
 
     def _reload_cli(self, monkeypatch, tmp_path):
         """Point cli._hermes_home at tmp_path and return a fresh load_cli_config."""
-        import cli
+        import hermes_agent.cli as cli
         monkeypatch.setattr(cli, "_hermes_home", tmp_path)
         return cli.load_cli_config
 
@@ -119,7 +119,7 @@ class TestIgnoreRulesEnvGate:
 
         # Import HermesCLI lazily — cli.py has heavy module-init side effects
         # that we don't want to run at test collection time.
-        import cli
+        import hermes_agent.cli as cli
         importlib.reload(cli)
 
         # Build only enough of HermesCLI to reach the ignore_rules assignment.
@@ -135,7 +135,7 @@ class TestIgnoreRulesEnvGate:
 
     def test_constructor_flag_alone_enables_ignore_rules(self, monkeypatch):
         monkeypatch.delenv("HERMES_IGNORE_RULES", raising=False)
-        import cli
+        import hermes_agent.cli as cli
         obj = object.__new__(cli.HermesCLI)
         ignore_rules = True  # constructor argument
         obj.ignore_rules = ignore_rules or os.environ.get("HERMES_IGNORE_RULES") == "1"
@@ -143,7 +143,7 @@ class TestIgnoreRulesEnvGate:
 
     def test_neither_flag_nor_env_leaves_rules_enabled(self, monkeypatch):
         monkeypatch.delenv("HERMES_IGNORE_RULES", raising=False)
-        import cli
+        import hermes_agent.cli as cli
         obj = object.__new__(cli.HermesCLI)
         ignore_rules = False
         obj.ignore_rules = ignore_rules or os.environ.get("HERMES_IGNORE_RULES") == "1"
@@ -225,7 +225,7 @@ class TestArgparseFlagsRegistered:
 
     def test_main_py_registers_both_flags(self):
         """E2E: the real hermes parser accepts both flags."""
-        from hermes_cli._parser import build_top_level_parser
+        from hermes_agent.hermes_cli._parser import build_top_level_parser
 
         parser, _subparsers, chat_parser = build_top_level_parser()
 
@@ -238,7 +238,7 @@ class TestArgparseFlagsRegistered:
 
         # And the cmd_chat env-var wiring must be present
         import inspect
-        import hermes_cli.main as hm
+        import hermes_agent.hermes_cli.main as hm
         src = inspect.getsource(hm)
         assert "HERMES_IGNORE_USER_CONFIG" in src
         assert "HERMES_IGNORE_RULES" in src

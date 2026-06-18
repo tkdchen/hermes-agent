@@ -7,7 +7,7 @@ _sanitize_api_messages() and the CLI session-restore paths.
 
 import logging
 
-from run_agent import AIAgent
+from hermes_agent.run_agent import AIAgent
 
 
 # ---------------------------------------------------------------------------

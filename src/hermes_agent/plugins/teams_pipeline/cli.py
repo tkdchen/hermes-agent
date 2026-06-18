@@ -10,22 +10,22 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from hermes_constants import display_hermes_home
-from gateway.config import Platform, load_gateway_config
-from plugins.teams_pipeline.meetings import (
+from hermes_agent.hermes_constants import display_hermes_home
+from hermes_agent.gateway.config import Platform, load_gateway_config
+from hermes_agent.plugins.teams_pipeline.meetings import (
     enrich_meeting_with_call_record,
     fetch_preferred_transcript_text,
     list_recording_artifacts,
     resolve_meeting_reference,
 )
-from plugins.teams_pipeline.models import GraphSubscription
-from plugins.teams_pipeline.pipeline import TeamsMeetingPipeline
-from plugins.teams_pipeline.store import TeamsPipelineStore, resolve_teams_pipeline_store_path
-from plugins.teams_pipeline.subscriptions import (
+from hermes_agent.plugins.teams_pipeline.models import GraphSubscription
+from hermes_agent.plugins.teams_pipeline.pipeline import TeamsMeetingPipeline
+from hermes_agent.plugins.teams_pipeline.store import TeamsPipelineStore, resolve_teams_pipeline_store_path
+from hermes_agent.plugins.teams_pipeline.subscriptions import (
     build_graph_client,
     maintain_graph_subscriptions,
 )
-from tools.microsoft_graph_auth import MicrosoftGraphConfigError, MicrosoftGraphTokenProvider
+from hermes_agent.tools.microsoft_graph_auth import MicrosoftGraphConfigError, MicrosoftGraphTokenProvider
 
 
 def register_cli(subparser: argparse.ArgumentParser) -> None:

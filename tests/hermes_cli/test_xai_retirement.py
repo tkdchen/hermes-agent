@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 
-from hermes_cli.xai_retirement import (
+from hermes_agent.hermes_cli.xai_retirement import (
     MIGRATION_GUIDE_URL,
     RETIREMENT_DATE,
     RetirementIssue,
@@ -155,7 +155,7 @@ class TestFindRetiredPerSlot:
             }
         }
         issues = find_retired_xai_refs(cfg)
-        assert _paths(issues) == ["plugins.image_gen.xai.model"]
+        assert _paths(issues) == ["hermes_agent.plugins.image_gen.xai.model"]
         assert issues[0].replacement == "grok-imagine-image-quality"
 
     def test_full_trap_config(self):

@@ -91,7 +91,7 @@ def check_codex_binary_ok() -> tuple[bool, Optional[str]]:
     """Best-effort verification that codex CLI is installed at acceptable
     version. Returns (ok, version_or_message)."""
     try:
-        from agent.transports.codex_app_server import check_codex_binary
+        from hermes_agent.agent.transports.codex_app_server import check_codex_binary
 
         return check_codex_binary()
     except Exception as exc:  # pragma: no cover
@@ -198,7 +198,7 @@ def apply(
         # browser/web/delegate_task/vision/memory tools (#7 fix).
         # Failures are non-fatal — the runtime change still proceeds.
         try:
-            from hermes_cli.codex_runtime_plugin_migration import migrate
+            from hermes_agent.hermes_cli.codex_runtime_plugin_migration import migrate
             mig_report = migrate(config)
             # Tools/MCP servers (excluding the hermes-tools callback,
             # which is internal plumbing — surface separately).

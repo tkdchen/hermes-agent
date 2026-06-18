@@ -268,7 +268,7 @@ class TestHermesConstantsFallback:
 
     def _load_helper(self, monkeypatch):
         """Load _hermes_home.py with hermes_constants blocked."""
-        monkeypatch.setitem(sys.modules, "hermes_constants", None)
+        monkeypatch.setitem(sys.modules, "hermes_agent.hermes_constants", None)
         spec = importlib.util.spec_from_file_location("_hermes_home_test", self.HELPER_PATH)
         module = importlib.util.module_from_spec(spec)
         assert spec.loader is not None
@@ -319,7 +319,7 @@ class TestHermesConstantsFallback:
         module = importlib.util.module_from_spec(spec)
         assert spec.loader is not None
         spec.loader.exec_module(module)
-        import hermes_constants
+        import hermes_agent.hermes_constants as hermes_constants
         assert module.get_hermes_home is hermes_constants.get_hermes_home
         assert module.display_hermes_home is hermes_constants.display_hermes_home
 

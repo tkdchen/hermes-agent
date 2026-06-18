@@ -10,8 +10,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from hermes_cli import profiles as profiles_mod
-from hermes_cli import profile_describer as describer
+from hermes_agent.hermes_cli import profiles as profiles_mod
+from hermes_agent.hermes_cli import profile_describer as describer
 
 
 @pytest.fixture
@@ -82,7 +82,7 @@ def _patch_aux_client(content: str):
     client = MagicMock()
     client.chat.completions.create = MagicMock(return_value=_fake_aux_response(content))
     return patch(
-        "agent.auxiliary_client.get_text_auxiliary_client",
+        "hermes_agent.agent.auxiliary_client.get_text_auxiliary_client",
         return_value=(client, "test-model"),
     )
 
@@ -101,7 +101,7 @@ def test_describer_writes_description_with_auto_true(profile_env, monkeypatch):
 
     payload = jsonlib.dumps({"description": "writes Python codebases"})
     with _patch_aux_client(payload), patch(
-        "agent.auxiliary_client.get_auxiliary_extra_body", return_value={}
+        "hermes_agent.agent.auxiliary_client.get_auxiliary_extra_body", return_value={}
     ):
         outcome = describer.describe_profile("myprof")
 
@@ -137,7 +137,7 @@ def test_describer_overwrite_flag_replaces_user_authored(profile_env, monkeypatc
 
     payload = jsonlib.dumps({"description": "new auto-gen"})
     with _patch_aux_client(payload), patch(
-        "agent.auxiliary_client.get_auxiliary_extra_body", return_value={}
+        "hermes_agent.agent.auxiliary_client.get_auxiliary_extra_body", return_value={}
     ):
         outcome = describer.describe_profile("myprof", overwrite=True)
     assert outcome.ok, outcome.reason
@@ -153,7 +153,7 @@ def test_describer_handles_malformed_llm_response(profile_env, monkeypatch):
 
     # Non-JSON: describer falls back to taking the first paragraph as the description.
     with _patch_aux_client("Plain text description that sneaks in"), patch(
-        "agent.auxiliary_client.get_auxiliary_extra_body", return_value={}
+        "hermes_agent.agent.auxiliary_client.get_auxiliary_extra_body", return_value={}
     ):
         outcome = describer.describe_profile("myprof")
     assert outcome.ok

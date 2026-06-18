@@ -31,20 +31,20 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from hermes_cli.timeouts import get_provider_request_timeout
-from agent.prompt_builder import format_steer_marker
-from agent.tool_dispatch_helpers import _trajectory_normalize_msg, make_tool_result_message
-from agent.trajectory import convert_scratchpad_to_think
-from agent.credential_pool import STATUS_EXHAUSTED
-from agent.error_classifier import FailoverReason
-from utils import base_url_host_matches, base_url_hostname, env_var_enabled, atomic_json_write
+from hermes_agent.hermes_cli.timeouts import get_provider_request_timeout
+from hermes_agent.agent.prompt_builder import format_steer_marker
+from hermes_agent.agent.tool_dispatch_helpers import _trajectory_normalize_msg, make_tool_result_message
+from hermes_agent.agent.trajectory import convert_scratchpad_to_think
+from hermes_agent.agent.credential_pool import STATUS_EXHAUSTED
+from hermes_agent.agent.error_classifier import FailoverReason
+from hermes_agent.utils import base_url_host_matches, base_url_hostname, env_var_enabled, atomic_json_write
 
 logger = logging.getLogger(__name__)
 
 
 def _ra():
     """Lazy ``run_agent`` reference for test-patch routing."""
-    import run_agent
+    import hermes_agent.run_agent as run_agent
     return run_agent
 
 
@@ -630,7 +630,7 @@ def recover_with_credential_pool(
         _custom_match = False
         if current_provider == "custom" and pool_provider.startswith("custom:"):
             try:
-                from agent.credential_pool import get_custom_provider_pool_key
+                from hermes_agent.agent.credential_pool import get_custom_provider_pool_key
                 _agent_base = (getattr(agent, "base_url", "") or "").strip()
                 _custom_match = bool(_agent_base) and (
                     (get_custom_provider_pool_key(_agent_base) or "").strip().lower()
@@ -847,7 +847,7 @@ def try_recover_primary_transport(
         agent.api_key = rt["api_key"]
 
         if agent.api_mode == "anthropic_messages":
-            from agent.anthropic_adapter import build_anthropic_client
+            from hermes_agent.agent.anthropic_adapter import build_anthropic_client
             agent._anthropic_api_key = rt["anthropic_api_key"]
             agent._anthropic_base_url = rt["anthropic_base_url"]
             agent._anthropic_client = build_anthropic_client(
@@ -1019,7 +1019,7 @@ def restore_primary_runtime(agent) -> bool:
 
         # ── Rebuild client for the primary provider ──
         if agent.api_mode == "anthropic_messages":
-            from agent.anthropic_adapter import build_anthropic_client
+            from hermes_agent.agent.anthropic_adapter import build_anthropic_client
             agent._anthropic_api_key = rt["anthropic_api_key"]
             agent._anthropic_base_url = rt["anthropic_base_url"]
             agent._anthropic_client = build_anthropic_client(
@@ -1225,7 +1225,7 @@ def dump_api_request_debug(
         # Run the serialized dump through the same scrubber used for logs/tool
         # output, then hand the resulting payload back to the shared atomic
         # JSON writer so request dumps keep the same write semantics as before.
-        from agent.redact import redact_sensitive_text
+        from hermes_agent.agent.redact import redact_sensitive_text
         _serialized = json.dumps(dump_payload, ensure_ascii=False, indent=2, default=str)
         _redacted_payload = json.loads(redact_sensitive_text(_serialized, force=True))
         atomic_json_write(dump_file, _redacted_payload, default=str)
@@ -1350,7 +1350,7 @@ def anthropic_prompt_cache_policy(
 
 
 def create_openai_client(agent, client_kwargs: dict, *, reason: str, shared: bool) -> Any:
-    from agent.auxiliary_client import _validate_base_url, _validate_proxy_env_urls
+    from hermes_agent.agent.auxiliary_client import _validate_base_url, _validate_proxy_env_urls
     # Treat client_kwargs as read-only. Callers pass agent._client_kwargs (or shallow
     # copies of it) in; any in-place mutation leaks back into the stored dict and is
     # reused on subsequent requests. #10933 hit this by injecting an httpx.Client
@@ -1363,7 +1363,7 @@ def create_openai_client(agent, client_kwargs: dict, *, reason: str, shared: boo
     _validate_proxy_env_urls()
     _validate_base_url(client_kwargs.get("base_url"))
     if agent.provider == "copilot-acp" or str(client_kwargs.get("base_url", "")).startswith("acp://copilot"):
-        from agent.copilot_acp_client import CopilotACPClient
+        from hermes_agent.agent.copilot_acp_client import CopilotACPClient
 
         client = CopilotACPClient(**client_kwargs)
         _ra().logger.info(
@@ -1374,7 +1374,7 @@ def create_openai_client(agent, client_kwargs: dict, *, reason: str, shared: boo
         )
         return client
     if agent.provider == "google-gemini-cli" or str(client_kwargs.get("base_url", "")).startswith("cloudcode-pa://"):
-        from agent.gemini_cloudcode_adapter import GeminiCloudCodeClient
+        from hermes_agent.agent.gemini_cloudcode_adapter import GeminiCloudCodeClient
 
         # Strip OpenAI-specific kwargs the Gemini client doesn't accept
         safe_kwargs = {
@@ -1390,7 +1390,7 @@ def create_openai_client(agent, client_kwargs: dict, *, reason: str, shared: boo
         )
         return client
     if agent.provider == "gemini":
-        from agent.gemini_native_adapter import GeminiNativeClient, is_native_gemini_base_url
+        from hermes_agent.agent.gemini_native_adapter import GeminiNativeClient, is_native_gemini_base_url
 
         base_url = str(client_kwargs.get("base_url", "") or "")
         if is_native_gemini_base_url(base_url):
@@ -1457,7 +1457,7 @@ def switch_model(agent, new_model, new_provider, api_key='', base_url='', api_mo
     change persists across turns (unlike fallback which is
     turn-scoped).
     """
-    from hermes_cli.providers import determine_api_mode
+    from hermes_agent.hermes_cli.providers import determine_api_mode
 
     # ── Determine api_mode if not provided ──
     if not api_mode:
@@ -1536,7 +1536,7 @@ def switch_model(agent, new_model, new_provider, api_key='', base_url='', api_mo
 
         # ── Build new client ──
         if api_mode == "anthropic_messages":
-            from agent.anthropic_adapter import (
+            from hermes_agent.agent.anthropic_adapter import (
                 build_anthropic_client,
                 resolve_anthropic_token,
                 _is_oauth_token,
@@ -1552,7 +1552,7 @@ def switch_model(agent, new_model, new_provider, api_key='', base_url='', api_mo
             # the matching block in agent_init.py for the full rationale.
             if new_provider == "minimax-oauth" and isinstance(effective_key, str) and effective_key:
                 try:
-                    from hermes_cli.auth import build_minimax_oauth_token_provider
+                    from hermes_agent.hermes_cli.auth import build_minimax_oauth_token_provider
                     effective_key = build_minimax_oauth_token_provider()
                 except Exception as _mm_exc:  # noqa: BLE001
                     import logging as _logging
@@ -1618,13 +1618,13 @@ def switch_model(agent, new_model, new_provider, api_key='', base_url='', api_mo
 
     # ── Update context compressor ──
     if hasattr(agent, "context_compressor") and agent.context_compressor:
-        from agent.model_metadata import get_model_context_length
+        from hermes_agent.agent.model_metadata import get_model_context_length
         # Re-read custom_providers from live config so per-model
         # context_length overrides are honored when switching to a
         # custom provider mid-session (closes #15779).
         _sm_custom_providers = None
         try:
-            from hermes_cli.config import load_config, get_compatible_custom_providers
+            from hermes_agent.hermes_cli.config import load_config, get_compatible_custom_providers
             _sm_cfg = load_config()
             _sm_custom_providers = get_compatible_custom_providers(_sm_cfg)
         except Exception:
@@ -1726,7 +1726,7 @@ def invoke_tool(agent, function_name: str, function_args: dict, effective_task_i
 
     _tool_middleware_trace = list(tool_request_middleware_trace or [])
     try:
-        from hermes_cli.middleware import apply_tool_request_middleware
+        from hermes_agent.hermes_cli.middleware import apply_tool_request_middleware
 
         if not skip_tool_request_middleware:
             _tool_request_mw = apply_tool_request_middleware(
@@ -1747,7 +1747,7 @@ def invoke_tool(agent, function_name: str, function_args: dict, effective_task_i
     block_message: Optional[str] = None
     if not pre_tool_block_checked:
         try:
-            from hermes_cli.plugins import get_pre_tool_call_block_message
+            from hermes_agent.hermes_cli.plugins import get_pre_tool_call_block_message
             block_message = get_pre_tool_call_block_message(
                 function_name,
                 function_args,
@@ -1763,7 +1763,7 @@ def invoke_tool(agent, function_name: str, function_args: dict, effective_task_i
     if block_message is not None:
         result = json.dumps({"error": block_message}, ensure_ascii=False)
         try:
-            from model_tools import _emit_post_tool_call_hook
+            from hermes_agent.model_tools import _emit_post_tool_call_hook
             _emit_post_tool_call_hook(
                 function_name=function_name,
                 function_args=function_args,
@@ -1787,7 +1787,7 @@ def invoke_tool(agent, function_name: str, function_args: dict, effective_task_i
     def _finish_agent_tool(result: Any, observed_args: Optional[dict] = None) -> Any:
         hook_args = observed_args if isinstance(observed_args, dict) else function_args
         try:
-            from model_tools import _emit_post_tool_call_hook
+            from hermes_agent.model_tools import _emit_post_tool_call_hook
             _emit_post_tool_call_hook(
                 function_name=function_name,
                 function_args=hook_args,
@@ -1806,7 +1806,7 @@ def invoke_tool(agent, function_name: str, function_args: dict, effective_task_i
 
     if function_name == "todo":
         def _execute(next_args: dict) -> Any:
-            from tools.todo_tool import todo_tool as _todo_tool
+            from hermes_agent.tools.todo_tool import todo_tool as _todo_tool
             return _finish_agent_tool(
                 _todo_tool(
                     todos=next_args.get("todos"),
@@ -1819,9 +1819,9 @@ def invoke_tool(agent, function_name: str, function_args: dict, effective_task_i
         def _execute(next_args: dict) -> Any:
             session_db = agent._get_session_db_for_recall()
             if not session_db:
-                from hermes_state import format_session_db_unavailable
+                from hermes_agent.hermes_state import format_session_db_unavailable
                 return _finish_agent_tool(json.dumps({"success": False, "error": format_session_db_unavailable()}), next_args)
-            from tools.session_search_tool import session_search as _session_search
+            from hermes_agent.tools.session_search_tool import session_search as _session_search
             return _finish_agent_tool(
                 _session_search(
                     query=next_args.get("query", ""),
@@ -1839,7 +1839,7 @@ def invoke_tool(agent, function_name: str, function_args: dict, effective_task_i
     elif function_name == "memory":
         def _execute(next_args: dict) -> Any:
             target = next_args.get("target", "memory")
-            from tools.memory_tool import memory_tool as _memory_tool
+            from hermes_agent.tools.memory_tool import memory_tool as _memory_tool
             result = _memory_tool(
                 action=next_args.get("action"),
                 target=target,
@@ -1867,7 +1867,7 @@ def invoke_tool(agent, function_name: str, function_args: dict, effective_task_i
             return _finish_agent_tool(agent._memory_manager.handle_tool_call(function_name, next_args), next_args)
     elif function_name == "clarify":
         def _execute(next_args: dict) -> Any:
-            from tools.clarify_tool import clarify_tool as _clarify_tool
+            from hermes_agent.tools.clarify_tool import clarify_tool as _clarify_tool
             return _finish_agent_tool(
                 _clarify_tool(
                     question=next_args.get("question", ""),
@@ -1878,7 +1878,7 @@ def invoke_tool(agent, function_name: str, function_args: dict, effective_task_i
             )
     elif function_name == "read_terminal":
         def _execute(next_args: dict) -> Any:
-            from tools.read_terminal_tool import read_terminal_tool as _read_terminal_tool
+            from hermes_agent.tools.read_terminal_tool import read_terminal_tool as _read_terminal_tool
             return _finish_agent_tool(
                 _read_terminal_tool(
                     start_line=next_args.get("start_line"),
@@ -1906,7 +1906,7 @@ def invoke_tool(agent, function_name: str, function_args: dict, effective_task_i
                 tool_request_middleware_trace=list(_tool_middleware_trace),
             )
 
-    from hermes_cli.middleware import run_tool_execution_middleware
+    from hermes_agent.hermes_cli.middleware import run_tool_execution_middleware
 
     return run_tool_execution_middleware(
         function_name,

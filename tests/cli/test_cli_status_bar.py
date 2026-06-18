@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-import cli as cli_mod
-from cli import HermesCLI
+import hermes_agent.cli as cli_mod
+from hermes_agent.cli import HermesCLI
 
 
 def _make_cli(model: str = "anthropic/claude-sonnet-4-20250514"):
@@ -316,7 +316,7 @@ class TestCLIStatusBar:
         already printed Panel borders — that's a cosmetic artifact of
         stamped scrollback history, not a live-render bug.
         """
-        from cli import HermesCLI
+        from hermes_agent.cli import HermesCLI
 
         # Floor at 32 — narrow terminals still get something usable
         # (avoids negative ``'─' * (w - 2)`` math).

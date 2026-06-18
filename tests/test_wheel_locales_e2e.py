@@ -68,11 +68,11 @@ def test_installed_wheel_renders_i18n_strings(tmp_path):
     probe = (
         "from agent import i18n;"
         "import sys;"
-        "r = i18n.t('gateway.reset.header_default', lang='en');"
-        "s = i18n.t('gateway.status.header', lang='en');"
+        "r = i18n.t('hermes_agent.gateway.reset.header_default', lang='en');"
+        "s = i18n.t('hermes_agent.gateway.status.header', lang='en');"
         "print(repr(r)); print(repr(s));"
-        "sys.exit(0 if (r != 'gateway.reset.header_default' "
-        "and s != 'gateway.status.header') else 1)"
+        "sys.exit(0 if (r != 'hermes_agent.gateway.reset.header_default' "
+        "and s != 'hermes_agent.gateway.status.header') else 1)"
     )
     env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "HERMES_BUNDLED_LOCALES")}
     env["PATH"] = f"{venv_dir / 'bin'}:{env['PATH']}"
@@ -124,7 +124,7 @@ def test_built_sdist_ships_locale_catalogs(tmp_path):
     # Compare against the canonical language list rather than a hardcoded floor
     # so adding/removing a catalog updates the guard automatically and a dropped
     # catalog (not just a fully-empty graft) trips it.
-    from agent.i18n import SUPPORTED_LANGUAGES
+    from hermes_agent.agent.i18n import SUPPORTED_LANGUAGES
 
     expected = len(SUPPORTED_LANGUAGES)
     assert len(catalogs) == expected, (

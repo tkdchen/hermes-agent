@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-from agent.image_routing import (
+from hermes_agent.agent.image_routing import (
     _coerce_capability_bool,
     _coerce_mode,
     _explicit_aux_vision_override,
@@ -77,39 +77,39 @@ class TestDecideImageInputMode:
         cfg = {"agent": {"image_input_mode": "native"}}
         # Non-vision model, aux-vision explicitly configured: native still wins.
         cfg["auxiliary"] = {"vision": {"provider": "openrouter", "model": "foo"}}
-        with patch("agent.image_routing._lookup_supports_vision", return_value=False):
+        with patch("hermes_agent.agent.image_routing._lookup_supports_vision", return_value=False):
             assert decide_image_input_mode("openrouter", "some-non-vision-model", cfg) == "native"
 
     def test_explicit_text_overrides_everything(self):
         cfg = {"agent": {"image_input_mode": "text"}}
-        with patch("agent.image_routing._lookup_supports_vision", return_value=True):
+        with patch("hermes_agent.agent.image_routing._lookup_supports_vision", return_value=True):
             assert decide_image_input_mode("anthropic", "claude-sonnet-4", cfg) == "text"
 
     def test_auto_with_vision_capable_model(self):
-        with patch("agent.image_routing._lookup_supports_vision", return_value=True):
+        with patch("hermes_agent.agent.image_routing._lookup_supports_vision", return_value=True):
             assert decide_image_input_mode("anthropic", "claude-sonnet-4", {}) == "native"
 
     def test_auto_with_non_vision_model(self):
-        with patch("agent.image_routing._lookup_supports_vision", return_value=False):
+        with patch("hermes_agent.agent.image_routing._lookup_supports_vision", return_value=False):
             assert decide_image_input_mode("openrouter", "qwen/qwen3-235b", {}) == "text"
 
     def test_auto_with_unknown_model(self):
-        with patch("agent.image_routing._lookup_supports_vision", return_value=None):
+        with patch("hermes_agent.agent.image_routing._lookup_supports_vision", return_value=None):
             assert decide_image_input_mode("openrouter", "brand-new-slug", {}) == "text"
 
     def test_auto_respects_aux_vision_override_even_for_vision_model(self):
         """If the user configured a dedicated vision backend, don't bypass it."""
         cfg = {"auxiliary": {"vision": {"provider": "openrouter", "model": "google/gemini-2.5-flash"}}}
-        with patch("agent.image_routing._lookup_supports_vision", return_value=True):
+        with patch("hermes_agent.agent.image_routing._lookup_supports_vision", return_value=True):
             assert decide_image_input_mode("anthropic", "claude-sonnet-4", cfg) == "text"
 
     def test_none_config_is_auto(self):
-        with patch("agent.image_routing._lookup_supports_vision", return_value=True):
+        with patch("hermes_agent.agent.image_routing._lookup_supports_vision", return_value=True):
             assert decide_image_input_mode("anthropic", "claude-sonnet-4", None) == "native"
 
     def test_invalid_mode_coerces_to_auto(self):
         cfg = {"agent": {"image_input_mode": "weird-value"}}
-        with patch("agent.image_routing._lookup_supports_vision", return_value=True):
+        with patch("hermes_agent.agent.image_routing._lookup_supports_vision", return_value=True):
             assert decide_image_input_mode("anthropic", "claude-sonnet-4", cfg) == "native"
 
     def test_auto_uses_text_for_text_only_modalities_even_with_attachment_flag(self):
@@ -124,7 +124,7 @@ class TestDecideImageInputMode:
                 },
             },
         }
-        with patch("agent.models_dev.fetch_models_dev", return_value=registry):
+        with patch("hermes_agent.agent.models_dev.fetch_models_dev", return_value=registry):
             assert decide_image_input_mode("xiaomi", "mimo-v2.5-pro", {}) == "text"
 
 
@@ -232,28 +232,28 @@ class TestLookupSupportsVisionOverride:
     def test_config_override_short_circuits_models_dev(self):
         # Config says True, models.dev says None — config wins.
         cfg = {"model": {"supports_vision": True}}
-        with patch("agent.models_dev.get_model_capabilities", return_value=None):
+        with patch("hermes_agent.agent.models_dev.get_model_capabilities", return_value=None):
             assert _lookup_supports_vision("custom", "my-llava", cfg) is True
 
     def test_config_override_false_beats_vision_capable_models_dev(self):
         # User explicitly disables vision on a models.dev-vision-capable model.
         fake_caps = type("Caps", (), {"supports_vision": True})()
         cfg = {"model": {"supports_vision": False}}
-        with patch("agent.models_dev.get_model_capabilities", return_value=fake_caps):
+        with patch("hermes_agent.agent.models_dev.get_model_capabilities", return_value=fake_caps):
             assert _lookup_supports_vision("anthropic", "claude-sonnet-4", cfg) is False
 
     def test_no_override_falls_back_to_models_dev(self):
         fake_caps = type("Caps", (), {"supports_vision": True})()
-        with patch("agent.models_dev.get_model_capabilities", return_value=fake_caps):
+        with patch("hermes_agent.agent.models_dev.get_model_capabilities", return_value=fake_caps):
             assert _lookup_supports_vision("anthropic", "claude-sonnet-4", {}) is True
 
     def test_no_override_no_models_dev_entry_returns_none(self):
-        with patch("agent.models_dev.get_model_capabilities", return_value=None):
+        with patch("hermes_agent.agent.models_dev.get_model_capabilities", return_value=None):
             assert _lookup_supports_vision("custom", "my-llava", {}) is None
 
     def test_cfg_none_falls_back_to_models_dev(self):
         # Caller didn't pass cfg at all — old call sites must still work.
-        with patch("agent.models_dev.get_model_capabilities", return_value=None):
+        with patch("hermes_agent.agent.models_dev.get_model_capabilities", return_value=None):
             assert _lookup_supports_vision("openrouter", "x", None) is None
 
 
@@ -266,17 +266,17 @@ class TestAutoModeRespectsOverride:
         # Without the override, auto falls back to text. With it, auto picks
         # native — no need to also set agent.image_input_mode: native.
         cfg = {"model": {"supports_vision": True}}
-        with patch("agent.models_dev.get_model_capabilities", return_value=None):
+        with patch("hermes_agent.agent.models_dev.get_model_capabilities", return_value=None):
             assert decide_image_input_mode("custom", "qwen3.6-35b", cfg) == "native"
 
     def test_auto_text_for_custom_with_supports_vision_false(self):
         cfg = {"model": {"supports_vision": False}}
-        with patch("agent.models_dev.get_model_capabilities", return_value=None):
+        with patch("hermes_agent.agent.models_dev.get_model_capabilities", return_value=None):
             assert decide_image_input_mode("custom", "some-text-only", cfg) == "text"
 
     def test_auto_text_for_custom_with_no_override(self):
         # Unchanged baseline: unknown custom model → text.
-        with patch("agent.models_dev.get_model_capabilities", return_value=None):
+        with patch("hermes_agent.agent.models_dev.get_model_capabilities", return_value=None):
             assert decide_image_input_mode("custom", "unknown", {}) == "text"
 
     def test_explicit_aux_vision_override_still_wins(self):
@@ -286,7 +286,7 @@ class TestAutoModeRespectsOverride:
             "model": {"supports_vision": True},
             "auxiliary": {"vision": {"provider": "openrouter", "model": "gemini-2.5-pro"}},
         }
-        with patch("agent.models_dev.get_model_capabilities", return_value=None):
+        with patch("hermes_agent.agent.models_dev.get_model_capabilities", return_value=None):
             assert decide_image_input_mode("custom", "qwen3.6-35b", cfg) == "text"
 
 
@@ -422,7 +422,7 @@ class TestLargeImageHandling:
 
     def test_large_image_passes_through_unchanged(self, tmp_path: Path):
         """A multi-MB image is attached as-is — no resize, no skip."""
-        from agent import image_routing as _ir
+        from hermes_agent.agent import image_routing as _ir
 
         img = tmp_path / "medium.png"
         # 200 KB of real bytes; not huge but enough to verify no size gate fires.
@@ -434,13 +434,13 @@ class TestLargeImageHandling:
         assert len(url) > 200_000
 
     def test_missing_file_returns_none(self, tmp_path: Path):
-        from agent import image_routing as _ir
+        from hermes_agent.agent import image_routing as _ir
         missing = tmp_path / "does_not_exist.png"
         assert _ir._file_to_data_url(missing) is None
 
     def test_build_native_parts_no_provider_kwarg(self, tmp_path: Path):
         """build_native_content_parts takes text + paths, no provider kwarg."""
-        from agent import image_routing as _ir
+        from hermes_agent.agent import image_routing as _ir
 
         img = tmp_path / "cat.png"
         img.write_bytes(_png_bytes())

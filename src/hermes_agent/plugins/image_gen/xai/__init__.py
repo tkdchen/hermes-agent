@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
-from agent.image_gen_provider import (
+from hermes_agent.agent.image_gen_provider import (
     DEFAULT_ASPECT_RATIO,
     ImageGenProvider,
     error_response,
@@ -32,7 +32,7 @@ from agent.image_gen_provider import (
     save_url_image,
     success_response,
 )
-from tools.xai_http import hermes_xai_user_agent, resolve_xai_http_credentials
+from hermes_agent.tools.xai_http import hermes_xai_user_agent, resolve_xai_http_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ DEFAULT_RESOLUTION = "1k"
 def _load_xai_config() -> Dict[str, Any]:
     """Read ``image_gen.xai`` from config.yaml."""
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
 
         cfg = load_config()
         section = cfg.get("image_gen") if isinstance(cfg, dict) else None

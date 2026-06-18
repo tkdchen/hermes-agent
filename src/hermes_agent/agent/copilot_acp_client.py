@@ -21,8 +21,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
-from agent.file_safety import get_read_block_error, is_write_denied
-from agent.redact import redact_sensitive_text
+from hermes_agent.agent.file_safety import get_read_block_error, is_write_denied
+from hermes_agent.agent.redact import redact_sensitive_text
 
 ACP_MARKER_BASE_URL = "acp://copilot"
 _DEFAULT_TIMEOUT_SECONDS = 900.0
@@ -97,7 +97,7 @@ def _build_subprocess_env() -> dict[str, str]:
     env = os.environ.copy()
     home = _resolve_home_dir()
     env["HOME"] = home
-    from hermes_constants import apply_subprocess_home_env
+    from hermes_agent.hermes_constants import apply_subprocess_home_env
     apply_subprocess_home_env(env)
     return env
 

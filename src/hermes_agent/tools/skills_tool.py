@@ -54,7 +54,7 @@ Available tools:
 - skill_view: Load full skill content (progressive disclosure tier 2-3)
 
 Usage:
-    from tools.skills_tool import skills_list, skill_view, check_skills_requirements
+    from hermes_agent.tools.skills_tool import skills_list, skill_view, check_skills_requirements
 
     # List all skills (returns metadata only - token efficient)
     result = skills_list()
@@ -69,17 +69,17 @@ Usage:
 import json
 import logging
 
-from hermes_constants import get_hermes_home, display_hermes_home
+from hermes_agent.hermes_constants import get_hermes_home, display_hermes_home
 import os
 import re
 from enum import Enum
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Dict, Any, List, Optional, Set, Tuple
 
-from tools.registry import registry, tool_error
-from hermes_cli.config import cfg_get
-from utils import env_var_enabled
-from agent.skill_utils import (
+from hermes_agent.tools.registry import registry, tool_error
+from hermes_agent.hermes_cli.config import cfg_get
+from hermes_agent.utils import env_var_enabled
+from hermes_agent.agent.skill_utils import (
     EXCLUDED_SKILL_DIRS as _EXCLUDED_SKILL_DIRS,
     is_skill_support_path as _is_skill_support_path,
 )
@@ -122,7 +122,7 @@ def _skill_lookup_path_error(name: str) -> Optional[str]:
     drive paths (e.g. ``C:\\skills``), whose ``:`` would otherwise be misread as
     a plugin namespace separator.
     """
-    from tools.path_security import has_traversal_component
+    from hermes_agent.tools.path_security import has_traversal_component
 
     if not isinstance(name, str):
         return "Skill name must be a string."
@@ -185,7 +185,7 @@ def skill_matches_platform(frontmatter: Dict[str, Any]) -> bool:
     Delegates to ``agent.skill_utils.skill_matches_platform`` — kept here
     as a public re-export so existing callers don't need updating.
     """
-    from agent.skill_utils import skill_matches_platform as _impl
+    from hermes_agent.agent.skill_utils import skill_matches_platform as _impl
     return _impl(frontmatter)
 
 
@@ -197,7 +197,7 @@ def skill_matches_environment(frontmatter: Dict[str, Any]) -> bool:
     offer-time relevance gate (kanban/docker/s6), NOT a hard-compatibility gate;
     explicit skill loads bypass it.
     """
-    from agent.skill_utils import skill_matches_environment as _impl
+    from hermes_agent.agent.skill_utils import skill_matches_environment as _impl
     return _impl(frontmatter)
 
 
@@ -416,7 +416,7 @@ def _capture_required_environment_variables(
 def _is_gateway_surface() -> bool:
     if env_var_enabled("HERMES_GATEWAY_SESSION"):
         return True
-    from gateway.session_context import get_session_env
+    from hermes_agent.gateway.session_context import get_session_env
     return bool(get_session_env("HERMES_SESSION_PLATFORM"))
 
 
@@ -456,7 +456,7 @@ def _remaining_required_environment_names(
 
 def _gateway_setup_hint() -> str:
     try:
-        from gateway.platforms.base import GATEWAY_SECRET_CAPTURE_UNSUPPORTED_MESSAGE
+        from hermes_agent.gateway.platforms.base import GATEWAY_SECRET_CAPTURE_UNSUPPORTED_MESSAGE
 
         return GATEWAY_SECRET_CAPTURE_UNSUPPORTED_MESSAGE
     except Exception:
@@ -488,7 +488,7 @@ def _parse_frontmatter(content: str) -> Tuple[Dict[str, Any], str]:
     Delegates to ``agent.skill_utils.parse_frontmatter`` — kept here
     as a public re-export so existing callers don't need updating.
     """
-    from agent.skill_utils import parse_frontmatter
+    from hermes_agent.agent.skill_utils import parse_frontmatter
     return parse_frontmatter(content)
 
 
@@ -503,7 +503,7 @@ def _get_category_from_path(skill_path: Path) -> Optional[str]:
     # then fall back to external dirs from config.
     dirs_to_check = [SKILLS_DIR]
     try:
-        from agent.skill_utils import get_external_skills_dirs
+        from hermes_agent.agent.skill_utils import get_external_skills_dirs
         dirs_to_check.extend(get_external_skills_dirs())
     except Exception:
         pass
@@ -555,7 +555,7 @@ def _get_disabled_skill_names() -> Set[str]:
     Delegates to ``agent.skill_utils.get_disabled_skill_names`` — kept here
     as a public re-export so existing callers don't need updating.
     """
-    from agent.skill_utils import get_disabled_skill_names
+    from hermes_agent.agent.skill_utils import get_disabled_skill_names
     return get_disabled_skill_names()
 
 
@@ -567,7 +567,7 @@ def _get_session_platform() -> str:
     ``_is_skill_disabled`` respects ``HERMES_SESSION_PLATFORM``.
     """
     try:
-        from gateway.session_context import get_session_env
+        from hermes_agent.gateway.session_context import get_session_env
         return get_session_env("HERMES_SESSION_PLATFORM") or ""
     except Exception:
         return ""
@@ -582,7 +582,7 @@ def _is_skill_disabled(name: str, platform: str = None) -> bool:
     3. ``HERMES_SESSION_PLATFORM`` from gateway session context
     """
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         config = load_config()
         skills_cfg = config.get("skills", {})
         resolved_platform = platform or os.getenv("HERMES_PLATFORM") or _get_session_platform()
@@ -610,7 +610,7 @@ def _find_all_skills(*, skip_disabled: bool = False) -> List[Dict[str, Any]]:
     Returns:
         List of skill metadata dicts (name, description, category).
     """
-    from agent.skill_utils import get_external_skills_dirs, iter_skill_index_files
+    from hermes_agent.agent.skill_utils import get_external_skills_dirs, iter_skill_index_files
 
     skills = []
     seen_names: set = set()
@@ -764,7 +764,7 @@ def _serve_plugin_skill(
     session_id: str | None = None,
 ) -> str:
     """Read a plugin-provided skill, apply guards, return JSON."""
-    from hermes_cli.plugins import _get_disabled_plugins, get_plugin_manager
+    from hermes_agent.hermes_cli.plugins import _get_disabled_plugins, get_plugin_manager
 
     if namespace in _get_disabled_plugins():
         return json.dumps(
@@ -834,7 +834,7 @@ def _serve_plugin_skill(
     rendered_content = content
     if preprocess:
         try:
-            from agent.skill_preprocessing import preprocess_skill_content
+            from hermes_agent.agent.skill_preprocessing import preprocess_skill_content
 
             rendered_content = preprocess_skill_content(
                 content,
@@ -901,8 +901,8 @@ def skill_view(
         # Names containing ':' are routed to the plugin skill registry.
         # Bare names fall through to the existing flat-tree scan below.
         if ":" in name:
-            from agent.skill_utils import is_valid_namespace, parse_qualified_name
-            from hermes_cli.plugins import discover_plugins, get_plugin_manager
+            from hermes_agent.agent.skill_utils import is_valid_namespace, parse_qualified_name
+            from hermes_agent.hermes_cli.plugins import discover_plugins, get_plugin_manager
 
             namespace, bare = parse_qualified_name(name)
             if not is_valid_namespace(namespace):
@@ -964,7 +964,7 @@ def skill_view(
             if bare:
                 local_category_name = f"{namespace}/{bare}"
 
-        from agent.skill_utils import get_external_skills_dirs
+        from hermes_agent.agent.skill_utils import get_external_skills_dirs
 
         # The categorized fall-through form (namespace/bare) joins onto each
         # search dir too; re-validate it since `bare` is not namespace-checked.
@@ -1004,7 +1004,7 @@ def skill_view(
         # the caller — silent shadowing of a local skill by a same-named
         # external skill is a real bug class (`/skills` shows one, agent
         # loaded the other) so we surface it loudly instead of guessing.
-        from agent.skill_utils import iter_skill_index_files
+        from hermes_agent.agent.skill_utils import iter_skill_index_files
 
         candidates: List[Tuple[Optional[Path], Path]] = []  # (skill_dir, skill_md)
         seen_md: set = set()
@@ -1191,7 +1191,7 @@ def skill_view(
 
         # If a specific file path is requested, read that instead
         if file_path and skill_dir:
-            from tools.path_security import validate_within_dir, has_traversal_component
+            from hermes_agent.tools.path_security import validate_within_dir, has_traversal_component
 
             # Security: Prevent path traversal attacks
             if has_traversal_component(file_path):
@@ -1404,7 +1404,7 @@ def skill_view(
         ]
         if available_env_names:
             try:
-                from tools.env_passthrough import register_env_passthrough
+                from hermes_agent.tools.env_passthrough import register_env_passthrough
 
                 register_env_passthrough(available_env_names)
             except Exception:
@@ -1423,7 +1423,7 @@ def skill_view(
         missing_cred_files: list = []
         if required_cred_files_raw:
             try:
-                from tools.credential_files import register_credential_files
+                from hermes_agent.tools.credential_files import register_credential_files
 
                 missing_cred_files = register_credential_files(required_cred_files_raw)
                 if missing_cred_files:
@@ -1438,7 +1438,7 @@ def skill_view(
         rendered_content = content
         if preprocess:
             try:
-                from agent.skill_preprocessing import preprocess_skill_content
+                from hermes_agent.agent.skill_preprocessing import preprocess_skill_content
 
                 rendered_content = preprocess_skill_content(
                     content,
@@ -1617,7 +1617,7 @@ def _skill_view_with_bump(args, **kw):
             # qualified forms ("plugin:skill") return with the canonical name.
             resolved = parsed.get("name") or name
             if resolved:
-                from tools.skill_usage import bump_use, bump_view
+                from hermes_agent.tools.skill_usage import bump_use, bump_view
                 bump_view(str(resolved))
                 # A skill_view tool call is the agent actively loading the skill
                 # to act on it — that counts as use, not just a browse/view.

@@ -70,16 +70,16 @@ except ImportError:
     HTTPX_AVAILABLE = False
     httpx = None  # type: ignore[assignment]
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
     SendResult,
     SUPPORTED_DOCUMENT_TYPES,
 )
-from gateway.platforms.whatsapp_common import WhatsAppBehaviorMixin
-from hermes_constants import get_hermes_dir
+from hermes_agent.gateway.platforms.whatsapp_common import WhatsAppBehaviorMixin
+from hermes_agent.hermes_constants import get_hermes_dir
 
 logger = logging.getLogger(__name__)
 
@@ -365,7 +365,7 @@ class WhatsAppCloudAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
 
         # Outbound HTTP client. Tighter keepalive matches other platform
         # adapters so idle CLOSE_WAIT drains promptly (#18451).
-        from gateway.platforms._http_client_limits import platform_httpx_limits
+        from hermes_agent.gateway.platforms._http_client_limits import platform_httpx_limits
 
         self._http_client = httpx.AsyncClient(
             timeout=30.0, limits=platform_httpx_limits()
@@ -1593,7 +1593,7 @@ class WhatsAppCloudAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
                 )
                 return False
             try:
-                from tools.clarify_gateway import resolve_gateway_clarify
+                from hermes_agent.tools.clarify_gateway import resolve_gateway_clarify
             except ImportError:
                 logger.warning(
                     "[whatsapp_cloud] clarify resolver unavailable; "
@@ -1611,7 +1611,7 @@ class WhatsAppCloudAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
                 # blocked in clarify and produces an "Interrupting
                 # current task" loop.
                 try:
-                    from tools.clarify_gateway import mark_awaiting_text
+                    from hermes_agent.tools.clarify_gateway import mark_awaiting_text
                     flipped = mark_awaiting_text(clarify_id)
                 except Exception:
                     logger.exception(
@@ -1688,7 +1688,7 @@ class WhatsAppCloudAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
                 self._exec_approval_state[approval_id] = session_key
                 return False
             try:
-                from tools.approval import resolve_gateway_approval
+                from hermes_agent.tools.approval import resolve_gateway_approval
             except ImportError:
                 logger.warning(
                     "[whatsapp_cloud] approval resolver unavailable"
@@ -1728,7 +1728,7 @@ class WhatsAppCloudAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
                 self._slash_confirm_state[confirm_id] = session_key
                 return False
             try:
-                from tools import slash_confirm as _slash_confirm_mod
+                from hermes_agent.tools import slash_confirm as _slash_confirm_mod
             except ImportError:
                 logger.warning(
                     "[whatsapp_cloud] slash_confirm resolver unavailable"

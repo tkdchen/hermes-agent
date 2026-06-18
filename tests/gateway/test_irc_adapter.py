@@ -63,7 +63,7 @@ class TestIRCAdapterInit:
         monkeypatch.setenv("IRC_CHANNEL", "#test")
         monkeypatch.setenv("IRC_USE_TLS", "false")
 
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
         cfg = PlatformConfig(enabled=True)
         adapter = IRCAdapter(cfg)
 
@@ -78,7 +78,7 @@ class TestIRCAdapterInit:
         for key in ("IRC_SERVER", "IRC_PORT", "IRC_NICKNAME", "IRC_CHANNEL", "IRC_USE_TLS"):
             monkeypatch.delenv(key, raising=False)
 
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
         cfg = PlatformConfig(
             enabled=True,
             extra={
@@ -100,7 +100,7 @@ class TestIRCAdapterInit:
     def test_env_overrides_config(self, monkeypatch):
         monkeypatch.setenv("IRC_SERVER", "env-server.net")
 
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
         cfg = PlatformConfig(
             enabled=True,
             extra={"server": "config-server.net", "channel": "#ch"},
@@ -115,7 +115,7 @@ class TestIRCAdapterSend:
     def adapter(self, monkeypatch):
         for key in ("IRC_SERVER", "IRC_PORT", "IRC_NICKNAME", "IRC_CHANNEL", "IRC_USE_TLS"):
             monkeypatch.delenv(key, raising=False)
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
         cfg = PlatformConfig(
             enabled=True,
             extra={
@@ -171,7 +171,7 @@ class TestIRCAdapterMessageParsing:
     def adapter(self, monkeypatch):
         for key in ("IRC_SERVER", "IRC_PORT", "IRC_NICKNAME", "IRC_CHANNEL", "IRC_USE_TLS"):
             monkeypatch.delenv(key, raising=False)
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
         cfg = PlatformConfig(
             enabled=True,
             extra={
@@ -304,7 +304,7 @@ class TestIRCAdapterMessageParsing:
         """Allowlist should match nicks case-insensitively."""
         for key in ("IRC_SERVER", "IRC_PORT", "IRC_NICKNAME", "IRC_CHANNEL", "IRC_USE_TLS"):
             monkeypatch.delenv(key, raising=False)
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
         cfg = PlatformConfig(
             enabled=True,
             extra={
@@ -337,7 +337,7 @@ class TestIRCAdapterMessageParsing:
         """Nicks not in allowlist should be ignored."""
         for key in ("IRC_SERVER", "IRC_PORT", "IRC_NICKNAME", "IRC_CHANNEL", "IRC_USE_TLS"):
             monkeypatch.delenv(key, raising=False)
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
         cfg = PlatformConfig(
             enabled=True,
             extra={
@@ -386,7 +386,7 @@ class TestIRCAdapterSplitting:
         """Multi-byte characters should not exceed IRC byte limit."""
         # 100 japanese chars = 300 bytes in utf-8
         text = "あ" * 100
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
         cfg = PlatformConfig(enabled=True, extra={"server": "x", "channel": "#x"})
         adapter = IRCAdapter(cfg)
         adapter._current_nick = "bot"
@@ -397,7 +397,7 @@ class TestIRCAdapterSplitting:
 
     def test_split_prefers_word_boundary(self):
         text = "hello world foo bar baz qux"
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
         cfg = PlatformConfig(enabled=True, extra={"server": "x", "channel": "#x"})
         adapter = IRCAdapter(cfg)
         adapter._current_nick = "bot"
@@ -466,14 +466,14 @@ class TestIRCRequirements:
     def test_validate_config_from_extra(self, monkeypatch):
         for key in ("IRC_SERVER", "IRC_CHANNEL"):
             monkeypatch.delenv(key, raising=False)
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
         cfg = PlatformConfig(extra={"server": "irc.test.net", "channel": "#test"})
         assert validate_config(cfg) is True
 
     def test_validate_config_missing(self, monkeypatch):
         for key in ("IRC_SERVER", "IRC_CHANNEL"):
             monkeypatch.delenv(key, raising=False)
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
         cfg = PlatformConfig(extra={})
         assert validate_config(cfg) is False
 
@@ -488,7 +488,7 @@ class TestIRCPluginRegistration:
         monkeypatch.setenv("IRC_SERVER", "irc.test.net")
         monkeypatch.setenv("IRC_CHANNEL", "#test")
 
-        from gateway.platform_registry import platform_registry
+        from hermes_agent.gateway.platform_registry import platform_registry
 
         # Clean up if already registered
         platform_registry.unregister("irc")
@@ -550,7 +550,7 @@ class TestIRCStandaloneSend:
 
     @pytest.mark.asyncio
     async def test_standalone_send_completes_handshake_and_sends_privmsg(self, monkeypatch):
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
 
         monkeypatch.setenv("IRC_SERVER", "irc.test.net")
         monkeypatch.setenv("IRC_CHANNEL", "#cron")
@@ -585,7 +585,7 @@ class TestIRCStandaloneSend:
 
     @pytest.mark.asyncio
     async def test_standalone_send_returns_error_when_unconfigured(self, monkeypatch):
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
 
         for var in ("IRC_SERVER", "IRC_CHANNEL"):
             monkeypatch.delenv(var, raising=False)
@@ -601,7 +601,7 @@ class TestIRCStandaloneSend:
 
     @pytest.mark.asyncio
     async def test_standalone_send_returns_error_on_registration_timeout(self, monkeypatch):
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
 
         monkeypatch.setenv("IRC_SERVER", "irc.test.net")
         monkeypatch.setenv("IRC_CHANNEL", "#cron")
@@ -637,7 +637,7 @@ class TestIRCStandaloneSend:
 
     @pytest.mark.asyncio
     async def test_standalone_send_rejects_crlf_in_chat_id(self, monkeypatch):
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
 
         monkeypatch.setenv("IRC_SERVER", "irc.test.net")
         monkeypatch.setenv("IRC_CHANNEL", "#cron")
@@ -656,7 +656,7 @@ class TestIRCStandaloneSend:
 
     @pytest.mark.asyncio
     async def test_standalone_send_strips_crlf_from_message_body(self, monkeypatch):
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
 
         monkeypatch.setenv("IRC_SERVER", "irc.test.net")
         monkeypatch.setenv("IRC_CHANNEL", "#cron")
@@ -688,7 +688,7 @@ class TestIRCStandaloneSend:
 
     @pytest.mark.asyncio
     async def test_standalone_send_joins_channel_before_privmsg(self, monkeypatch):
-        from gateway.config import PlatformConfig
+        from hermes_agent.gateway.config import PlatformConfig
 
         monkeypatch.setenv("IRC_SERVER", "irc.test.net")
         monkeypatch.setenv("IRC_CHANNEL", "#cron")

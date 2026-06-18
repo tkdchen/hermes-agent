@@ -14,7 +14,7 @@ echoes responses/events for inbound requests. No framing differences.
 Mounting
 --------
     from fastapi import WebSocket
-    from tui_gateway.ws import handle_ws
+    from hermes_agent.tui_gateway.ws import handle_ws
 
     @app.websocket("/api/ws")
     async def ws(ws: WebSocket):
@@ -30,7 +30,7 @@ import logging
 import socket
 from typing import Any
 
-from tui_gateway import server
+from hermes_agent.tui_gateway import server
 
 _log = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ class WSTransport:
             return True
 
         try:
-            from agent.async_utils import safe_schedule_threadsafe
+            from hermes_agent.agent.async_utils import safe_schedule_threadsafe
             fut = safe_schedule_threadsafe(self._safe_send(line), self._loop)
             if fut is None:
                 self._closed = True
@@ -195,7 +195,7 @@ async def handle_ws(ws: Any) -> None:
                 "jsonrpc": "2.0",
                 "method": "event",
                 "params": {
-                    "type": "gateway.ready",
+                    "type": "hermes_agent.gateway.ready",
                     "payload": {"skin": server.resolve_skin()},
                 },
             }

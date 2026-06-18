@@ -14,7 +14,7 @@ import pytest
 # ── _is_auth_error ──────────────────────────────────────────────────────────
 
 def _import_is_auth_error():
-    from agent.auxiliary_client import _is_auth_error
+    from hermes_agent.agent.auxiliary_client import _is_auth_error
     return _is_auth_error
 
 
@@ -87,7 +87,7 @@ class TestIsAuthErrorXaiOauth403:
 # ── _recoverable_pool_provider ──────────────────────────────────────────────
 
 def _import_recoverable_pool_provider():
-    from agent.auxiliary_client import _recoverable_pool_provider
+    from hermes_agent.agent.auxiliary_client import _recoverable_pool_provider
     return _recoverable_pool_provider
 
 
@@ -123,7 +123,7 @@ class TestRecoverablePoolProviderXaiOAuth:
 # ── _refresh_provider_credentials (structure check) ─────────────────────────
 
 def _import_refresh_provider_credentials():
-    from agent.auxiliary_client import _refresh_provider_credentials
+    from hermes_agent.agent.auxiliary_client import _refresh_provider_credentials
     return _refresh_provider_credentials
 
 

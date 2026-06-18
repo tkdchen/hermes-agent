@@ -7,15 +7,15 @@ advancement through multiple providers.
 
 from unittest.mock import MagicMock, patch
 
-from run_agent import AIAgent, _pool_may_recover_from_rate_limit
+from hermes_agent.run_agent import AIAgent, _pool_may_recover_from_rate_limit
 
 
 def _make_agent(fallback_model=None):
     """Create a minimal AIAgent with optional fallback config."""
     with (
-        patch("run_agent.get_tool_definitions", return_value=[]),
-        patch("run_agent.check_toolset_requirements", return_value={}),
-        patch("run_agent.OpenAI"),
+        patch("hermes_agent.run_agent.get_tool_definitions", return_value=[]),
+        patch("hermes_agent.run_agent.check_toolset_requirements", return_value={}),
+        patch("hermes_agent.run_agent.OpenAI"),
     ):
         agent = AIAgent(
             api_key="test-key",
@@ -96,7 +96,7 @@ class TestFallbackChainAdvancement:
             {"provider": "zai", "model": "glm-4.7"},
         ]
         agent = _make_agent(fallback_model=fbs)
-        with patch("agent.auxiliary_client.resolve_provider_client",
+        with patch("hermes_agent.agent.auxiliary_client.resolve_provider_client",
                     return_value=(_mock_client(), "gpt-4o")):
             assert agent._try_activate_fallback() is True
             assert agent._fallback_index == 1
@@ -109,7 +109,7 @@ class TestFallbackChainAdvancement:
             {"provider": "zai", "model": "glm-4.7"},
         ]
         agent = _make_agent(fallback_model=fbs)
-        with patch("agent.auxiliary_client.resolve_provider_client",
+        with patch("hermes_agent.agent.auxiliary_client.resolve_provider_client",
                     return_value=(_mock_client(), "resolved")):
             assert agent._try_activate_fallback() is True
             assert agent.model == "gpt-4o"
@@ -120,7 +120,7 @@ class TestFallbackChainAdvancement:
     def test_all_exhausted_returns_false(self):
         fbs = [{"provider": "openai", "model": "gpt-4o"}]
         agent = _make_agent(fallback_model=fbs)
-        with patch("agent.auxiliary_client.resolve_provider_client",
+        with patch("hermes_agent.agent.auxiliary_client.resolve_provider_client",
                     return_value=(_mock_client(), "gpt-4o")):
             assert agent._try_activate_fallback() is True
             assert agent._try_activate_fallback() is False
@@ -132,7 +132,7 @@ class TestFallbackChainAdvancement:
             {"provider": "openai", "model": "gpt-4o"},
         ]
         agent = _make_agent(fallback_model=fbs)
-        with patch("agent.auxiliary_client.resolve_provider_client") as mock_rpc:
+        with patch("hermes_agent.agent.auxiliary_client.resolve_provider_client") as mock_rpc:
             mock_rpc.side_effect = [
                 (None, None),                    # broken provider
                 (_mock_client(), "gpt-4o"),       # fallback succeeds
@@ -148,7 +148,7 @@ class TestFallbackChainAdvancement:
             {"provider": "openai", "model": "gpt-4o"},
         ]
         agent = _make_agent(fallback_model=fbs)
-        with patch("agent.auxiliary_client.resolve_provider_client") as mock_rpc:
+        with patch("hermes_agent.agent.auxiliary_client.resolve_provider_client") as mock_rpc:
             mock_rpc.side_effect = [
                 RuntimeError("auth failed"),
                 (_mock_client(), "gpt-4o"),
@@ -169,7 +169,7 @@ class TestFallbackChainAdvancement:
         with (
             patch.dict("os.environ", {"MY_FALLBACK_KEY": "env-secret"}, clear=False),
             patch(
-                "agent.auxiliary_client.resolve_provider_client",
+                "hermes_agent.agent.auxiliary_client.resolve_provider_client",
                 return_value=(
                     _mock_client(
                         base_url="https://fallback.example/v1",
@@ -251,8 +251,8 @@ class TestFallbackChainDedup:
         def _resolve(provider, model=None, raw_codex=False, **kwargs):
             called.append((provider, model))
             return _mock_client(), model
-        with patch("agent.auxiliary_client.resolve_provider_client", side_effect=_resolve):
-            with patch("hermes_cli.model_normalize.normalize_model_for_provider", side_effect=lambda m, p: m):
+        with patch("hermes_agent.agent.auxiliary_client.resolve_provider_client", side_effect=_resolve):
+            with patch("hermes_agent.hermes_cli.model_normalize.normalize_model_for_provider", side_effect=lambda m, p: m):
                 ok = agent._try_activate_fallback()
 
         assert ok is True
@@ -280,8 +280,8 @@ class TestFallbackChainDedup:
         def _resolve(provider, model=None, raw_codex=False, **kwargs):
             called.append((provider, model))
             return _mock_client(), model
-        with patch("agent.auxiliary_client.resolve_provider_client", side_effect=_resolve):
-            with patch("hermes_cli.model_normalize.normalize_model_for_provider", side_effect=lambda m, p: m):
+        with patch("hermes_agent.agent.auxiliary_client.resolve_provider_client", side_effect=_resolve):
+            with patch("hermes_agent.hermes_cli.model_normalize.normalize_model_for_provider", side_effect=lambda m, p: m):
                 ok = agent._try_activate_fallback()
 
         assert ok is True
@@ -300,7 +300,7 @@ class TestFallbackChainDedup:
         agent.model = "z-ai/glm-4.7"
         agent.base_url = "https://openrouter.ai/api/v1"
 
-        with patch("agent.auxiliary_client.resolve_provider_client") as mock_resolve:
+        with patch("hermes_agent.agent.auxiliary_client.resolve_provider_client") as mock_resolve:
             ok = agent._try_activate_fallback()
 
         assert ok is False

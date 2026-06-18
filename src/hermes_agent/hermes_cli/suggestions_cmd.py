@@ -47,7 +47,7 @@ def _resolve_origin() -> Optional[Dict[str, Any]]:
     which case create_job falls back to a configured home channel.
     """
     try:
-        from gateway.session_context import get_session_env
+        from hermes_agent.gateway.session_context import get_session_env
 
         platform = get_session_env("HERMES_SESSION_PLATFORM")
         chat_id = get_session_env("HERMES_SESSION_CHAT_ID")
@@ -81,7 +81,7 @@ def handle_suggestions_command(
     if origin is None:
         origin = _resolve_origin()
     try:
-        from cron import suggestions as store
+        from hermes_agent.cron import suggestions as store
     except Exception as e:  # pragma: no cover - import guard
         logger.debug("suggestions store import failed: %s", e)
         return "Suggestions are unavailable in this build."
@@ -125,7 +125,7 @@ def handle_suggestions_command(
 
     if sub == "catalog":
         try:
-            from cron.suggestion_catalog import seed_catalog_suggestions
+            from hermes_agent.cron.suggestion_catalog import seed_catalog_suggestions
 
             created = seed_catalog_suggestions()
         except Exception as e:

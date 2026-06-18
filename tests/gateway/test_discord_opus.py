@@ -9,14 +9,14 @@ class TestOpusFindLibrary:
 
     def test_uses_find_library_first(self):
         """find_library must be the primary lookup strategy."""
-        from plugins.platforms.discord.adapter import DiscordAdapter
+        from hermes_agent.plugins.platforms.discord.adapter import DiscordAdapter
         source = inspect.getsource(DiscordAdapter.connect)
         assert "find_library" in source, \
             "Opus loading must use ctypes.util.find_library"
 
     def test_homebrew_fallback_is_conditional(self):
         """Homebrew paths must only be tried when find_library returns None."""
-        from plugins.platforms.discord.adapter import DiscordAdapter
+        from hermes_agent.plugins.platforms.discord.adapter import DiscordAdapter
         source = inspect.getsource(DiscordAdapter.connect)
         # Homebrew fallback must exist
         assert "/opt/homebrew" in source or "homebrew" in source, \
@@ -32,7 +32,7 @@ class TestOpusFindLibrary:
 
     def test_windows_bundled_discord_opus_dll_is_discovered(self, monkeypatch, tmp_path):
         """Native Windows installs should try discord.py's bundled opus DLL."""
-        import plugins.platforms.discord.adapter as adapter
+        import hermes_agent.plugins.platforms.discord.adapter as adapter
 
         opus_py = tmp_path / "discord" / "opus.py"
         bundled = opus_py.parent / "bin" / "libopus-0.x64.dll"
@@ -52,7 +52,7 @@ class TestOpusFindLibrary:
 
     def test_opus_decode_error_logged(self):
         """Opus decode failure must log the error, not silently return."""
-        from plugins.platforms.discord.adapter import VoiceReceiver
+        from hermes_agent.plugins.platforms.discord.adapter import VoiceReceiver
         source = inspect.getsource(VoiceReceiver._on_packet)
         assert "logger" in source, \
             "_on_packet must log Opus decode errors"

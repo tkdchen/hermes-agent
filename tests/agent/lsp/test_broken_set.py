@@ -19,8 +19,8 @@ from unittest.mock import patch
 
 import pytest
 
-from agent.lsp.manager import LSPService
-from agent.lsp.workspace import clear_cache
+from hermes_agent.agent.lsp.manager import LSPService
+from hermes_agent.agent.lsp.workspace import clear_cache
 
 
 @pytest.fixture(autouse=True)

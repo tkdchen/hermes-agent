@@ -29,7 +29,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
 
-from hermes_cli.secret_prompt import masked_secret_prompt
+from hermes_agent.hermes_cli.secret_prompt import masked_secret_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -295,8 +295,8 @@ _EXTRA_ENV_KEYS = frozenset({
 })
 import yaml
 
-from hermes_cli.colors import Colors, color
-from hermes_cli.default_soul import DEFAULT_SOUL_MD
+from hermes_agent.hermes_cli.colors import Colors, color
+from hermes_agent.hermes_cli.default_soul import DEFAULT_SOUL_MD
 
 
 # =============================================================================
@@ -558,7 +558,7 @@ def get_container_exec_info() -> Optional[dict]:
     if os.environ.get("HERMES_DEV") == "1":
         return None
 
-    from hermes_constants import is_container
+    from hermes_agent.hermes_constants import is_container
     if is_container():
         return None
 
@@ -594,8 +594,8 @@ def get_container_exec_info() -> Optional[dict]:
 # =============================================================================
 
 # Re-export from hermes_constants — canonical definition lives there.
-from hermes_constants import get_hermes_home  # noqa: F811,E402
-from utils import atomic_replace
+from hermes_agent.hermes_constants import get_hermes_home  # noqa: F811,E402
+from hermes_agent.utils import atomic_replace
 
 def get_config_path() -> Path:
     """Get the main config file path."""
@@ -3691,7 +3691,7 @@ def _set_nested(config, dotted_key: str, value):
     Supports both dict and list navigation:
       _set_nested(c, "a.b.c", 1)     → c["a"]["b"]["c"] = 1
       _set_nested(c, "a.0.b", 1)     → c["a"][0]["b"] = 1
-      _set_nested(c, "providers.1", "x") → c["providers"][1] = "x"
+      _set_nested(c, "hermes_agent.providers.1", "x") → c["providers"][1] = "x"
 
     Intermediate dicts are created on demand.  List indices are parsed
     from numeric path segments; the referenced index must already exist
@@ -3772,7 +3772,7 @@ def get_missing_skill_config_vars() -> List[Dict[str, Any]]:
     config.yaml.  Returns a list of dicts suitable for prompting.
     """
     try:
-        from agent.skill_utils import discover_all_skill_config_vars, SKILL_CONFIG_PREFIX
+        from hermes_agent.agent.skill_utils import discover_all_skill_config_vars, SKILL_CONFIG_PREFIX
     except Exception:
         return []
 
@@ -3846,7 +3846,7 @@ def _normalize_custom_provider_entry(
     for camel, snake in _CAMEL_ALIASES.items():
         if camel in entry and snake not in entry:
             logger.warning(
-                "providers.%s: camelCase key '%s' auto-mapped to '%s' "
+                "hermes_agent.providers.%s: camelCase key '%s' auto-mapped to '%s' "
                 "(use snake_case to avoid this warning)",
                 provider_key or "?", camel, snake,
             )
@@ -3854,7 +3854,7 @@ def _normalize_custom_provider_entry(
     unknown = set(entry.keys()) - _KNOWN_KEYS - set(_CAMEL_ALIASES.keys())
     if unknown:
         logger.warning(
-            "providers.%s: unknown config keys ignored: %s",
+            "hermes_agent.providers.%s: unknown config keys ignored: %s",
             provider_key or "?", ", ".join(sorted(unknown)),
         )
 
@@ -3871,7 +3871,7 @@ def _normalize_custom_provider_entry(
                 break
             else:
                 logger.warning(
-                    "providers.%s: '%s' value '%s' is not a valid URL "
+                    "hermes_agent.providers.%s: '%s' value '%s' is not a valid URL "
                     "(no scheme or host) — skipped",
                     provider_key or "?", url_key, candidate,
                 )
@@ -4727,7 +4727,7 @@ def migrate_config(interactive: bool = True, quiet: bool = False) -> Dict[str, A
             config["plugins"] = plugins_cfg
             save_config(config)
             results["config_added"].append(
-                f"plugins.enabled (opt-in allow-list, {len(grandfathered)} grandfathered)"
+                f"hermes_agent.plugins.enabled (opt-in allow-list, {len(grandfathered)} grandfathered)"
             )
             if not quiet:
                 if grandfathered:
@@ -4900,7 +4900,7 @@ def migrate_config(interactive: bool = True, quiet: bool = False) -> Dict[str, A
     raw_mcp_servers = config.get("mcp_servers")
     if isinstance(raw_mcp_servers, dict):
         try:
-            from hermes_cli.mcp_security import validate_mcp_server_entry as _validate_mcp_server_entry
+            from hermes_agent.hermes_cli.mcp_security import validate_mcp_server_entry as _validate_mcp_server_entry
         except Exception:
             _validate_mcp_server_entry = None
         if _validate_mcp_server_entry:
@@ -5050,7 +5050,7 @@ def migrate_config(interactive: bool = True, quiet: bool = False) -> Dict[str, A
             print()
             config = load_config()
             try:
-                from agent.skill_utils import SKILL_CONFIG_PREFIX
+                from hermes_agent.agent.skill_utils import SKILL_CONFIG_PREFIX
             except Exception:
                 SKILL_CONFIG_PREFIX = "skills.config"
             for var in missing_skill_config:
@@ -5594,7 +5594,7 @@ def save_config(config: Dict[str, Any]):
         if is_managed():
             managed_error("save configuration")
             return
-        from utils import atomic_yaml_write
+        from hermes_agent.utils import atomic_yaml_write
 
         ensure_hermes_home()
         config_path = get_config_path()
@@ -6064,7 +6064,7 @@ def redact_key(key: str) -> str:
     Thin wrapper over :func:`agent.redact.mask_secret` — preserves the
     "(not set)" placeholder in dim color for the empty case.
     """
-    from agent.redact import mask_secret
+    from hermes_agent.agent.redact import mask_secret
     return mask_secret(key, empty=color("(not set)", Colors.DIM))
 
 
@@ -6103,7 +6103,7 @@ def show_config():
     for env_key, name in keys:
         value = get_env_value(env_key)
         print(f"  {name:<14} {redact_key(value)}")
-    from hermes_cli.auth import get_anthropic_key
+    from hermes_agent.hermes_cli.auth import get_anthropic_key
     anthropic_value = get_anthropic_key()
     print(f"  {'Anthropic':<14} {redact_key(anthropic_value)}")
     
@@ -6226,7 +6226,7 @@ def show_config():
     
     # Skill config
     try:
-        from agent.skill_utils import discover_all_skill_config_vars, resolve_skill_config_values
+        from hermes_agent.agent.skill_utils import discover_all_skill_config_vars, resolve_skill_config_values
         skill_vars = discover_all_skill_config_vars()
         if skill_vars:
             resolved = resolve_skill_config_values(skill_vars)
@@ -6343,7 +6343,7 @@ def set_config_value(key: str, value: str):
     
     # Write only user config back (not the full merged defaults)
     ensure_hermes_home()
-    from utils import atomic_yaml_write
+    from hermes_agent.utils import atomic_yaml_write
     atomic_yaml_write(config_path, user_config, sort_keys=False)
     
     # Keep .env in sync for keys that terminal_tool reads directly from env vars.
@@ -6514,7 +6514,7 @@ def _inject_profile_env_vars() -> None:
         return
     _profile_env_vars_injected = True
     try:
-        from providers import list_providers
+        from hermes_agent.providers import list_providers
         for _pp in list_providers():
             if _pp.auth_type not in {"api_key",}:
                 continue

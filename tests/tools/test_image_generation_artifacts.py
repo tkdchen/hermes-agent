@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 
 def test_postprocess_adds_agent_visible_image_for_active_ssh_env(monkeypatch, tmp_path):
-    from tools import image_generation_tool
+    from hermes_agent.tools import image_generation_tool
 
     hermes_home = tmp_path / ".hermes"
     image_dir = hermes_home / "cache" / "images"
@@ -39,7 +39,7 @@ def test_postprocess_adds_agent_visible_image_for_active_ssh_env(monkeypatch, tm
 
 
 def test_postprocess_maps_docker_cache_path_without_active_env(monkeypatch, tmp_path):
-    from tools import image_generation_tool
+    from hermes_agent.tools import image_generation_tool
 
     hermes_home = tmp_path / ".hermes"
     image_dir = hermes_home / "cache" / "images"
@@ -59,7 +59,7 @@ def test_postprocess_maps_docker_cache_path_without_active_env(monkeypatch, tmp_
 
 
 def test_postprocess_maps_ssh_cache_path_without_active_env(monkeypatch, tmp_path):
-    from tools import image_generation_tool
+    from hermes_agent.tools import image_generation_tool
 
     hermes_home = tmp_path / ".hermes"
     image_dir = hermes_home / "cache" / "images"
@@ -79,7 +79,7 @@ def test_postprocess_maps_ssh_cache_path_without_active_env(monkeypatch, tmp_pat
 
 
 def test_postprocess_leaves_remote_image_urls_unchanged(monkeypatch):
-    from tools import image_generation_tool
+    from hermes_agent.tools import image_generation_tool
 
     monkeypatch.setattr(image_generation_tool, "_active_terminal_env", lambda task_id: None)
 
@@ -89,7 +89,7 @@ def test_postprocess_leaves_remote_image_urls_unchanged(monkeypatch):
 
 
 def test_handle_image_generate_postprocesses_plugin_result(monkeypatch, tmp_path):
-    from tools import image_generation_tool
+    from hermes_agent.tools import image_generation_tool
 
     hermes_home = tmp_path / ".hermes"
     image_dir = hermes_home / "cache" / "images"

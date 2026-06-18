@@ -14,7 +14,7 @@ import tempfile
 import threading
 from unittest.mock import MagicMock, patch
 
-from tools.environments.local import (
+from hermes_agent.tools.environments.local import (
     LocalEnvironment,
     _resolve_safe_cwd,
 )
@@ -112,10 +112,10 @@ class TestRunBashCwdRecovery:
         captured = {}
         fds: list = []
         try:
-            with patch("tools.environments.local._find_bash", return_value="/bin/bash"), \
+            with patch("hermes_agent.tools.environments.local._find_bash", return_value="/bin/bash"), \
                  patch("subprocess.Popen", side_effect=_make_fake_popen(captured, fds)), \
-                 patch("tools.terminal_tool._interrupt_event", _fake_interrupt()), \
-                 caplog.at_level("WARNING", logger="tools.environments.local"):
+                 patch("hermes_agent.tools.terminal_tool._interrupt_event", _fake_interrupt()), \
+                 caplog.at_level("WARNING", logger="hermes_agent.tools.environments.local"):
                 env.execute("echo hello")
         finally:
             _close_fds(fds)
@@ -137,10 +137,10 @@ class TestRunBashCwdRecovery:
         captured = {}
         fds: list = []
         try:
-            with patch("tools.environments.local._find_bash", return_value="/bin/bash"), \
+            with patch("hermes_agent.tools.environments.local._find_bash", return_value="/bin/bash"), \
                  patch("subprocess.Popen", side_effect=_make_fake_popen(captured, fds)), \
-                 patch("tools.terminal_tool._interrupt_event", _fake_interrupt()), \
-                 caplog.at_level("WARNING", logger="tools.environments.local"):
+                 patch("hermes_agent.tools.terminal_tool._interrupt_event", _fake_interrupt()), \
+                 caplog.at_level("WARNING", logger="hermes_agent.tools.environments.local"):
                 env.execute("echo hello")
         finally:
             _close_fds(fds)

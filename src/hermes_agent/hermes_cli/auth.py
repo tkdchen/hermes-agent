@@ -43,10 +43,10 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 import httpx
 
-from hermes_cli.config import get_hermes_home, get_config_path, read_raw_config
-from hermes_constants import OPENROUTER_BASE_URL, secure_parent_dir
-from agent.credential_persistence import sanitize_borrowed_credential_payload
-from utils import atomic_replace, atomic_yaml_write, is_truthy_value
+from hermes_agent.hermes_cli.config import get_hermes_home, get_config_path, read_raw_config
+from hermes_agent.hermes_constants import OPENROUTER_BASE_URL, secure_parent_dir
+from hermes_agent.agent.credential_persistence import sanitize_borrowed_credential_payload
+from hermes_agent.utils import atomic_replace, atomic_yaml_write, is_truthy_value
 
 logger = logging.getLogger(__name__)
 
@@ -450,7 +450,7 @@ PROVIDER_REGISTRY: Dict[str, ProviderConfig] = {
 # providers/ that is not already declared above.  New providers only need a
 # plugins/model-providers/<name>/ plugin — no edits to this file required.
 try:
-    from providers import list_providers as _list_providers_for_registry
+    from hermes_agent.providers import list_providers as _list_providers_for_registry
     for _pp in _list_providers_for_registry():
         if _pp.name in PROVIDER_REGISTRY:
             continue
@@ -494,7 +494,7 @@ def get_anthropic_key() -> str:
 
         ANTHROPIC_API_KEY -> ANTHROPIC_TOKEN -> CLAUDE_CODE_OAUTH_TOKEN
     """
-    from hermes_cli.config import get_env_value
+    from hermes_agent.hermes_cli.config import get_env_value
 
     for var in PROVIDER_REGISTRY["anthropic"].api_key_env_vars:
         value = get_env_value(var) or os.getenv(var, "")
@@ -572,7 +572,7 @@ def _resolve_api_key_provider_secret(
     if provider_id == "copilot":
         # Use the dedicated copilot auth module for proper token validation
         try:
-            from hermes_cli.copilot_auth import resolve_copilot_token, get_copilot_api_token
+            from hermes_agent.hermes_cli.copilot_auth import resolve_copilot_token, get_copilot_api_token
             token, source = resolve_copilot_token()
             if token:
                 return get_copilot_api_token(token), source
@@ -582,7 +582,7 @@ def _resolve_api_key_provider_secret(
             pass
         return "", ""
 
-    from hermes_cli.config import get_env_value
+    from hermes_agent.hermes_cli.config import get_env_value
     for env_var in pconfig.api_key_env_vars:
         # Check both os.environ and ~/.hermes/.env file
         val = (get_env_value(env_var) or "").strip()
@@ -591,7 +591,7 @@ def _resolve_api_key_provider_secret(
 
     # Fallback: try credential pool (e.g. zai key stored via auth.json)
     try:
-        from agent.credential_pool import load_pool
+        from hermes_agent.agent.credential_pool import load_pool
         pool = load_pool(provider_id)
         if pool and pool.has_credentials():
             entry = pool.peek()
@@ -811,7 +811,7 @@ def format_auth_error(error: Exception) -> str:
 
 def _format_nous_entitlement_auth_error(error: AuthError) -> str:
     try:
-        from hermes_cli.nous_account import (
+        from hermes_agent.hermes_cli.nous_account import (
             format_nous_portal_entitlement_message,
             get_nous_portal_account_info,
         )
@@ -890,7 +890,7 @@ def _global_auth_file_path() -> Optional[Path]:
     See issue #18594 follow-up (credential_pool shadowing).
     """
     try:
-        from hermes_constants import get_default_hermes_root
+        from hermes_agent.hermes_constants import get_default_hermes_root
         global_root = get_default_hermes_root()
     except Exception:
         return None
@@ -1382,7 +1382,7 @@ def is_provider_explicitly_configured(provider_id: str) -> bool:
 
     # 2. Check config.yaml model.provider
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         cfg = load_config()
         model_cfg = cfg.get("model")
         if isinstance(model_cfg, dict):
@@ -1471,7 +1471,7 @@ def _get_config_hint_for_unknown_provider(provider_name: str) -> str:
     and returns a human-readable diagnostic, or empty string if nothing found.
     """
     try:
-        from hermes_cli.config import validate_config_structure
+        from hermes_agent.hermes_cli.config import validate_config_structure
         issues = validate_config_structure()
         if not issues:
             return ""
@@ -1546,7 +1546,7 @@ def resolve_provider(
     # This keeps providers/ as the single source for new aliases while the
     # hardcoded dict above remains authoritative for existing ones.
     try:
-        from providers import list_providers as _lp
+        from hermes_agent.providers import list_providers as _lp
         for _pp in _lp():
             for _alias in _pp.aliases:
                 if _alias not in _PROVIDER_ALIASES:
@@ -1597,7 +1597,7 @@ def resolve_provider(
     # env-var check above only covers keys exported as OPENROUTER_API_KEY /
     # OPENAI_API_KEY. See issue #42130.
     try:
-        from agent.credential_pool import load_pool as _load_pool
+        from hermes_agent.agent.credential_pool import load_pool as _load_pool
 
         if _load_pool("openrouter").has_credentials():
             return "openrouter"
@@ -1623,7 +1623,7 @@ def resolve_provider(
     # AWS Bedrock — detect via boto3 credential chain (IAM roles, SSO, env vars).
     # This runs after API-key providers so explicit keys always win.
     try:
-        from agent.bedrock_adapter import has_aws_credentials
+        from hermes_agent.agent.bedrock_adapter import has_aws_credentials
         if has_aws_credentials():
             return "bedrock"
     except ImportError:
@@ -2186,7 +2186,7 @@ def resolve_gemini_oauth_runtime_credentials(
 ) -> Dict[str, Any]:
     """Resolve runtime OAuth creds for google-gemini-cli."""
     try:
-        from agent.google_oauth import (
+        from hermes_agent.agent.google_oauth import (
             GoogleOAuthError,
             _credentials_path,
             get_valid_access_token,
@@ -2194,7 +2194,7 @@ def resolve_gemini_oauth_runtime_credentials(
         )
     except ImportError as exc:
         raise AuthError(
-            f"agent.google_oauth is not importable: {exc}",
+            f"hermes_agent.agent.google_oauth is not importable: {exc}",
             provider="google-gemini-cli",
             code="google_oauth_module_missing",
         ) from exc
@@ -2225,9 +2225,9 @@ def resolve_gemini_oauth_runtime_credentials(
 def get_gemini_oauth_auth_status() -> Dict[str, Any]:
     """Return a status dict for `hermes auth list` / `hermes status`."""
     try:
-        from agent.google_oauth import _credentials_path, load_credentials
+        from hermes_agent.agent.google_oauth import _credentials_path, load_credentials
     except ImportError:
-        return {"logged_in": False, "error": "agent.google_oauth unavailable"}
+        return {"logged_in": False, "error": "hermes_agent.agent.google_oauth unavailable"}
     auth_path = _credentials_path()
     creds = load_credentials()
     if creds is None or not creds.access_token:
@@ -2269,7 +2269,7 @@ def _spotify_client_id(
     explicit: Optional[str] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> str:
-    from hermes_cli.config import get_env_value
+    from hermes_agent.hermes_cli.config import get_env_value
 
     candidates = (
         explicit,
@@ -2292,7 +2292,7 @@ def _spotify_redirect_uri(
     explicit: Optional[str] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> str:
-    from hermes_cli.config import get_env_value
+    from hermes_agent.hermes_cli.config import get_env_value
 
     candidates = (
         explicit,
@@ -2309,7 +2309,7 @@ def _spotify_redirect_uri(
 
 
 def _spotify_api_base_url(state: Optional[Dict[str, Any]] = None) -> str:
-    from hermes_cli.config import get_env_value
+    from hermes_agent.hermes_cli.config import get_env_value
 
     candidates = (
         get_env_value("HERMES_SPOTIFY_API_BASE_URL"),
@@ -2324,7 +2324,7 @@ def _spotify_api_base_url(state: Optional[Dict[str, Any]] = None) -> str:
 
 
 def _spotify_accounts_base_url(state: Optional[Dict[str, Any]] = None) -> str:
-    from hermes_cli.config import get_env_value
+    from hermes_agent.hermes_cli.config import get_env_value
 
     candidates = (
         get_env_value("HERMES_SPOTIFY_ACCOUNTS_BASE_URL"),
@@ -2950,7 +2950,7 @@ def _spotify_interactive_setup(redirect_uri_hint: str) -> str:
 
     Raises SystemExit if the user aborts or submits an empty value.
     """
-    from hermes_cli.config import save_env_value
+    from hermes_agent.hermes_cli.config import save_env_value
 
     print()
     print("=" * 70)
@@ -4727,7 +4727,7 @@ def _nous_shared_auth_dir() -> Path:
     override = os.getenv("HERMES_SHARED_AUTH_DIR", "").strip()
     if override:
         return Path(override).expanduser()
-    from hermes_constants import get_default_hermes_root
+    from hermes_agent.hermes_constants import get_default_hermes_root
     return get_default_hermes_root() / "shared"
 
 
@@ -4740,7 +4740,7 @@ def _nous_shared_store_path() -> Path:
     # so forgetting to set it fails loudly instead of writing to the real
     # shared store).
     if os.environ.get("PYTEST_CURRENT_TEST"):
-        from hermes_constants import get_default_hermes_root
+        from hermes_agent.hermes_constants import get_default_hermes_root
         real_home_shared = (
             get_default_hermes_root() / "shared" / NOUS_SHARED_STORE_FILENAME
         ).resolve(strict=False)
@@ -5510,7 +5510,7 @@ def persist_nous_credentials(
     Returns the upserted :class:`PooledCredential` entry (or ``None`` if
     seeding somehow produced no match — shouldn't happen).
     """
-    from agent.credential_pool import load_pool
+    from hermes_agent.agent.credential_pool import load_pool
 
     state = dict(creds)
     if label and str(label).strip():
@@ -5537,7 +5537,7 @@ def persist_nous_credentials(
 def _sync_nous_pool_from_auth_store() -> None:
     """Best-effort pool reseed after providers.nous changes; never fail login."""
     try:
-        from agent.credential_pool import load_pool
+        from hermes_agent.agent.credential_pool import load_pool
 
         load_pool("nous")
     except Exception as exc:
@@ -5797,7 +5797,7 @@ def _snapshot_nous_pool_status() -> Dict[str, Any]:
     of truth because it is what ``resolve_nous_runtime_credentials()`` refreshes.
     """
     try:
-        from agent.credential_pool import load_pool
+        from hermes_agent.agent.credential_pool import load_pool
 
         pool = load_pool("nous")
         if not pool or not pool.has_credentials():
@@ -5982,7 +5982,7 @@ def get_codex_auth_status() -> Dict[str, Any]:
     # Check credential pool first — this is where `hermes auth` and
     # `hermes model` store device_code tokens.
     try:
-        from agent.credential_pool import load_pool
+        from hermes_agent.agent.credential_pool import load_pool
         pool = load_pool("openai-codex")
         if pool and pool.has_credentials():
             entry = pool.select()
@@ -6040,7 +6040,7 @@ def get_codex_auth_status() -> Dict[str, Any]:
 
 def get_xai_oauth_auth_status() -> Dict[str, Any]:
     try:
-        from agent.credential_pool import load_pool
+        from hermes_agent.agent.credential_pool import load_pool
 
         pool = load_pool("xai-oauth")
         if pool and pool.has_credentials():
@@ -6171,7 +6171,7 @@ def get_auth_status(provider_id: Optional[str] = None) -> Dict[str, Any]:
     # AWS SDK providers (Bedrock) — check via boto3 credential chain
     if pconfig and pconfig.auth_type == "aws_sdk":
         try:
-            from agent.bedrock_adapter import has_aws_credentials
+            from hermes_agent.agent.bedrock_adapter import has_aws_credentials
             return {"logged_in": has_aws_credentials(), "provider": target}
         except ImportError:
             return {"logged_in": False, "provider": target, "error": "boto3 not installed"}
@@ -6195,7 +6195,7 @@ def _get_azure_foundry_auth_status() -> Dict[str, Any]:
     """
     info: Dict[str, Any] = {"provider": "azure-foundry"}
     try:
-        from hermes_cli.config import load_config, get_env_value
+        from hermes_agent.hermes_cli.config import load_config, get_env_value
         cfg = load_config()
     except Exception:
         cfg = {}
@@ -6211,7 +6211,7 @@ def _get_azure_foundry_auth_status() -> Dict[str, Any]:
 
     if auth_mode == "entra_id":
         try:
-            from agent.azure_identity_adapter import (
+            from hermes_agent.agent.azure_identity_adapter import (
                 EntraIdentityConfig,
                 SCOPE_AI_AZURE_DEFAULT,
                 has_azure_identity_installed,
@@ -6486,7 +6486,7 @@ def _confirm_expensive_model_selection(
 ) -> bool:
     """Prompt before saving a model whose known pricing exceeds guardrails."""
     try:
-        from hermes_cli.model_cost_guard import expensive_model_warning
+        from hermes_agent.hermes_cli.model_cost_guard import expensive_model_warning
 
         warning = expensive_model_warning(
             model_id,
@@ -6530,7 +6530,7 @@ def _prompt_model_selection(
     If *unavailable_models* is provided, those models are shown grayed out
     and unselectable, with an upgrade link to *portal_url*.
     """
-    from hermes_cli.models import _format_price_per_mtok
+    from hermes_agent.hermes_cli.models import _format_price_per_mtok
 
     _unavailable = unavailable_models or []
 
@@ -6622,7 +6622,7 @@ def _prompt_model_selection(
     # of simple_term_menu, which conflicts with /dev/tty and left ESC/arrow
     # keys unreliable in the setup model picker.
     try:
-        from hermes_cli.curses_ui import curses_radiolist
+        from hermes_agent.hermes_cli.curses_ui import curses_radiolist
 
         choices = [_label(mid) for mid in ordered]
         choices.append("Enter custom model name")
@@ -6718,7 +6718,7 @@ def _save_model_choice(model_id: str) -> None:
     The model is stored in config.yaml only — NOT in .env.  This avoids
     conflicts in multi-agent setups where env vars would stomp each other.
     """
-    from hermes_cli.config import save_config, load_config
+    from hermes_agent.hermes_cli.config import save_config, load_config
 
     config = load_config()
     # Always use dict format so provider/base_url can be stored alongside
@@ -6806,7 +6806,7 @@ def _login_openai_codex(
     config_path = _update_config_for_provider("openai-codex", creds.get("base_url", DEFAULT_CODEX_BASE_URL))
     print()
     print("Login successful!")
-    from hermes_constants import display_hermes_home as _dhh
+    from hermes_agent.hermes_constants import display_hermes_home as _dhh
     print(f"  Auth state: {_dhh()}/auth.json")
     print(f"  Config updated: {config_path} (model.provider=openai-codex)")
 
@@ -6866,7 +6866,7 @@ def _login_xai_oauth(
     config_path = _update_config_for_provider("xai-oauth", creds.get("base_url", DEFAULT_XAI_OAUTH_BASE_URL))
     print()
     print("Login successful!")
-    from hermes_constants import display_hermes_home as _dhh
+    from hermes_agent.hermes_constants import display_hermes_home as _dhh
     print(f"  Auth state: {_dhh()}/auth.json")
     print(f"  Config updated: {config_path} (model.provider=xai-oauth)")
 
@@ -8074,7 +8074,7 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
                     code="invalid_token",
                 )
 
-            from hermes_cli.models import (
+            from hermes_agent.hermes_cli.models import (
                 get_curated_nous_model_ids, get_pricing_for_provider,
                 check_nous_free_tier, partition_nous_models_by_tier,
                 union_with_portal_free_recommendations,
@@ -8093,7 +8093,7 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
                 _portal_for_recs = auth_state.get("portal_base_url", "")
                 if free_tier:
                     try:
-                        from hermes_cli.nous_account import (
+                        from hermes_agent.hermes_cli.nous_account import (
                             format_nous_portal_entitlement_message,
                             get_nous_portal_account_info,
                         )

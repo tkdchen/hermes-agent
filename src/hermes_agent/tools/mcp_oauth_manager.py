@@ -154,7 +154,7 @@ def _make_hermes_provider_class() -> Optional[type]:
             # guessed ``{server_url}/token`` path (returns 404 on most real
             # providers) and require a full browser re-authorization.
             storage = self.context.storage
-            from tools.mcp_oauth import HermesTokenStorage
+            from hermes_agent.tools.mcp_oauth import HermesTokenStorage
             if (
                 isinstance(storage, HermesTokenStorage)
                 and self.context.oauth_metadata is None
@@ -253,7 +253,7 @@ def _make_hermes_provider_class() -> Optional[type]:
                         # Persist immediately so a subsequent cold-load can
                         # skip discovery entirely.
                         storage = self.context.storage
-                        from tools.mcp_oauth import HermesTokenStorage
+                        from hermes_agent.tools.mcp_oauth import HermesTokenStorage
                         if isinstance(storage, HermesTokenStorage):
                             storage.save_oauth_metadata(asm)
                         logger.debug(
@@ -274,7 +274,7 @@ def _make_hermes_provider_class() -> Optional[type]:
             if meta is None:
                 return
             storage = self.context.storage
-            from tools.mcp_oauth import HermesTokenStorage
+            from hermes_agent.tools.mcp_oauth import HermesTokenStorage
             if not isinstance(storage, HermesTokenStorage):
                 return
             existing = storage.load_oauth_metadata()
@@ -406,7 +406,7 @@ class MCPOAuthManager:
             return None
 
         # Local imports avoid circular deps at module import time.
-        from tools.mcp_oauth import (
+        from hermes_agent.tools.mcp_oauth import (
             HermesTokenStorage,
             OAuthNonInteractiveError,
             _OAUTH_AVAILABLE,
@@ -456,7 +456,7 @@ class MCPOAuthManager:
         with self._entries_lock:
             self._entries.pop(server_name, None)
 
-        from tools.mcp_oauth import remove_oauth_tokens
+        from hermes_agent.tools.mcp_oauth import remove_oauth_tokens
         remove_oauth_tokens(server_name)
         logger.info(
             "MCP OAuth '%s': evicted from cache and removed from disk",
@@ -474,7 +474,7 @@ class MCPOAuthManager:
         fresh tokens to disk, and on the next tool call the running MCP
         session picks them up without a restart.
         """
-        from tools.mcp_oauth import _get_token_dir, _safe_filename
+        from hermes_agent.tools.mcp_oauth import _get_token_dir, _safe_filename
 
         entry = self._entries.get(server_name)
         if entry is None or entry.provider is None:

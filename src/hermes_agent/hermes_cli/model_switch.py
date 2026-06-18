@@ -25,7 +25,7 @@ import re
 from dataclasses import dataclass
 from typing import List, NamedTuple, Optional
 
-from hermes_cli.providers import (
+from hermes_agent.hermes_cli.providers import (
     ProviderDef,
     custom_provider_slug,
     determine_api_mode,
@@ -33,10 +33,10 @@ from hermes_cli.providers import (
     is_aggregator,
     resolve_provider_full,
 )
-from hermes_cli.model_normalize import (
+from hermes_agent.hermes_cli.model_normalize import (
     normalize_model_for_provider,
 )
-from agent.models_dev import (
+from hermes_agent.agent.models_dev import (
     ModelCapabilities,
     ModelInfo,
     get_model_capabilities,
@@ -216,7 +216,7 @@ def _load_direct_aliases() -> dict[str, DirectAlias]:
     """
     merged = dict(_BUILTIN_DIRECT_ALIASES)
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         cfg = load_config()
 
         # --- model_aliases (dict-based format) ---
@@ -501,7 +501,7 @@ def resolve_alias(
     # yet synced to the registry).
     catalog = list_provider_models(current_provider)
     try:
-        from hermes_cli.models import _PROVIDER_MODELS
+        from hermes_agent.hermes_cli.models import _PROVIDER_MODELS
         static = _PROVIDER_MODELS.get(current_provider, [])
         if static:
             seen = {m.lower() for m in catalog}
@@ -602,7 +602,7 @@ def resolve_display_context_length(
     only if the resolver returns nothing.
     """
     try:
-        from agent.model_metadata import get_model_context_length
+        from hermes_agent.agent.model_metadata import get_model_context_length
         ctx = get_model_context_length(
             model,
             base_url=base_url or "",
@@ -672,13 +672,13 @@ def switch_model(
     Returns:
         ModelSwitchResult with all information the caller needs.
     """
-    from hermes_cli.models import (
+    from hermes_agent.hermes_cli.models import (
         copilot_model_api_mode,
         detect_provider_for_model,
         validate_requested_model,
         opencode_model_api_mode,
     )
-    from hermes_cli.runtime_provider import resolve_runtime_provider
+    from hermes_agent.hermes_cli.runtime_provider import resolve_runtime_provider
 
     resolved_alias = ""
     new_model = raw_input.strip()
@@ -704,7 +704,7 @@ def switch_model(
             )
             # Check for common config issues that cause provider resolution failures
             try:
-                from hermes_cli.config import validate_config_structure
+                from hermes_agent.hermes_cli.config import validate_config_structure
                 _cfg_issues = validate_config_structure()
                 if _cfg_issues:
                     _switch_err += "\n\nRun 'hermes doctor' — config issues detected:"
@@ -726,8 +726,8 @@ def switch_model(
         # routes to has no credentials, do NOT silently switch them onto an
         # unauthed endpoint (the classic HTTP 401 "Missing Authentication
         # header"). Point them at the real direct provider instead.
-        from hermes_cli.models import _AGGREGATOR_PROVIDERS as _AGG_PROVIDERS
-        from hermes_cli.providers import ALIASES as _PROVIDER_ALIAS_TABLE
+        from hermes_agent.hermes_cli.models import _AGGREGATOR_PROVIDERS as _AGG_PROVIDERS
+        from hermes_agent.hermes_cli.providers import ALIASES as _PROVIDER_ALIAS_TABLE
         _explicit_norm = explicit_provider.strip().lower()
         _alias_target = _PROVIDER_ALIAS_TABLE.get(_explicit_norm)
         if (
@@ -765,7 +765,7 @@ def switch_model(
         # If no model specified, try auto-detect from endpoint
         if not new_model:
             if pdef.base_url:
-                from hermes_cli.runtime_provider import _auto_detect_local_model
+                from hermes_agent.hermes_cli.runtime_provider import _auto_detect_local_model
                 detected = _auto_detect_local_model(pdef.base_url)
                 if detected:
                     new_model = detected
@@ -926,7 +926,7 @@ def switch_model(
         # or hop to an aggregator. Use the pdef's endpoint directly instead.
         _user_pdef = None
         if explicit_provider and user_providers:
-            from hermes_cli.providers import resolve_user_provider as _ruser
+            from hermes_agent.hermes_cli.providers import resolve_user_provider as _ruser
             _user_pdef = _ruser(explicit_provider.strip().lower(), user_providers)
             if _user_pdef is None:
                 _user_pdef = _ruser(target_provider, user_providers)
@@ -1176,7 +1176,7 @@ def prewarm_picker_cache_async() -> Optional["_threading.Thread"]:
 
     def _warm() -> None:
         try:
-            from hermes_cli.inventory import load_picker_context
+            from hermes_agent.hermes_cli.inventory import load_picker_context
 
             ctx = load_picker_context()
             # Calling this is what populates cached_provider_model_ids() ->
@@ -1230,13 +1230,13 @@ def list_authenticated_providers(
     not block on fresh Portal/account checks every time.
     """
     import os
-    from agent.models_dev import (
+    from hermes_agent.agent.models_dev import (
         PROVIDER_TO_MODELS_DEV,
         fetch_models_dev,
         get_provider_info as _mdev_pinfo,
     )
-    from hermes_cli.auth import PROVIDER_REGISTRY
-    from hermes_cli.models import (
+    from hermes_agent.hermes_cli.auth import PROVIDER_REGISTRY
+    from hermes_agent.hermes_cli.models import (
         OPENROUTER_MODELS, _PROVIDER_MODELS,
         _MODELS_DEV_PREFERRED, _merge_with_models_dev, cached_provider_model_ids,
         get_curated_nous_model_ids,
@@ -1262,7 +1262,7 @@ def list_authenticated_providers(
         static inference_base_url so the dedup matches what a user typing
         that URL into custom_providers would actually hit."""
         try:
-            from hermes_cli.auth import PROVIDER_REGISTRY as _reg
+            from hermes_agent.hermes_cli.auth import PROVIDER_REGISTRY as _reg
         except Exception:
             return
         pcfg = _reg.get(slug)
@@ -1311,7 +1311,7 @@ def list_authenticated_providers(
         if slug_norm != current_norm:
             return False
         try:
-            from agent.bedrock_adapter import has_aws_credentials
+            from hermes_agent.agent.bedrock_adapter import has_aws_credentials
             return bool(has_aws_credentials())
         except Exception:
             return False
@@ -1329,7 +1329,7 @@ def list_authenticated_providers(
     curated["nous"] = get_curated_nous_model_ids()
     # Ollama Cloud uses dynamic discovery (no static curated list)
     if "ollama-cloud" not in curated:
-        from hermes_cli.models import fetch_ollama_cloud_models
+        from hermes_agent.hermes_cli.models import fetch_ollama_cloud_models
         curated["ollama-cloud"] = fetch_ollama_cloud_models()
     # LM Studio has no static catalog — probe its native /api/v1/models
     # endpoint live so the picker reflects whatever the user has loaded.
@@ -1340,8 +1340,8 @@ def list_authenticated_providers(
     if "lmstudio" not in curated and (
         os.environ.get("LM_API_KEY") or os.environ.get("LM_BASE_URL") or current_provider.strip().lower() == "lmstudio"
     ):
-        from hermes_cli.models import fetch_lmstudio_models
-        from hermes_cli.auth import AuthError
+        from hermes_agent.hermes_cli.models import fetch_lmstudio_models
+        from hermes_agent.hermes_cli.auth import AuthError
         is_current_lmstudio = current_provider.strip().lower() == "lmstudio"
         lm_base = (
             os.environ.get("LM_BASE_URL")
@@ -1361,8 +1361,8 @@ def list_authenticated_providers(
         curated["lmstudio"] = live
 
     # --- 1. Check Hermes-mapped providers ---
-    from hermes_cli.models import _AGGREGATOR_PROVIDERS as _AGG_PROVIDERS
-    from hermes_cli.providers import ALIASES as _PROVIDER_ALIAS_TABLE
+    from hermes_agent.hermes_cli.models import _AGGREGATOR_PROVIDERS as _AGG_PROVIDERS
+    from hermes_agent.hermes_cli.providers import ALIASES as _PROVIDER_ALIAS_TABLE
     for hermes_id, mdev_id in PROVIDER_TO_MODELS_DEV.items():
         # Skip vendor names that are merely aliases routing through an
         # aggregator (e.g. bare "openai" → "openrouter"). These are NOT
@@ -1407,7 +1407,7 @@ def list_authenticated_providers(
         has_creds = any(os.environ.get(ev) for ev in env_vars)
         if not has_creds:
             try:
-                from hermes_cli.auth import _load_auth_store
+                from hermes_agent.hermes_cli.auth import _load_auth_store
                 store = _load_auth_store()
                 if store and store.get("credential_pool", {}).get(hermes_id):
                     has_creds = True
@@ -1446,8 +1446,8 @@ def list_authenticated_providers(
         _record_builtin_endpoint(slug)
 
     # --- 2. Check Hermes-only providers (nous, openai-codex, copilot, opencode-go) ---
-    from hermes_cli.providers import HERMES_OVERLAYS
-    from hermes_cli.auth import PROVIDER_REGISTRY as _auth_registry
+    from hermes_agent.hermes_cli.providers import HERMES_OVERLAYS
+    from hermes_agent.hermes_cli.auth import PROVIDER_REGISTRY as _auth_registry
 
     # Build reverse mapping: models.dev ID → Hermes provider ID.
     # HERMES_OVERLAYS keys may be models.dev IDs (e.g. "github-copilot")
@@ -1483,7 +1483,7 @@ def list_authenticated_providers(
         # OAuth via external credential files).
         if not has_creds:
             try:
-                from hermes_cli.auth import _load_auth_store
+                from hermes_agent.hermes_cli.auth import _load_auth_store
                 store = _load_auth_store()
                 providers_store = store.get("providers", {})
                 if store and (pid in providers_store or hermes_slug in providers_store):
@@ -1496,7 +1496,7 @@ def list_authenticated_providers(
         # imports on demand but aren't in the raw auth.json yet.
         if not has_creds:
             try:
-                from agent.credential_pool import load_pool
+                from hermes_agent.agent.credential_pool import load_pool
                 pool = load_pool(hermes_slug)
                 if pool.has_credentials():
                     has_creds = True
@@ -1511,7 +1511,7 @@ def list_authenticated_providers(
         # configured.
         if not has_creds and hermes_slug == "anthropic":
             try:
-                from agent.anthropic_adapter import (
+                from hermes_agent.agent.anthropic_adapter import (
                     read_claude_code_credentials,
                     read_hermes_oauth_credentials,
                 )
@@ -1555,13 +1555,13 @@ def list_authenticated_providers(
             # recommendations (e.g. stepfun/step-3.7-flash:free).
             model_ids = curated.get("nous", [])
             try:
-                from hermes_cli.models import (
+                from hermes_agent.hermes_cli.models import (
                     get_pricing_for_provider as _nous_pricing,
                     check_nous_free_tier as _nous_free,
                     union_with_portal_free_recommendations as _union_free,
                     union_with_portal_paid_recommendations as _union_paid,
                 )
-                from hermes_cli.auth import get_provider_auth_state as _nous_state
+                from hermes_agent.hermes_cli.auth import get_provider_auth_state as _nous_state
 
                 _pricing = _nous_pricing("nous") or {}
                 _portal = ""
@@ -1609,7 +1609,7 @@ def list_authenticated_providers(
     # in PROVIDER_TO_MODELS_DEV or HERMES_OVERLAYS (keeps /model in sync
     # with `hermes model`).
     try:
-        from hermes_cli.models import CANONICAL_PROVIDERS as _canon_provs
+        from hermes_agent.hermes_cli.models import CANONICAL_PROVIDERS as _canon_provs
     except ImportError:
         _canon_provs = []
 
@@ -1625,7 +1625,7 @@ def list_authenticated_providers(
         # Also check auth store and credential pool
         if not _cp_has_creds:
             try:
-                from hermes_cli.auth import _load_auth_store
+                from hermes_agent.hermes_cli.auth import _load_auth_store
                 _cp_store = _load_auth_store()
                 _cp_providers_store = _cp_store.get("providers", {})
                 if _cp_store and _cp.slug in _cp_providers_store:
@@ -1634,7 +1634,7 @@ def list_authenticated_providers(
                 pass
         if not _cp_has_creds:
             try:
-                from agent.credential_pool import load_pool
+                from hermes_agent.agent.credential_pool import load_pool
                 _cp_pool = load_pool(_cp.slug)
                 if _cp_pool.has_credentials():
                     _cp_has_creds = True
@@ -1757,7 +1757,7 @@ def list_authenticated_providers(
             )
             if should_probe:
                 try:
-                    from hermes_cli.models import fetch_api_models
+                    from hermes_agent.hermes_cli.models import fetch_api_models
                     live_models = fetch_api_models(api_key, api_url)
                     if live_models:
                         models_list = live_models
@@ -2003,7 +2003,7 @@ def list_authenticated_providers(
             )
             if should_probe:
                 try:
-                    from hermes_cli.models import fetch_api_models
+                    from hermes_agent.hermes_cli.models import fetch_api_models
 
                     live_models = fetch_api_models(api_key, api_url)
                     if live_models:
@@ -2062,7 +2062,7 @@ def list_picker_providers(
     The typed ``/model <name>`` path is unaffected -- only the interactive
     picker payload is narrowed.
     """
-    from hermes_cli.models import fetch_openrouter_models
+    from hermes_agent.hermes_cli.models import fetch_openrouter_models
 
     providers = list_authenticated_providers(
         current_provider=current_provider,

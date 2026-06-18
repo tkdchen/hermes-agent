@@ -41,22 +41,22 @@ import threading
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from agent.lsp import eventlog
-from agent.lsp.client import (
+from hermes_agent.agent.lsp import eventlog
+from hermes_agent.agent.lsp.client import (
     DIAGNOSTICS_DOCUMENT_WAIT,
     LSPClient,
 )
-from agent.lsp.servers import (
+from hermes_agent.agent.lsp.servers import (
     ServerContext,
     find_server_for_file,
     language_id_for,
 )
-from agent.lsp.workspace import (
+from hermes_agent.agent.lsp.workspace import (
     clear_cache,
     resolve_workspace_for_file,
 )
 
-logger = logging.getLogger("agent.lsp.manager")
+logger = logging.getLogger("hermes_agent.agent.lsp.manager")
 
 DEFAULT_IDLE_TIMEOUT = 600  # seconds; servers idle for >10min get reaped
 
@@ -102,7 +102,7 @@ class _BackgroundLoop:
 
         Returns the coroutine's result, or raises its exception.
         """
-        from agent.async_utils import safe_schedule_threadsafe
+        from hermes_agent.agent.async_utils import safe_schedule_threadsafe
         if self._loop is None:
             if asyncio.iscoroutine(coro):
                 coro.close()
@@ -191,7 +191,7 @@ class LSPService:
         itself returns ``is_active()`` False when LSP is disabled.
         """
         try:
-            from hermes_cli.config import load_config
+            from hermes_agent.hermes_cli.config import load_config
             cfg = load_config()
         except Exception as e:  # noqa: BLE001
             logger.debug("LSP config load failed: %s", e)
@@ -363,7 +363,7 @@ class LSPService:
                     # entries hash equal under _diag_key.  Entries
                     # that mapped into a deleted region drop out
                     # silently — they no longer apply.
-                    from agent.lsp.range_shift import shift_baseline
+                    from hermes_agent.agent.lsp.range_shift import shift_baseline
                     baseline = shift_baseline(baseline, line_shift)
                 seen = {_diag_key(d) for d in baseline}
                 diags = [d for d in diags if _diag_key(d) not in seen]

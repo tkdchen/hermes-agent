@@ -38,9 +38,9 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 from urllib.request import url2pathname
 
-from agent.memory_provider import MemoryProvider
-from agent.skill_commands import extract_user_instruction_from_skill_message
-from tools.registry import tool_error
+from hermes_agent.agent.memory_provider import MemoryProvider
+from hermes_agent.agent.skill_commands import extract_user_instruction_from_skill_message
+from hermes_agent.tools.registry import tool_error
 
 logger = logging.getLogger(__name__)
 

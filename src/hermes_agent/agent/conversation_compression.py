@@ -36,7 +36,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Tuple
 
-from agent.model_metadata import estimate_request_tokens_rough
+from hermes_agent.agent.model_metadata import estimate_request_tokens_rough
 
 logger = logging.getLogger(__name__)
 
@@ -88,11 +88,11 @@ def check_compression_model_feasibility(agent: Any) -> None:
     if not agent.compression_enabled:
         return
     try:
-        from agent.auxiliary_client import (
+        from hermes_agent.agent.auxiliary_client import (
             _resolve_task_provider_model,
             get_text_auxiliary_client,
         )
-        from agent.model_metadata import (
+        from hermes_agent.agent.model_metadata import (
             MINIMUM_CONTEXT_LENGTH,
             get_model_context_length,
         )
@@ -518,7 +518,7 @@ def compress_context(
             # Ordering contract: the agent thread updates the contextvar here;
             # the gateway propagates to SessionEntry after run_in_executor returns.
             try:
-                from gateway.session_context import set_current_session_id
+                from hermes_agent.gateway.session_context import set_current_session_id
 
                 set_current_session_id(agent.session_id)
             except Exception:
@@ -533,7 +533,7 @@ def compress_context(
             # compaction boundary (see #34089). Guarded separately so a logging
             # failure can never regress the routing update above.
             try:
-                from hermes_logging import set_session_context
+                from hermes_agent.hermes_logging import set_session_context
 
                 set_session_context(agent.session_id)
             except Exception:
@@ -634,7 +634,7 @@ def compress_context(
     # read content is summarised away — if the model re-reads the same
     # file it needs the full content, not a "file unchanged" stub.
     try:
-        from tools.file_tools import reset_file_dedup
+        from hermes_agent.tools.file_tools import reset_file_dedup
         reset_file_dedup(task_id)
     except Exception:
         pass
@@ -680,7 +680,7 @@ def try_shrink_image_parts_in_messages(
         return False
 
     try:
-        from tools.vision_tools import _resize_image_for_vision
+        from hermes_agent.tools.vision_tools import _resize_image_for_vision
     except Exception as exc:
         logger.warning("image-shrink recovery: vision_tools unavailable — %s", exc)
         return False

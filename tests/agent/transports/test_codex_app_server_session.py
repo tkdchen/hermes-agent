@@ -13,8 +13,8 @@ from typing import Any, Optional
 
 import pytest
 
-import agent.transports.codex_app_server_session as session_mod
-from agent.transports.codex_app_server_session import (
+import hermes_agent.agent.transports.codex_app_server_session as session_mod
+from hermes_agent.agent.transports.codex_app_server_session import (
     CodexAppServerSession,
     _ServerRequestRouting,
     _approval_choice_to_codex_decision,
@@ -290,7 +290,7 @@ class TestRunTurn:
 
     def test_turn_start_failure_returns_error(self):
         client = FakeClient()
-        from agent.transports.codex_app_server import CodexAppServerError
+        from hermes_agent.agent.transports.codex_app_server import CodexAppServerError
 
         def boom(method, params):
             if method == "turn/start":
@@ -316,7 +316,7 @@ class TestRunTurn:
             "Authorization: Bearer sk-live-deadbeefdeadbeef",
             "url=https://api.example.com/v1?token=querysecret12345",
         ])
-        from agent.transports.codex_app_server import CodexAppServerError
+        from hermes_agent.agent.transports.codex_app_server import CodexAppServerError
 
         def boom(method, params):
             if method == "turn/start":
@@ -368,7 +368,7 @@ class TestRunTurn:
         client.set_stderr_tail([
             "FATAL: model_provider 'azure_foundry' not configured",
         ])
-        from agent.transports.codex_app_server import CodexAppServerError
+        from hermes_agent.agent.transports.codex_app_server import CodexAppServerError
 
         def boom(method, params):
             if method == "thread/start":
@@ -863,7 +863,7 @@ class TestSessionRetirement:
         assert r.error and "turn_aborted" in r.error
 
     def test_oauth_refresh_failure_on_turn_start_suggests_login(self):
-        from agent.transports.codex_app_server import CodexAppServerError
+        from hermes_agent.agent.transports.codex_app_server import CodexAppServerError
 
         client = FakeClient()
 
@@ -886,7 +886,7 @@ class TestSessionRetirement:
     def test_oauth_failure_from_stderr_on_turn_start_failure(self):
         """If the RPC error itself is opaque but stderr shows an auth
         problem, we still classify it as a refresh failure."""
-        from agent.transports.codex_app_server import CodexAppServerError
+        from hermes_agent.agent.transports.codex_app_server import CodexAppServerError
 
         client = FakeClient()
         client.set_stderr_tail([
@@ -999,7 +999,7 @@ class TestThreadStartCrossFill:
         assert tid == "top-1"
 
     def test_missing_thread_id_raises(self):
-        from agent.transports.codex_app_server import CodexAppServerError
+        from hermes_agent.agent.transports.codex_app_server import CodexAppServerError
 
         client = FakeClient()
         client._request_handler = lambda method, params: (
@@ -1016,26 +1016,26 @@ class TestHasTurnAbortedMarker:
     """Unit coverage for the marker matcher itself."""
 
     def test_empty_string(self):
-        from agent.transports.codex_app_server_session import (
+        from hermes_agent.agent.transports.codex_app_server_session import (
             _has_turn_aborted_marker,
         )
         assert _has_turn_aborted_marker("") is False
         assert _has_turn_aborted_marker(None) is False  # type: ignore[arg-type]
 
     def test_plain_text_no_marker(self):
-        from agent.transports.codex_app_server_session import (
+        from hermes_agent.agent.transports.codex_app_server_session import (
             _has_turn_aborted_marker,
         )
         assert _has_turn_aborted_marker("normal response with no markers") is False
 
     def test_open_marker(self):
-        from agent.transports.codex_app_server_session import (
+        from hermes_agent.agent.transports.codex_app_server_session import (
             _has_turn_aborted_marker,
         )
         assert _has_turn_aborted_marker("blah <turn_aborted> blah") is True
 
     def test_self_closing_marker(self):
-        from agent.transports.codex_app_server_session import (
+        from hermes_agent.agent.transports.codex_app_server_session import (
             _has_turn_aborted_marker,
         )
         assert _has_turn_aborted_marker("<turn_aborted/>") is True
@@ -1045,7 +1045,7 @@ class TestClassifyOAuthFailure:
     """Unit coverage for the OAuth classifier; conservative on purpose."""
 
     def test_invalid_grant_classified(self):
-        from agent.transports.codex_app_server_session import (
+        from hermes_agent.agent.transports.codex_app_server_session import (
             _classify_oauth_failure,
         )
         hint = _classify_oauth_failure("error: invalid_grant returned by server")
@@ -1053,7 +1053,7 @@ class TestClassifyOAuthFailure:
         assert "codex login" in hint
 
     def test_token_refresh_classified(self):
-        from agent.transports.codex_app_server_session import (
+        from hermes_agent.agent.transports.codex_app_server_session import (
             _classify_oauth_failure,
         )
         hint = _classify_oauth_failure("token refresh failed: network error")
@@ -1061,14 +1061,14 @@ class TestClassifyOAuthFailure:
         assert "codex login" in hint
 
     def test_401_classified(self):
-        from agent.transports.codex_app_server_session import (
+        from hermes_agent.agent.transports.codex_app_server_session import (
             _classify_oauth_failure,
         )
         hint = _classify_oauth_failure("HTTP 401 Unauthorized")
         assert hint is not None
 
     def test_generic_error_not_classified(self):
-        from agent.transports.codex_app_server_session import (
+        from hermes_agent.agent.transports.codex_app_server_session import (
             _classify_oauth_failure,
         )
         assert _classify_oauth_failure("connection reset") is None
@@ -1076,7 +1076,7 @@ class TestClassifyOAuthFailure:
         assert _classify_oauth_failure("rate limit exceeded") is None
 
     def test_empty_inputs(self):
-        from agent.transports.codex_app_server_session import (
+        from hermes_agent.agent.transports.codex_app_server_session import (
             _classify_oauth_failure,
         )
         assert _classify_oauth_failure() is None
@@ -1085,7 +1085,7 @@ class TestClassifyOAuthFailure:
 
     def test_multi_string_search(self):
         """Hint can come from any of the provided strings."""
-        from agent.transports.codex_app_server_session import (
+        from hermes_agent.agent.transports.codex_app_server_session import (
             _classify_oauth_failure,
         )
         hint = _classify_oauth_failure(

@@ -8,20 +8,20 @@ class TestResolveApiKey:
     """Test _resolve_api_key with various config shapes."""
 
     def test_returns_api_key_from_root(self, monkeypatch):
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         assert honcho_cli._resolve_api_key({"apiKey": "root-key"}) == "root-key"
 
     def test_returns_api_key_from_host_block(self, monkeypatch):
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         cfg = {"hosts": {"hermes": {"apiKey": "host-key"}}, "apiKey": "root-key"}
         assert honcho_cli._resolve_api_key(cfg) == "host-key"
 
     def test_returns_local_for_base_url_without_api_key(self, monkeypatch):
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         monkeypatch.delenv("HONCHO_BASE_URL", raising=False)
@@ -29,14 +29,14 @@ class TestResolveApiKey:
         assert honcho_cli._resolve_api_key(cfg) == "local"
 
     def test_returns_local_for_base_url_env_var(self, monkeypatch):
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         monkeypatch.setenv("HONCHO_BASE_URL", "http://10.0.0.5:8000")
         assert honcho_cli._resolve_api_key({}) == "local"
 
     def test_returns_empty_when_nothing_configured(self, monkeypatch):
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         monkeypatch.delenv("HONCHO_BASE_URL", raising=False)
@@ -44,7 +44,7 @@ class TestResolveApiKey:
 
     def test_rejects_garbage_base_url_without_scheme(self, monkeypatch):
         """Obvious non-URL literals in baseUrl (typos) must not pass the guard."""
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         monkeypatch.delenv("HONCHO_BASE_URL", raising=False)
@@ -64,7 +64,7 @@ class TestResolveApiKey:
         needed later, extend the lowered-literal blocklist or check the
         parsed scheme explicitly.
         """
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         monkeypatch.delenv("HONCHO_BASE_URL", raising=False)
@@ -77,7 +77,7 @@ class TestResolveApiKey:
         # intentionally lenient: SDK errors out with clearer message.
 
     def test_accepts_https_base_url(self, monkeypatch):
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         monkeypatch.delenv("HONCHO_BASE_URL", raising=False)
@@ -92,7 +92,7 @@ class TestResolveApiKey:
         older configs don't see spurious "no API key configured" errors.
         The SDK itself still rejects malformed URLs at connect time.
         """
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
         monkeypatch.setattr(honcho_cli, "_host_key", lambda: "hermes")
         monkeypatch.delenv("HONCHO_API_KEY", raising=False)
         monkeypatch.delenv("HONCHO_BASE_URL", raising=False)
@@ -105,7 +105,7 @@ class TestCmdSetupLocalJwt:
     """Local-deployment setup must allow configuring a JWT for AUTH_JWT_SECRET-backed Honcho servers."""
 
     def _run_setup(self, monkeypatch, tmp_path, initial_cfg, prompt_answers):
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
 
         # Avoid touching real config / SDK / filesystem.
         cfg_path = tmp_path / "honcho.json"
@@ -181,7 +181,7 @@ class TestCmdSetupLocalJwt:
 
 class TestCmdStatus:
     def test_reports_connection_failure_when_session_setup_fails(self, monkeypatch, capsys, tmp_path):
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
 
         cfg_path = tmp_path / "honcho.json"
         cfg_path.write_text("{}")
@@ -214,11 +214,11 @@ class TestCmdStatus:
         monkeypatch.setattr(honcho_cli, "_local_config_path", lambda: cfg_path)
         monkeypatch.setattr(honcho_cli, "_active_profile_name", lambda: "default")
         monkeypatch.setattr(
-            "plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
+            "hermes_agent.plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
             lambda host=None: FakeConfig(),
         )
         monkeypatch.setattr(
-            "plugins.memory.honcho.client.get_honcho_client",
+            "hermes_agent.plugins.memory.honcho.client.get_honcho_client",
             lambda cfg: object(),
         )
 
@@ -245,7 +245,7 @@ class TestCloneHonchoForProfile:
     """
 
     def _setup_clone_env(self, monkeypatch, tmp_path, cfg):
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
         cfg_path = tmp_path / "config.json"
         cfg_path.write_text("{}")
         monkeypatch.setattr(honcho_cli, "_read_config", lambda: cfg)
@@ -337,7 +337,7 @@ class TestSetupWizardDeploymentShape:
 
     def _run_setup(self, monkeypatch, tmp_path, *, answers, initial_cfg=None,
                    gateway_platforms=("telegram",)):
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
 
         cfg_path = tmp_path / "config.json"
         cfg_path.write_text("{}")
@@ -356,10 +356,10 @@ class TestSetupWizardDeploymentShape:
 
         # Bypass config.yaml + connection test side effects.
         monkeypatch.setattr(
-            "hermes_cli.config.load_config", lambda: {"memory": {}}, raising=False,
+            "hermes_agent.hermes_cli.config.load_config", lambda: {"memory": {}}, raising=False,
         )
         monkeypatch.setattr(
-            "hermes_cli.config.save_config", lambda c: None, raising=False,
+            "hermes_agent.hermes_cli.config.save_config", lambda c: None, raising=False,
         )
 
         class _FakeClientCfg:
@@ -374,15 +374,15 @@ class TestSetupWizardDeploymentShape:
             session_strategy = "per-session"
 
         monkeypatch.setattr(
-            "plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
+            "hermes_agent.plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
             lambda host=None: _FakeClientCfg(),
         )
         monkeypatch.setattr(
-            "plugins.memory.honcho.client.reset_honcho_client",
+            "hermes_agent.plugins.memory.honcho.client.reset_honcho_client",
             lambda: None,
         )
         monkeypatch.setattr(
-            "plugins.memory.honcho.client.get_honcho_client",
+            "hermes_agent.plugins.memory.honcho.client.get_honcho_client",
             lambda hcfg: object(),
         )
 
@@ -683,7 +683,7 @@ class TestCloneCarriesPinUserPeer:
     """
 
     def test_clone_inherits_host_pin_user_peer(self, monkeypatch, tmp_path):
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
 
         cfg = {
             "apiKey": "***",
@@ -712,19 +712,19 @@ class TestMigratePinKey:
     canonical value."""
 
     def test_legacy_key_renamed_to_canonical(self):
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
         block = {"pinPeerName": True}
         assert honcho_cli._migrate_pin_key(block) is True
         assert block == {"pinUserPeer": True}
 
     def test_canonical_key_wins_when_both_present(self):
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
         block = {"pinPeerName": True, "pinUserPeer": False}
         assert honcho_cli._migrate_pin_key(block) is True
         assert block == {"pinUserPeer": False}
 
     def test_noop_when_no_legacy_key(self):
-        import plugins.memory.honcho.cli as honcho_cli
+        import hermes_agent.plugins.memory.honcho.cli as honcho_cli
         block = {"pinUserPeer": True}
         assert honcho_cli._migrate_pin_key(block) is False
         assert block == {"pinUserPeer": True}

@@ -3,9 +3,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from gateway.config import GatewayConfig, Platform, PlatformConfig
-from gateway.platforms.base import MessageEvent
-from gateway.session import SessionSource
+from hermes_agent.gateway.config import GatewayConfig, Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import MessageEvent
+from hermes_agent.gateway.session import SessionSource
 
 
 def _clear_auth_env(monkeypatch) -> None:
@@ -56,7 +56,7 @@ def _make_event(platform: Platform, user_id: str, chat_id: str) -> MessageEvent:
 
 
 def _make_runner(platform: Platform, config: GatewayConfig):
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = object.__new__(GatewayRunner)
     runner.config = config
@@ -110,7 +110,7 @@ def test_simplex_allowlist_accepts_display_name(monkeypatch):
     monkeypatch.setenv("SIMPLEX_ALLOWED_USERS", "hujikuji")
 
     # Register the simplex plugin so the env-var lookup resolves.
-    from gateway.platform_registry import platform_registry, PlatformEntry
+    from hermes_agent.gateway.platform_registry import platform_registry, PlatformEntry
     platform_registry.register(PlatformEntry(
         name="simplex",
         label="SimpleX Chat",
@@ -145,7 +145,7 @@ def test_simplex_allowlist_accepts_numeric_contact_id(monkeypatch):
     monkeypatch.delenv("SIMPLEX_ALLOWED_USERS", raising=False)
     monkeypatch.setenv("SIMPLEX_ALLOWED_USERS", "4")
 
-    from gateway.platform_registry import platform_registry, PlatformEntry
+    from hermes_agent.gateway.platform_registry import platform_registry, PlatformEntry
     platform_registry.register(PlatformEntry(
         name="simplex",
         label="SimpleX Chat",
@@ -177,7 +177,7 @@ def test_simplex_allowlist_denies_unlisted(monkeypatch):
     monkeypatch.delenv("SIMPLEX_ALLOWED_USERS", raising=False)
     monkeypatch.setenv("SIMPLEX_ALLOWED_USERS", "hujikuji")
 
-    from gateway.platform_registry import platform_registry, PlatformEntry
+    from hermes_agent.gateway.platform_registry import platform_registry, PlatformEntry
     platform_registry.register(PlatformEntry(
         name="simplex",
         label="SimpleX Chat",

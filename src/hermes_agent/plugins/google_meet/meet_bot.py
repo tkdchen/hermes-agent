@@ -284,7 +284,7 @@ def _start_realtime_speaker(
     device selected as default input.
     """
     try:
-        from plugins.google_meet.realtime.openai_client import (
+        from hermes_agent.plugins.google_meet.realtime.openai_client import (
             RealtimeSession,
             RealtimeSpeaker,
         )
@@ -501,7 +501,7 @@ def run_bot() -> int:  # noqa: C901 — orchestration, explicit branches
             rt["enabled"] = False
         else:
             try:
-                from plugins.google_meet.audio_bridge import AudioBridge
+                from hermes_agent.plugins.google_meet.audio_bridge import AudioBridge
                 bridge = AudioBridge()
                 rt["bridge_info"] = bridge.setup()
                 rt["bridge"] = bridge

@@ -16,7 +16,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from agent.plugin_llm import (
+from hermes_agent.agent.plugin_llm import (
     PluginLlm,
     PluginLlmCompleteResult,
     PluginLlmImageInput,
@@ -721,7 +721,7 @@ class TestAsyncSurface:
 
 class TestConfigDrivenPolicy:
     def test_policy_loaded_from_yaml(self, tmp_path, monkeypatch):
-        from agent.plugin_llm import _resolve_trust_policy
+        from hermes_agent.agent.plugin_llm import _resolve_trust_policy
 
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
@@ -742,7 +742,7 @@ plugins:
             encoding="utf-8",
         )
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
-        from hermes_cli import config as _config_mod
+        from hermes_agent.hermes_cli import config as _config_mod
         _config_mod._config_cache = None  # type: ignore[attr-defined]
 
         policy = _resolve_trust_policy("my-plugin")
@@ -755,13 +755,13 @@ plugins:
         })
 
     def test_missing_plugin_entry_yields_default_deny(self, tmp_path, monkeypatch):
-        from agent.plugin_llm import _resolve_trust_policy
+        from hermes_agent.agent.plugin_llm import _resolve_trust_policy
 
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         (hermes_home / "config.yaml").write_text("plugins: {}\n", encoding="utf-8")
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
-        from hermes_cli import config as _config_mod
+        from hermes_agent.hermes_cli import config as _config_mod
         _config_mod._config_cache = None  # type: ignore[attr-defined]
 
         policy = _resolve_trust_policy("never-configured")
@@ -778,7 +778,7 @@ plugins:
 
 class TestPluginContextIntegration:
     def test_ctx_llm_is_lazy_singleton(self):
-        from hermes_cli.plugins import PluginContext, PluginManifest, PluginManager
+        from hermes_agent.hermes_cli.plugins import PluginContext, PluginManifest, PluginManager
 
         manifest = PluginManifest(name="test-plugin", source="test", key="test-plugin")
         manager = PluginManager()
@@ -790,7 +790,7 @@ class TestPluginContextIntegration:
         assert first._plugin_id == "test-plugin"  # type: ignore[attr-defined]
 
     def test_ctx_llm_uses_manifest_key_for_policy(self):
-        from hermes_cli.plugins import PluginContext, PluginManifest, PluginManager
+        from hermes_agent.hermes_cli.plugins import PluginContext, PluginManifest, PluginManager
 
         manifest = PluginManifest(
             name="bare-name", source="test", key="image_gen/openai"
@@ -811,7 +811,7 @@ class TestAttribution:
     fallbacks ('auto', 'default') from earlier drafts."""
 
     def test_explicit_overrides_recorded_when_no_response_model(self):
-        from agent.plugin_llm import _resolve_attribution
+        from hermes_agent.agent.plugin_llm import _resolve_attribution
 
         # Response with no .model attribute — overrides win.
         response = SimpleNamespace(choices=[], usage=None)
@@ -827,7 +827,7 @@ class TestAttribution:
         """Providers often canonicalise the model name (e.g. ``gpt-4o``
         → ``gpt-4o-2024-08-06``). Whatever they actually returned wins
         for the recorded model so the audit log reflects reality."""
-        from agent.plugin_llm import _resolve_attribution
+        from hermes_agent.agent.plugin_llm import _resolve_attribution
 
         response = SimpleNamespace(model="gpt-4o-2024-08-06", choices=[])
         provider, model = _resolve_attribution(
@@ -843,8 +843,8 @@ class TestAttribution:
         """When the plugin doesn't override anything, attribution
         reflects the user's active main provider/model rather than
         misleading placeholders."""
-        from agent import plugin_llm
-        import agent.auxiliary_client as ac
+        from hermes_agent.agent import plugin_llm
+        import hermes_agent.agent.auxiliary_client as ac
 
         monkeypatch.setattr(ac, "_read_main_provider", lambda: "openrouter")
         monkeypatch.setattr(ac, "_read_main_model", lambda: "anthropic/claude-3-5-sonnet")
@@ -861,8 +861,8 @@ class TestAttribution:
     def test_response_model_used_even_when_no_overrides(self, monkeypatch):
         """The provider's canonical model name should still flow through
         when no overrides are set."""
-        from agent import plugin_llm
-        import agent.auxiliary_client as ac
+        from hermes_agent.agent import plugin_llm
+        import hermes_agent.agent.auxiliary_client as ac
 
         monkeypatch.setattr(ac, "_read_main_provider", lambda: "openrouter")
         monkeypatch.setattr(ac, "_read_main_model", lambda: "openai/gpt-4o")
@@ -880,8 +880,8 @@ class TestAttribution:
         """If main_provider/main_model are unset AND there's no override
         AND the response has no .model, fall through to the safety
         placeholders so the result object never has empty strings."""
-        from agent import plugin_llm
-        import agent.auxiliary_client as ac
+        from hermes_agent.agent import plugin_llm
+        import hermes_agent.agent.auxiliary_client as ac
 
         monkeypatch.setattr(ac, "_read_main_provider", lambda: "")
         monkeypatch.setattr(ac, "_read_main_model", lambda: "")
@@ -908,7 +908,7 @@ class TestHookMode:
     the real ``invoke_hook`` machinery, and check the call landed."""
 
     def test_complete_works_from_post_tool_call_hook(self):
-        from hermes_cli.plugins import PluginContext, PluginManifest, PluginManager
+        from hermes_agent.hermes_cli.plugins import PluginContext, PluginManifest, PluginManager
 
         manifest = PluginManifest(name="hook-plugin", source="test", key="hook-plugin")
         manager = PluginManager()
@@ -964,7 +964,7 @@ class TestHookMode:
     def test_complete_works_from_post_tool_call_hook_when_async_caller_set(self):
         """Hooks fired synchronously should still work with sync
         ctx.llm.complete even if other callsites use async."""
-        from hermes_cli.plugins import PluginContext, PluginManifest, PluginManager
+        from hermes_agent.hermes_cli.plugins import PluginContext, PluginManifest, PluginManager
 
         manifest = PluginManifest(name="hook-async", source="test", key="hook-async")
         manager = PluginManager()

@@ -4,7 +4,7 @@ import sqlite3
 import time
 import pytest
 
-from hermes_state import SCHEMA_SQL, SCHEMA_VERSION, SessionDB
+from hermes_agent.hermes_state import SCHEMA_SQL, SCHEMA_VERSION, SessionDB
 
 
 class _NoFtsCursor(sqlite3.Cursor):
@@ -210,7 +210,7 @@ class TestSessionLifecycle:
             kwargs["factory"] = _NoFtsConnection
             return real_connect(*args, **kwargs)
 
-        monkeypatch.setattr("hermes_state.sqlite3.connect", connect_without_fts)
+        monkeypatch.setattr("hermes_agent.hermes_state.sqlite3.connect", connect_without_fts)
 
         db = SessionDB(db_path=tmp_path / "state.db")
         try:
@@ -247,7 +247,7 @@ class TestSessionLifecycle:
             kwargs["factory"] = _NoFtsExistingTableConnection
             return real_connect(*args, **kwargs)
 
-        monkeypatch.setattr("hermes_state.sqlite3.connect", connect_without_fts)
+        monkeypatch.setattr("hermes_agent.hermes_state.sqlite3.connect", connect_without_fts)
 
         db = SessionDB(db_path=db_path)
         try:
@@ -279,7 +279,7 @@ class TestSessionLifecycle:
             kwargs["factory"] = _NoFtsConnection
             return real_connect(*args, **kwargs)
 
-        monkeypatch.setattr("hermes_state.sqlite3.connect", connect_without_fts)
+        monkeypatch.setattr("hermes_agent.hermes_state.sqlite3.connect", connect_without_fts)
 
         db = SessionDB(db_path=db_path)
         try:
@@ -313,14 +313,14 @@ class TestSessionLifecycle:
             kwargs["factory"] = _NoFtsExistingTableConnection
             return real_connect(*args, **kwargs)
 
-        monkeypatch.setattr("hermes_state.sqlite3.connect", connect_without_fts)
+        monkeypatch.setattr("hermes_agent.hermes_state.sqlite3.connect", connect_without_fts)
         no_fts = SessionDB(db_path=db_path)
         try:
             no_fts.append_message("s1", role="assistant", content="not indexed yet")
         finally:
             no_fts.close()
 
-        monkeypatch.setattr("hermes_state.sqlite3.connect", real_connect)
+        monkeypatch.setattr("hermes_agent.hermes_state.sqlite3.connect", real_connect)
         restored = SessionDB(db_path=db_path)
         try:
             assert restored._fts_enabled is True
@@ -496,7 +496,7 @@ class TestMessageStorage:
     def test_replace_messages_persists_tool_name(self, db):
         """`replace_messages` (used by /retry, /undo, /compress) must write
         tool_name to the DB for messages built by make_tool_result_message."""
-        from agent.tool_dispatch_helpers import make_tool_result_message
+        from hermes_agent.agent.tool_dispatch_helpers import make_tool_result_message
         db.create_session(session_id="s1", source="cli")
         db.replace_messages(
             "s1",
@@ -987,7 +987,7 @@ class TestFTS5Search:
 
     def test_sanitize_fts5_query_strips_dangerous_chars(self):
         """Unit test for _sanitize_fts5_query static method."""
-        from hermes_state import SessionDB
+        from hermes_agent.hermes_state import SessionDB
         s = SessionDB._sanitize_fts5_query
         assert s('hello world') == 'hello world'
         assert '+' not in s('C++')
@@ -1008,7 +1008,7 @@ class TestFTS5Search:
 
     def test_sanitize_fts5_preserves_quoted_phrases(self):
         """Properly paired double-quoted phrases should be preserved."""
-        from hermes_state import SessionDB
+        from hermes_agent.hermes_state import SessionDB
         s = SessionDB._sanitize_fts5_query
         # Simple quoted phrase
         assert s('"exact phrase"') == '"exact phrase"'
@@ -1023,7 +1023,7 @@ class TestFTS5Search:
 
     def test_sanitize_fts5_quotes_hyphenated_terms(self):
         """Hyphenated terms should be wrapped in quotes for exact matching."""
-        from hermes_state import SessionDB
+        from hermes_agent.hermes_state import SessionDB
         s = SessionDB._sanitize_fts5_query
         # Simple hyphenated term
         assert s('chat-send') == '"chat-send"'
@@ -1045,7 +1045,7 @@ class TestFTS5Search:
 
     def test_sanitize_fts5_quotes_dotted_terms(self):
         """Dotted terms should be wrapped in quotes to avoid FTS5 query parse edge cases."""
-        from hermes_state import SessionDB
+        from hermes_agent.hermes_state import SessionDB
         s = SessionDB._sanitize_fts5_query
 
         assert s('P2.2') == '"P2.2"'
@@ -1071,7 +1071,7 @@ class TestFTS5Search:
         Without quoting, a search for 'sp_new' becomes an AND query
         ('sp AND new') that fails to match rows indexed as 'sp_new1'.
         """
-        from hermes_state import SessionDB
+        from hermes_agent.hermes_state import SessionDB
         s = SessionDB._sanitize_fts5_query
         # Simple underscored term
         assert s('sp_new') == '"sp_new"'
@@ -1104,7 +1104,7 @@ class TestCJKSearchFallback:
     """
 
     def test_cjk_detection_covers_all_ranges(self):
-        from hermes_state import SessionDB
+        from hermes_agent.hermes_state import SessionDB
         f = SessionDB._contains_cjk
         # Chinese (CJK Unified Ideographs)
         assert f("记忆断裂") is True
@@ -1993,7 +1993,7 @@ class TestSchemaInit:
         assert "schema_version" in tables
 
     def test_schema_version(self, db):
-        from hermes_state import SCHEMA_VERSION
+        from hermes_agent.hermes_state import SCHEMA_VERSION
         cursor = db._conn.execute("SELECT version FROM schema_version")
         version = cursor.fetchone()[0]
         assert version == SCHEMA_VERSION
@@ -2292,7 +2292,7 @@ class TestSchemaInit:
         migrated_db = SessionDB(db_path=db_path)
 
         # Verify migration
-        from hermes_state import SCHEMA_VERSION
+        from hermes_agent.hermes_state import SCHEMA_VERSION
         cursor = migrated_db._conn.execute("SELECT version FROM schema_version")
         assert cursor.fetchone()[0] == SCHEMA_VERSION
 
@@ -2355,7 +2355,7 @@ class TestSchemaInit:
             conn.set_trace_callback(trace)
             return conn
 
-        monkeypatch.setattr("hermes_state.sqlite3.connect", connect_with_trace)
+        monkeypatch.setattr("hermes_agent.hermes_state.sqlite3.connect", connect_with_trace)
         migrated_db = SessionDB(db_path=db_path)
         try:
             assert trigram_content_only_inserts == []
@@ -2495,7 +2495,7 @@ class TestSchemaInit:
         This is the architectural invariant: SCHEMA_SQL declares the
         desired schema, _reconcile_columns ensures it matches reality.
         """
-        from hermes_state import SCHEMA_SQL
+        from hermes_agent.hermes_state import SCHEMA_SQL
 
         expected = SessionDB._parse_schema_columns(SCHEMA_SQL)
         for table_name, declared_cols in expected.items():
@@ -3306,7 +3306,7 @@ class TestConcurrentWriteSafety:
         # Access the underlying connection timeout via sqlite3 introspection.
         # There is no public API, so we check the kwarg via the module default.
         import inspect
-        from hermes_state import SessionDB as _SessionDB
+        from hermes_agent.hermes_state import SessionDB as _SessionDB
         src = inspect.getsource(_SessionDB.__init__)
         assert "30" in src, (
             "SQLite timeout should be at least 30s to handle CLI/gateway lock contention"
@@ -3732,7 +3732,7 @@ class TestFTS5ToolCallMigration:
             assert len(session_db.search_messages("LEGACYARG")) == 1, \
                 "v11 migration must backfill tool_calls JSON into FTS"
             # schema_version bumped
-            from hermes_state import SCHEMA_VERSION
+            from hermes_agent.hermes_state import SCHEMA_VERSION
             row = session_db._conn.execute(
                 "SELECT version FROM schema_version LIMIT 1"
             ).fetchone()
@@ -3753,7 +3753,7 @@ class TestApplyWalProbe:
     def test_skips_set_pragma_when_already_wal(self, tmp_path):
         """Already-WAL connection must not trigger the set-pragma."""
         import sqlite3
-        from hermes_state import apply_wal_with_fallback
+        from hermes_agent.hermes_state import apply_wal_with_fallback
 
         class _TracingConn(sqlite3.Connection):
             def __init__(self, *a, **kw):
@@ -3787,7 +3787,7 @@ class TestApplyWalProbe:
     def test_sets_wal_on_fresh_connection(self, tmp_path):
         """Probe sees 'delete', then set-pragma runs and returns 'wal'."""
         import sqlite3
-        from hermes_state import apply_wal_with_fallback
+        from hermes_agent.hermes_state import apply_wal_with_fallback
 
         class _TracingConn(sqlite3.Connection):
             def __init__(self, *a, **kw):
@@ -3815,7 +3815,7 @@ class TestApplyWalProbe:
         import sys
         import threading
         import sqlite3
-        from hermes_state import apply_wal_with_fallback
+        from hermes_agent.hermes_state import apply_wal_with_fallback
 
         db_path = tmp_path / "concurrent.db"
         errors = []
@@ -3858,7 +3858,7 @@ class TestApplyWalProbe:
     def test_fallback_to_delete_still_works(self, tmp_path):
         """When set-pragma raises a WAL-incompat error, falls back to DELETE."""
         import sqlite3
-        from hermes_state import apply_wal_with_fallback
+        from hermes_agent.hermes_state import apply_wal_with_fallback
 
         class _IncompatConn(sqlite3.Connection):
             def __init__(self, *a, **kw):
@@ -3885,7 +3885,7 @@ class TestApplyWalProbe:
     def test_probe_failure_falls_through_to_set_pragma(self, tmp_path):
         """When the read probe raises OperationalError, fall through to set-pragma."""
         import sqlite3
-        from hermes_state import apply_wal_with_fallback
+        from hermes_agent.hermes_state import apply_wal_with_fallback
 
         class _ProbeFails(sqlite3.Connection):
             def __init__(self, *a, **kw):
@@ -3912,7 +3912,7 @@ class TestApplyWalProbe:
         """OperationalError NOT in _WAL_INCOMPAT_MARKERS must propagate, not downgrade."""
         import sqlite3
         import pytest
-        from hermes_state import apply_wal_with_fallback
+        from hermes_agent.hermes_state import apply_wal_with_fallback
 
         class _EIOConn(sqlite3.Connection):
             def __init__(self, *a, **kw):
@@ -3938,7 +3938,7 @@ class TestApplyWalProbe:
     def test_returns_wal_not_delete_from_probe(self, tmp_path):
         """Early-return only on 'wal'; 'delete' or 'memory' must fall through to set-pragma."""
         import sqlite3
-        from hermes_state import apply_wal_with_fallback
+        from hermes_agent.hermes_state import apply_wal_with_fallback
 
         class _TracingConn(sqlite3.Connection):
             def __init__(self, *a, **kw):

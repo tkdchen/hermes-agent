@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from tools.environments import modal as modal_env
+from hermes_agent.tools.environments import modal as modal_env
 
 
 def _make_mock_modal_env(monkeypatch, tmp_path):
@@ -187,7 +187,7 @@ class TestModalBulkUpload:
         env._task_id = "test"
 
         # Manually call the part of __init__ that wires FileSyncManager
-        from tools.environments.file_sync import iter_sync_files
+        from hermes_agent.tools.environments.file_sync import iter_sync_files
         env._sync_manager = modal_env.FileSyncManager(
             get_files_fn=lambda: iter_sync_files("/root/.hermes"),
             upload_fn=env._modal_upload,

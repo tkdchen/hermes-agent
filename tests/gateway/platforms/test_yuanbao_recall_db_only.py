@@ -8,13 +8,13 @@ JSONL file gone.  When a row has no platform id (e.g. agent-processed
 @bot messages whose adapter didn't carry a msg_id, or pre-column legacy
 rows), recall falls through to content-match.
 """
-from gateway.session import SessionStore
-from gateway.config import GatewayConfig
+from hermes_agent.gateway.session import SessionStore
+from hermes_agent.gateway.config import GatewayConfig
 
 
 def _pin_db(monkeypatch, tmp_path):
     """Force SessionDB() to write into tmp_path instead of the real ~/.hermes."""
-    import hermes_state
+    import hermes_agent.hermes_state as hermes_state
     monkeypatch.setattr(hermes_state, "DEFAULT_DB_PATH", tmp_path / "state.db")
 
 

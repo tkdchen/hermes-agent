@@ -35,7 +35,7 @@ def _run_cli(args, timeout=60):
     env = dict(os.environ)
     env["PYTHONPATH"] = REPO_ROOT + os.pathsep + env.get("PYTHONPATH", "")
     return subprocess.run(
-        [sys.executable, "-m", "hermes_cli.main", *args],
+        [sys.executable, "-m", "hermes_agent.hermes_cli.main", *args],
         cwd=REPO_ROOT,
         env=env,
         capture_output=True,

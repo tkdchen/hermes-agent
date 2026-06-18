@@ -88,9 +88,9 @@ except ImportError:
     ExecuteAction = None  # type: ignore[assignment,misc]
     TextBlock = None  # type: ignore[assignment,misc]
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.helpers import MessageDeduplicator
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.helpers import MessageDeduplicator
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
@@ -280,8 +280,8 @@ class TeamsSummaryWriter:
         if self._graph_client is not None:
             return self._graph_client
 
-        from tools.microsoft_graph_auth import MicrosoftGraphTokenProvider
-        from tools.microsoft_graph_client import MicrosoftGraphClient
+        from hermes_agent.tools.microsoft_graph_auth import MicrosoftGraphTokenProvider
+        from hermes_agent.tools.microsoft_graph_client import MicrosoftGraphClient
 
         access_token = str(config.get("access_token") or "").strip()
         if access_token:
@@ -682,7 +682,7 @@ def check_teams_requirements() -> bool:
             "TEAMS_SDK_AVAILABLE": True,
         }
 
-    from tools.lazy_deps import ensure_and_bind
+    from hermes_agent.tools.lazy_deps import ensure_and_bind
 
     return ensure_and_bind("platform.teams", _import, globals(), prompt=False)
 
@@ -804,8 +804,8 @@ class TeamsAdapter(BasePlatformAdapter):
         SSRF guard and follows redirects through the shared redirect guard,
         matching the cache_*_from_url helpers in gateway.platforms.base.
         """
-        from tools.url_safety import is_safe_url
-        from gateway.platforms.base import _ssrf_redirect_guard
+        from hermes_agent.tools.url_safety import is_safe_url
+        from hermes_agent.gateway.platforms.base import _ssrf_redirect_guard
 
         if not is_safe_url(url):
             raise ValueError("Blocked unsafe attachment URL (SSRF protection)")
@@ -992,7 +992,7 @@ class TeamsAdapter(BasePlatformAdapter):
         self, ctx: "ActivityContext[AdaptiveCardInvokeActivity]"
     ) -> "InvokeResponse[AdaptiveCardActionMessageResponse]":
         """Handle an Adaptive Card Action.Execute button click."""
-        from tools.approval import resolve_gateway_approval, has_blocking_approval
+        from hermes_agent.tools.approval import resolve_gateway_approval, has_blocking_approval
 
         action = ctx.activity.value.action
         data = action.data or {}
@@ -1254,11 +1254,11 @@ class TeamsAdapter(BasePlatformAdapter):
 
 def interactive_setup() -> None:
     """Guide the user through Teams setup using the Teams CLI."""
-    from hermes_cli.config import (
+    from hermes_agent.hermes_cli.config import (
         get_env_value,
         save_env_value,
     )
-    from hermes_cli.cli_output import (
+    from hermes_agent.hermes_cli.cli_output import (
         prompt,
         prompt_yes_no,
         print_info,

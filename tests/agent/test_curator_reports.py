@@ -24,11 +24,11 @@ def curator_env(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
     import importlib
-    import hermes_constants
+    import hermes_agent.hermes_constants as hermes_constants
     importlib.reload(hermes_constants)
-    from agent import curator
+    from hermes_agent.agent import curator
     importlib.reload(curator)
-    from tools import skill_usage
+    from hermes_agent.tools import skill_usage
     importlib.reload(skill_usage)
     yield {"home": home, "curator": curator, "skill_usage": skill_usage}
 
@@ -292,7 +292,7 @@ def curator_env_with_cron(curator_env, monkeypatch):
     (home / "cron" / "output").mkdir(exist_ok=True)
 
     import importlib
-    import cron.jobs as jobs_mod
+    import hermes_agent.cron.jobs as jobs_mod
     importlib.reload(jobs_mod)
     monkeypatch.setattr(jobs_mod, "HERMES_DIR", home)
     monkeypatch.setattr(jobs_mod, "CRON_DIR", home / "cron")

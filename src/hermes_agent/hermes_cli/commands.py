@@ -20,7 +20,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from utils import is_truthy_value
+from hermes_agent.utils import is_truthy_value
 
 logger = logging.getLogger(__name__)
 
@@ -401,7 +401,7 @@ def _resolve_config_gates() -> set[str]:
     if not gated:
         return set()
     try:
-        from hermes_cli.config import read_raw_config
+        from hermes_agent.hermes_cli.config import read_raw_config
         cfg = read_raw_config()
     except Exception:
         return set()
@@ -474,7 +474,7 @@ def _iter_plugin_command_entries() -> list[tuple[str, str, str]]:
     behavior).
     """
     try:
-        from hermes_cli.plugins import get_plugin_commands
+        from hermes_agent.hermes_cli.plugins import get_plugin_commands
     except Exception:
         return []
     try:
@@ -700,7 +700,7 @@ def _collect_gateway_skill_entries(
     # --- Tier 1: Plugin slash commands (never trimmed) ---------------------
     plugin_pairs: list[tuple[str, str]] = []
     try:
-        from hermes_cli.plugins import get_plugin_commands
+        from hermes_agent.hermes_cli.plugins import get_plugin_commands
         plugin_cmds = get_plugin_commands()
         for cmd_name in sorted(plugin_cmds):
             name = sanitize_name(cmd_name) if sanitize_name else cmd_name
@@ -722,16 +722,16 @@ def _collect_gateway_skill_entries(
     # --- Tier 2: Built-in skill commands (trimmed at cap) -----------------
     _platform_disabled: set[str] = set()
     try:
-        from agent.skill_utils import get_disabled_skill_names
+        from hermes_agent.agent.skill_utils import get_disabled_skill_names
         _platform_disabled = get_disabled_skill_names(platform=platform)
     except Exception:
         pass
 
     skill_triples: list[tuple[str, str, str]] = []
     try:
-        from agent.skill_commands import get_skill_commands
-        from tools.skills_tool import SKILLS_DIR
-        from agent.skill_utils import get_external_skills_dirs
+        from hermes_agent.agent.skill_commands import get_skill_commands
+        from hermes_agent.tools.skills_tool import SKILLS_DIR
+        from hermes_agent.agent.skill_utils import get_external_skills_dirs
         _skills_dir = str(SKILLS_DIR.resolve())
         _hub_dir = str((SKILLS_DIR / ".hub").resolve()).rstrip("/") + "/"
         # Build set of allowed directory prefixes: local skills dir + any
@@ -892,7 +892,7 @@ def discord_skill_commands_by_category(
 
     _platform_disabled: set[str] = set()
     try:
-        from agent.skill_utils import get_disabled_skill_names
+        from hermes_agent.agent.skill_utils import get_disabled_skill_names
         _platform_disabled = get_disabled_skill_names(platform="discord")
     except Exception:
         pass
@@ -909,9 +909,9 @@ def discord_skill_commands_by_category(
     hidden = 0
 
     try:
-        from agent.skill_commands import get_skill_commands
-        from agent.skill_utils import get_external_skills_dirs
-        from tools.skills_tool import SKILLS_DIR
+        from hermes_agent.agent.skill_commands import get_skill_commands
+        from hermes_agent.agent.skill_utils import get_external_skills_dirs
+        from hermes_agent.tools.skills_tool import SKILLS_DIR
 
         _skills_dir = SKILLS_DIR.resolve()
         _hub_dir = (SKILLS_DIR / ".hub").resolve()
@@ -1590,7 +1590,7 @@ class SlashCommandCompleter(Completer):
     def _skin_completions(sub_text: str, sub_lower: str):
         """Yield completions for /skin from available skins."""
         try:
-            from hermes_cli.skin_engine import list_skins
+            from hermes_agent.hermes_cli.skin_engine import list_skins
             for s in list_skins():
                 name = s["name"]
                 if name.startswith(sub_lower) and name != sub_lower:
@@ -1633,8 +1633,8 @@ class SlashCommandCompleter(Completer):
         already = set(parts[1:] if trailing_space else parts[1:-1])
 
         try:
-            from hermes_cli.config import load_config
-            from hermes_cli.tools_config import (
+            from hermes_agent.hermes_cli.config import load_config
+            from hermes_agent.hermes_cli.tools_config import (
                 CONFIGURABLE_TOOLSETS,
                 _get_platform_tools,
                 _get_plugin_toolset_keys,
@@ -1704,7 +1704,7 @@ class SlashCommandCompleter(Completer):
         partial = "" if (not parts or trailing_space) else parts[-1]
         partial_lower = partial.lower()
         try:
-            from gateway.config import load_gateway_config
+            from hermes_agent.gateway.config import load_gateway_config
 
             gw = load_gateway_config()
             platforms = gw.get_connected_platforms()
@@ -1734,7 +1734,7 @@ class SlashCommandCompleter(Completer):
             # agent.personalities via the CLI config (which ships the built-ins).
             # load_config()'s schema has no agent.personalities, so the completer
             # used to come back empty even with personalities available.
-            from cli import load_cli_config
+            from hermes_agent.cli import load_cli_config
 
             personalities = (load_cli_config().get("agent") or {}).get("personalities", {}) or {}
             if "none".startswith(sub_lower) and "none" != sub_lower:
@@ -1852,7 +1852,7 @@ class SlashCommandCompleter(Completer):
 
         # Plugin-registered slash commands
         try:
-            from hermes_cli.plugins import get_plugin_commands
+            from hermes_agent.hermes_cli.plugins import get_plugin_commands
             for cmd_name, cmd_info in get_plugin_commands().items():
                 if cmd_name.startswith(word):
                     desc = str(cmd_info.get("description", "Plugin command"))

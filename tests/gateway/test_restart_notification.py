@@ -6,10 +6,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-import gateway.run as gateway_run
-from gateway.config import HomeChannel, Platform
-from gateway.platforms.base import MessageEvent, MessageType, SendResult
-from gateway.session import build_session_key
+import hermes_agent.gateway.run as gateway_run
+from hermes_agent.gateway.config import HomeChannel, Platform
+from hermes_agent.gateway.platforms.base import MessageEvent, MessageType, SendResult
+from hermes_agent.gateway.session import build_session_key
 from tests.gateway.restart_test_helpers import (
     make_restart_runner,
     make_restart_source,
@@ -155,7 +155,7 @@ async def test_restart_command_uses_atomic_json_writes_for_marker_files(tmp_path
 
     # _handle_restart_command lives in gateway/slash_commands.py (extracted from
     # run.py); it uses that module's top-level atomic_json_write import.
-    import gateway.slash_commands as gateway_slash
+    import hermes_agent.gateway.slash_commands as gateway_slash
     monkeypatch.setattr(gateway_slash, "atomic_json_write", _fake_atomic_json_write)
     monkeypatch.setattr(gateway_run, "atomic_json_write", _fake_atomic_json_write)
 
@@ -188,7 +188,7 @@ async def test_sethome_updates_running_config_for_same_process_restart(tmp_path,
     def _fake_save_env_value(key, value):
         saved[key] = value
 
-    monkeypatch.setattr("hermes_cli.config.save_env_value", _fake_save_env_value)
+    monkeypatch.setattr("hermes_agent.hermes_cli.config.save_env_value", _fake_save_env_value)
 
     runner, _adapter = make_restart_runner()
     source = make_restart_source(chat_id="home-42")
@@ -220,7 +220,7 @@ async def test_sethome_preserves_thread_target_for_same_process_restart(tmp_path
     def _fake_save_env_value(key, value):
         saved[key] = value
 
-    monkeypatch.setattr("hermes_cli.config.save_env_value", _fake_save_env_value)
+    monkeypatch.setattr("hermes_agent.hermes_cli.config.save_env_value", _fake_save_env_value)
 
     runner, _adapter = make_restart_runner()
     source = make_restart_source(chat_id="parent-42", thread_id="topic-7")
@@ -495,7 +495,7 @@ async def test_send_restart_notification_logs_warning_on_sendresult_failure(
     logged "Sent restart notification to ..." at INFO — masking real
     delivery failures behind a fake success line.
     """
-    from gateway.platforms.base import SendResult
+    from hermes_agent.gateway.platforms.base import SendResult
 
     monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
 
@@ -510,7 +510,7 @@ async def test_send_restart_notification_logs_warning_on_sendresult_failure(
         return_value=SendResult(success=False, error="Chat not found"),
     )
 
-    with caplog.at_level("DEBUG", logger="gateway.run"):
+    with caplog.at_level("DEBUG", logger="hermes_agent.gateway.run"):
         delivered_target = await runner._send_restart_notification()
 
     success_lines = [
@@ -617,7 +617,7 @@ async def test_send_restart_notification_logs_info_on_sendresult_success(
     tmp_path, monkeypatch, caplog
 ):
     """Adapter returning SendResult(success=True) keeps the INFO log line."""
-    from gateway.platforms.base import SendResult
+    from hermes_agent.gateway.platforms.base import SendResult
 
     monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
 
@@ -630,7 +630,7 @@ async def test_send_restart_notification_logs_info_on_sendresult_success(
     runner, adapter = make_restart_runner()
     adapter.send = AsyncMock(return_value=SendResult(success=True, message_id="m-1"))
 
-    with caplog.at_level("DEBUG", logger="gateway.run"):
+    with caplog.at_level("DEBUG", logger="hermes_agent.gateway.run"):
         delivered_target = await runner._send_restart_notification()
 
     success_lines = [

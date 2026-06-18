@@ -10,7 +10,7 @@ import logging
 
 import pytest
 
-from agent.anthropic_adapter import (
+from hermes_agent.agent.anthropic_adapter import (
     _RESPONSES_ONLY_KWARGS,
     sanitize_anthropic_kwargs,
 )
@@ -67,7 +67,7 @@ def test_clean_anthropic_payload_is_untouched():
 
 
 def test_warns_when_keys_are_stripped(caplog):
-    with caplog.at_level(logging.WARNING, logger="agent.anthropic_adapter"):
+    with caplog.at_level(logging.WARNING, logger="hermes_agent.agent.anthropic_adapter"):
         sanitize_anthropic_kwargs(
             {"model": "m", "instructions": "sys"}, log_prefix="[pfx] "
         )
@@ -78,7 +78,7 @@ def test_warns_when_keys_are_stripped(caplog):
 
 
 def test_no_warning_on_clean_payload(caplog):
-    with caplog.at_level(logging.WARNING, logger="agent.anthropic_adapter"):
+    with caplog.at_level(logging.WARNING, logger="hermes_agent.agent.anthropic_adapter"):
         sanitize_anthropic_kwargs({"model": "m", "messages": []})
     assert not caplog.records
 

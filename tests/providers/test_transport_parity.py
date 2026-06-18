@@ -7,8 +7,8 @@ a behavioral regression.
 """
 
 import pytest
-from agent.transports.chat_completions import ChatCompletionsTransport
-from providers import get_provider_profile
+from hermes_agent.agent.transports.chat_completions import ChatCompletionsTransport
+from hermes_agent.providers import get_provider_profile
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ class TestNvidiaParity:
 
     def test_default_max_tokens(self, transport):
         """NVIDIA default max_tokens=16384 comes from profile, not legacy is_nvidia_nim flag."""
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
 
         profile = get_provider_profile("nvidia")
         kw = transport.build_kwargs(
@@ -42,7 +42,7 @@ class TestNvidiaParity:
         assert kw["max_completion_tokens"] == 16384
 
     def test_user_max_tokens_overrides(self, transport):
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
 
         profile = get_provider_profile("nvidia")
         kw = transport.build_kwargs(
@@ -199,7 +199,7 @@ class TestNousParity:
     """Nous: product tags, reasoning, omit when disabled."""
 
     def test_tags(self, transport):
-        from agent.portal_tags import nous_portal_tags
+        from hermes_agent.agent.portal_tags import nous_portal_tags
         kw = transport.build_kwargs(
             model="hermes-3-llama-3.1-405b",
             messages=_simple_messages(),

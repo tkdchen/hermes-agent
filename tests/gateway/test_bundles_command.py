@@ -17,9 +17,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from gateway.config import GatewayConfig, Platform, PlatformConfig
-from gateway.platforms.base import MessageEvent
-from gateway.session import SessionSource
+from hermes_agent.gateway.config import GatewayConfig, Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import MessageEvent
+from hermes_agent.gateway.session import SessionSource
 
 
 def _make_source() -> SessionSource:
@@ -37,7 +37,7 @@ def _make_event(text: str) -> MessageEvent:
 
 
 def _make_runner():
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = object.__new__(GatewayRunner)
     runner.config = GatewayConfig(
@@ -60,9 +60,9 @@ def bundles_env(tmp_path, monkeypatch):
     skills_dir = tmp_path / "skills"
     skills_dir.mkdir()
     monkeypatch.setenv("HERMES_BUNDLES_DIR", str(bundles_dir))
-    import tools.skills_tool as skills_tool_module
+    import hermes_agent.tools.skills_tool as skills_tool_module
     monkeypatch.setattr(skills_tool_module, "SKILLS_DIR", skills_dir)
-    import agent.skill_bundles as mod
+    import hermes_agent.agent.skill_bundles as mod
     mod._bundles_cache = {}
     mod._bundles_cache_mtime = None
     return bundles_dir, skills_dir
@@ -105,11 +105,11 @@ class TestBundleResolutionPriority:
     def test_bundle_resolves(self, bundles_env):
         bundles_dir, _ = bundles_env
         _make_bundle(bundles_dir, "research", ["alpha"])
-        from agent.skill_bundles import resolve_bundle_command_key
+        from hermes_agent.agent.skill_bundles import resolve_bundle_command_key
         assert resolve_bundle_command_key("research") == "/research"
 
     def test_underscore_alias(self, bundles_env):
         bundles_dir, _ = bundles_env
         _make_bundle(bundles_dir, "my-bundle", ["alpha"])
-        from agent.skill_bundles import resolve_bundle_command_key
+        from hermes_agent.agent.skill_bundles import resolve_bundle_command_key
         assert resolve_bundle_command_key("my_bundle") == "/my-bundle"

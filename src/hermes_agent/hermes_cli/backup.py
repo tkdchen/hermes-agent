@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from hermes_constants import get_default_hermes_root, get_hermes_home, display_hermes_home
+from hermes_agent.hermes_constants import get_default_hermes_root, get_hermes_home, display_hermes_home
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +60,8 @@ _EXCLUDED_SUFFIXES = (
 
 # File names to skip (runtime state that's meaningless on another machine)
 _EXCLUDED_NAMES = {
-    "gateway.pid",
-    "cron.pid",
+    "hermes_agent.gateway.pid",
+    "hermes_agent.cron.pid",
 }
 
 # zipfile.open() drops Unix mode bits on extract; restore tightens these to 0600.
@@ -438,7 +438,7 @@ def run_import(args) -> None:
         restored_profiles = []
         if profiles_dir.is_dir():
             try:
-                from hermes_cli.profiles import (
+                from hermes_agent.hermes_cli.profiles import (
                     create_wrapper_script, check_alias_collision,
                     _is_wrapper_dir_in_path, _get_wrapper_dir,
                 )

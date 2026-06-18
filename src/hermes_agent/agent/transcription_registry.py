@@ -23,7 +23,7 @@ import logging
 import threading
 from typing import Dict, List, Optional
 
-from agent.transcription_provider import TranscriptionProvider
+from hermes_agent.agent.transcription_provider import TranscriptionProvider
 
 logger = logging.getLogger(__name__)
 

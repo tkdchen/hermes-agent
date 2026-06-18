@@ -71,10 +71,10 @@ with open(config_path, "w") as f:
 
 # Fresh import — must not have any browser modules cached.
 for name in list(sys.modules):
-    if name.startswith("tools.") or name.startswith("agent.") or name.startswith("plugins."):
+    if name.startswith("hermes_agent.tools.") or name.startswith("hermes_agent.agent.") or name.startswith("hermes_agent.plugins."):
         sys.modules.pop(name, None)
 
-from tools.browser_tool import _get_cloud_provider, _is_local_mode
+from hermes_agent.tools.browser_tool import _get_cloud_provider, _is_local_mode
 
 provider = _get_cloud_provider()
 

@@ -9,7 +9,7 @@ providers (violating role alternation), which retriggered the empty-retry
 recovery every turn.
 """
 
-from run_agent import AIAgent
+from hermes_agent.run_agent import AIAgent
 
 
 def _bare_agent():
@@ -203,7 +203,7 @@ def test_repair_preserves_system_messages():
 
 # ── repair_message_sequence_with_cursor (#44837) ───────────────────────────
 
-from agent.agent_runtime_helpers import repair_message_sequence_with_cursor
+from hermes_agent.agent.agent_runtime_helpers import repair_message_sequence_with_cursor
 
 
 def test_cursor_clamped_when_compaction_shrinks_below_cursor():

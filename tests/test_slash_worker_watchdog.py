@@ -1,6 +1,6 @@
 import psutil
 
-from tui_gateway import slash_worker
+from hermes_agent.tui_gateway import slash_worker
 
 
 def test_is_orphaned_true_when_ppid_changes():

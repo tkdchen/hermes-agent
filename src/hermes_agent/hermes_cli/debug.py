@@ -22,8 +22,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from hermes_constants import get_hermes_home
-from utils import atomic_replace
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.utils import atomic_replace
 
 logger = logging.getLogger(__name__)
 
@@ -354,7 +354,7 @@ class LogSnapshot:
 
 def _primary_log_path(log_name: str) -> Optional[Path]:
     """Where *log_name* would live if present. Doesn't check existence."""
-    from hermes_cli.logs import LOG_FILES
+    from hermes_agent.hermes_cli.logs import LOG_FILES
 
     filename = LOG_FILES.get(log_name)
     return (get_hermes_home() / "logs" / filename) if filename else None
@@ -392,7 +392,7 @@ def _redact_log_text(text: str) -> str:
     """
     if not text:
         return text
-    from agent.redact import redact_sensitive_text
+    from hermes_agent.agent.redact import redact_sensitive_text
 
     text = redact_sensitive_text(text, force=True)
     return _EMAIL_ADDRESS_RE.sub("[REDACTED_EMAIL]", text)
@@ -515,7 +515,7 @@ def _capture_default_log_snapshots(
 
 def _capture_dump() -> str:
     """Run ``hermes dump`` and return its stdout as a string."""
-    from hermes_cli.dump import run_dump
+    from hermes_agent.hermes_cli.dump import run_dump
 
     class _FakeArgs:
         show_keys = False
@@ -594,7 +594,7 @@ class DebugShareResult:
     instead of scraping printed text.
     """
 
-    urls: dict  # label -> paste URL (e.g. {"Report": "...", "agent.log": "..."})
+    urls: dict  # label -> paste URL (e.g. {"Report": "...", "hermes_agent.agent.log": "..."})
     failures: list  # human-readable "label: error" strings for optional uploads
     redacted: bool  # whether force-mode redaction was applied before upload
     auto_delete_seconds: int  # how long until the pastes auto-delete
@@ -668,8 +668,8 @@ def build_debug_share(
 
     # 2-4. Full logs (optional — failures are collected, not raised)
     for label, content in (
-        ("agent.log", agent_log),
-        ("gateway.log", gateway_log),
+        ("hermes_agent.agent.log", agent_log),
+        ("hermes_agent.gateway.log", gateway_log),
         ("desktop.log", desktop_log),
     ):
         if not content:

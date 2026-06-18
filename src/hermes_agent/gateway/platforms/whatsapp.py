@@ -27,7 +27,7 @@ _IS_WINDOWS = platform.system() == "Windows"
 from pathlib import Path
 from typing import Dict, Optional, Any
 
-from hermes_constants import get_hermes_dir
+from hermes_agent.hermes_constants import get_hermes_dir
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,7 @@ def _kill_stale_bridge_by_pidfile(session_path: Path) -> None:
         return
     # ``os.kill(pid, 0)`` is NOT a no-op on Windows (bpo-14484) — use the
     # cross-platform existence check before sending a real signal.
-    from gateway.status import _pid_exists
+    from hermes_agent.gateway.status import _pid_exists
     if _pid_exists(pid):
         try:
             os.kill(pid, signal.SIGTERM)
@@ -177,9 +177,9 @@ def _terminate_bridge_process(proc, *, force: bool = False) -> None:
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.whatsapp_common import WhatsAppBehaviorMixin
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.whatsapp_common import WhatsAppBehaviorMixin
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
@@ -497,7 +497,7 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
             # media where the Python side reads it.  Without these the bridge
             # hardcodes ~/.hermes/{image,audio,document}_cache, which diverges
             # under HERMES_HOME overrides, profiles, and the new cache/ layout.
-            from gateway.platforms.base import (
+            from hermes_agent.gateway.platforms.base import (
                 get_audio_cache_dir as _get_audio_dir,
                 get_document_cache_dir as _get_doc_dir,
                 get_image_cache_dir as _get_img_dir,
@@ -1000,7 +1000,7 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
 
     def _text_batch_key(self, event: MessageEvent) -> str:
         """Session-scoped key for text message batching."""
-        from gateway.session import build_session_key
+        from hermes_agent.gateway.session import build_session_key
         return build_session_key(
             event.source,
             group_sessions_per_user=self.config.extra.get("group_sessions_per_user", True),

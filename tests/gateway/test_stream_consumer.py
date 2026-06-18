@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from gateway.stream_consumer import GatewayStreamConsumer, StreamConsumerConfig
+from hermes_agent.gateway.stream_consumer import GatewayStreamConsumer, StreamConsumerConfig
 
 
 # ── _clean_for_display unit tests ────────────────────────────────────────
@@ -148,14 +148,14 @@ class TestEditMessageFinalizeSignature:
     @pytest.mark.parametrize(
         "module_path,class_name",
         [
-            ("gateway.platforms.telegram", "TelegramAdapter"),
-            ("plugins.platforms.discord.adapter", "DiscordAdapter"),
-            ("gateway.platforms.slack", "SlackAdapter"),
-            ("gateway.platforms.matrix", "MatrixAdapter"),
-            ("plugins.platforms.mattermost.adapter", "MattermostAdapter"),
-            ("gateway.platforms.feishu", "FeishuAdapter"),
-            ("gateway.platforms.whatsapp", "WhatsAppAdapter"),
-            ("gateway.platforms.dingtalk", "DingTalkAdapter"),
+            ("hermes_agent.gateway.platforms.telegram", "TelegramAdapter"),
+            ("hermes_agent.plugins.platforms.discord.adapter", "DiscordAdapter"),
+            ("hermes_agent.gateway.platforms.slack", "SlackAdapter"),
+            ("hermes_agent.gateway.platforms.matrix", "MatrixAdapter"),
+            ("hermes_agent.plugins.platforms.mattermost.adapter", "MattermostAdapter"),
+            ("hermes_agent.gateway.platforms.feishu", "FeishuAdapter"),
+            ("hermes_agent.gateway.platforms.whatsapp", "WhatsAppAdapter"),
+            ("hermes_agent.gateway.platforms.dingtalk", "DingTalkAdapter"),
         ],
     )
     def test_edit_message_accepts_finalize(self, module_path, class_name):
@@ -1866,7 +1866,7 @@ class TestUtf16OverflowDetection:
     def _make_telegram_like_adapter(self):
         """Construct a minimal BasePlatformAdapter subclass that overrides
         message_len_fn like Telegram does."""
-        from gateway.platforms.base import utf16_len, BasePlatformAdapter
+        from hermes_agent.gateway.platforms.base import utf16_len, BasePlatformAdapter
 
         TelegramLikeAdapter = type(
             "TelegramLikeAdapter",
@@ -1888,7 +1888,7 @@ class TestUtf16OverflowDetection:
     async def test_emoji_text_exceeding_utf16_limit_triggers_overflow_split(self):
         """A response that is under 4096 codepoints but over 4096 UTF-16
         units must trigger the overflow-split path."""
-        from gateway.platforms.base import utf16_len
+        from hermes_agent.gateway.platforms.base import utf16_len
 
         adapter = self._make_telegram_like_adapter()
         # Mock the send/edit methods we actually call

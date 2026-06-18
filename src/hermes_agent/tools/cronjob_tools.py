@@ -12,14 +12,14 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from hermes_constants import display_hermes_home
+from hermes_agent.hermes_constants import display_hermes_home
 
 logger = logging.getLogger(__name__)
 
 # Import from cron module (will be available when properly installed)
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from cron.jobs import (
+from hermes_agent.cron.jobs import (
     AmbiguousJobReference,
     create_job,
     list_jobs,
@@ -267,7 +267,7 @@ def _scan_cron_skill_assembled(assembled: str) -> tuple[str, str]:
 
 
 def _origin_from_env() -> Optional[Dict[str, str]]:
-    from gateway.session_context import get_session_env
+    from hermes_agent.gateway.session_context import get_session_env
     origin_platform = get_session_env("HERMES_SESSION_PLATFORM")
     origin_chat_id = get_session_env("HERMES_SESSION_CHAT_ID")
     if origin_platform and origin_chat_id:
@@ -338,7 +338,7 @@ def _resolve_model_override(model_obj: Optional[Dict[str, Any]]) -> tuple:
     # silently hijacks a job that meant to use the configured custom endpoint.
     if provider_name == "custom":
         try:
-            from hermes_cli.runtime_provider import has_named_custom_provider
+            from hermes_agent.hermes_cli.runtime_provider import has_named_custom_provider
             if not has_named_custom_provider("custom"):
                 provider_name = None
         except Exception:
@@ -346,7 +346,7 @@ def _resolve_model_override(model_obj: Optional[Dict[str, Any]]) -> tuple:
     if model_name and not provider_name:
         # Pin to the current main provider so the job is stable
         try:
-            from hermes_cli.config import load_config
+            from hermes_agent.hermes_cli.config import load_config
             cfg = load_config()
             model_cfg = cfg.get("model", {})
             if isinstance(model_cfg, dict):
@@ -398,7 +398,7 @@ def _validate_cron_script_path(script: Optional[str]) -> Optional[str]:
     if not script or not script.strip():
         return None  # empty/None = clearing the field, always OK
 
-    from hermes_constants import get_hermes_home
+    from hermes_agent.hermes_constants import get_hermes_home
 
     raw = script.strip()
 
@@ -412,7 +412,7 @@ def _validate_cron_script_path(script: Optional[str]) -> Optional[str]:
         )
 
     # Validate containment after resolution
-    from tools.path_security import validate_within_dir
+    from hermes_agent.tools.path_security import validate_within_dir
 
     scripts_dir = get_hermes_home() / "scripts"
     scripts_dir.mkdir(parents=True, exist_ok=True)
@@ -522,7 +522,7 @@ def cronjob(
 
             # Validate context_from references existing jobs
             if context_from:
-                from cron.jobs import get_job as _get_job
+                from hermes_agent.cron.jobs import get_job as _get_job
                 refs = [context_from] if isinstance(context_from, str) else context_from
                 for ref_id in refs:
                     if not _get_job(ref_id):
@@ -666,7 +666,7 @@ def cronjob(
                 else:
                     refs = [str(j).strip() for j in context_from if str(j).strip()]
                 if refs:
-                    from cron.jobs import get_job as _get_job
+                    from hermes_agent.cron.jobs import get_job as _get_job
                     for ref_id in refs:
                         if not _get_job(ref_id):
                             return tool_error(
@@ -853,7 +853,7 @@ def check_cronjob_requirements() -> bool:
     leave the tool disabled. Uses the shared ``env_var_enabled`` helper so
     every consumer of these flags agrees on the truthy set.
     """
-    from utils import env_var_enabled
+    from hermes_agent.utils import env_var_enabled
 
     return (
         env_var_enabled("HERMES_INTERACTIVE")
@@ -863,7 +863,7 @@ def check_cronjob_requirements() -> bool:
 
 
 # --- Registry ---
-from tools.registry import registry, tool_error
+from hermes_agent.tools.registry import registry, tool_error
 
 registry.register(
     name="cronjob",

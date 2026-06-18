@@ -31,7 +31,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import List, Optional
 
-from agent.skill_utils import is_excluded_skill_path
+from hermes_agent.agent.skill_utils import is_excluded_skill_path
 
 _PROFILE_ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
 
@@ -71,7 +71,7 @@ _CLONE_SUBDIR_FILES = [
 # Kept as a post-copy step rather than in the ignore filter because they
 # are created dynamically during normal use and may be absent at copy time.
 _CLONE_ALL_STRIP: list[str] = [
-    "gateway.pid",
+    "hermes_agent.gateway.pid",
     "gateway_state.json",
     "processes.json",
 ]
@@ -208,9 +208,9 @@ _DEFAULT_EXPORT_EXCLUDE_ROOT = frozenset({
     "node_modules",         # npm packages
     # Databases & runtime state
     "state.db", "state.db-shm", "state.db-wal",
-    "hermes_state.db",
+    "hermes_agent.hermes_state.db",
     "response_store.db", "response_store.db-shm", "response_store.db-wal",
-    "gateway.pid", "gateway_state.json", "processes.json",
+    "hermes_agent.gateway.pid", "gateway_state.json", "processes.json",
     "auth.json",            # API keys, OAuth tokens, credential pools
     ".env",                 # API keys (dotenv)
     "auth.lock", "active_profile", ".update_check",
@@ -262,7 +262,7 @@ def _get_default_hermes_home() -> Path:
     In Docker/custom deployments where HERMES_HOME is outside ``~/.hermes``
     (e.g. ``/opt/data``), returns HERMES_HOME directly.
     """
-    from hermes_constants import get_default_hermes_root
+    from hermes_agent.hermes_constants import get_default_hermes_root
     return get_default_hermes_root()
 
 
@@ -469,8 +469,8 @@ def _migrate_profile_config_if_outdated(profile_dir: Path) -> None:
         return
 
     try:
-        from hermes_constants import reset_hermes_home_override, set_hermes_home_override
-        from hermes_cli.config import check_config_version, migrate_config
+        from hermes_agent.hermes_constants import reset_hermes_home_override, set_hermes_home_override
+        from hermes_agent.hermes_cli.config import check_config_version, migrate_config
 
         token = set_hermes_home_override(str(profile_dir))
         try:
@@ -614,8 +614,8 @@ def _read_config_model(profile_dir: Path) -> tuple:
 def _check_gateway_running(profile_dir: Path) -> bool:
     """Check if a gateway is running for a given profile directory."""
     try:
-        from gateway.status import get_running_pid
-        return get_running_pid(profile_dir / "gateway.pid", cleanup_stale=False) is not None
+        from hermes_agent.gateway.status import get_running_pid
+        return get_running_pid(profile_dir / "hermes_agent.gateway.pid", cleanup_stale=False) is not None
     except Exception:
         return False
 
@@ -839,7 +839,7 @@ def create_profile(
     if clone_from is not None or clone_all or clone_config:
         if clone_from is None:
             # Default: clone from active profile
-            from hermes_constants import get_hermes_home
+            from hermes_agent.hermes_constants import get_hermes_home
             source_dir = get_hermes_home()
         else:
             clone_from = normalize_profile_name(clone_from)
@@ -923,7 +923,7 @@ def create_profile(
     soul_path = profile_dir / "SOUL.md"
     if not soul_path.exists():
         try:
-            from hermes_cli.default_soul import DEFAULT_SOUL_MD
+            from hermes_agent.hermes_cli.default_soul import DEFAULT_SOUL_MD
             soul_path.write_text(DEFAULT_SOUL_MD, encoding="utf-8")
         except Exception:
             pass  # best-effort — don't fail profile creation over this
@@ -1253,10 +1253,10 @@ def _maybe_register_gateway_service(profile_name: str) -> None:
     actually the S6 one.
     """
     try:
-        from hermes_cli.service_manager import detect_service_manager
+        from hermes_agent.hermes_cli.service_manager import detect_service_manager
         if detect_service_manager() != "s6":
             return  # host path — silent, no registration needed
-        from hermes_cli.service_manager import get_service_manager
+        from hermes_agent.hermes_cli.service_manager import get_service_manager
         mgr = get_service_manager()
     except RuntimeError:
         return  # no backend on this host — nothing to do
@@ -1288,10 +1288,10 @@ def _maybe_unregister_gateway_service(profile_name: str) -> None:
     — see that docstring.
     """
     try:
-        from hermes_cli.service_manager import detect_service_manager
+        from hermes_agent.hermes_cli.service_manager import detect_service_manager
         if detect_service_manager() != "s6":
             return  # host path — silent
-        from hermes_cli.service_manager import get_service_manager
+        from hermes_agent.hermes_cli.service_manager import get_service_manager
         mgr = get_service_manager()
     except RuntimeError:
         return
@@ -1314,7 +1314,7 @@ def _cleanup_gateway_service(name: str, profile_dir: Path) -> None:
     old_home = os.environ.get("HERMES_HOME")
     try:
         os.environ["HERMES_HOME"] = str(profile_dir)
-        from hermes_cli.gateway import get_service_name, get_launchd_plist_path
+        from hermes_agent.hermes_cli.gateway import get_service_name, get_launchd_plist_path
 
         if _platform.system() == "Linux":
             svc_name = get_service_name()
@@ -1357,7 +1357,7 @@ def _stop_gateway_process(profile_dir: Path) -> None:
     """Stop a running gateway process via its PID file."""
     import time as _time
 
-    pid_file = profile_dir / "gateway.pid"
+    pid_file = profile_dir / "hermes_agent.gateway.pid"
     if not pid_file.exists():
         return
 
@@ -1370,8 +1370,8 @@ def _stop_gateway_process(profile_dir: Path) -> None:
         # _signal.SIGKILL raises AttributeError at import time on Windows,
         # and raw os.kill with SIGTERM doesn't cascade to child processes
         # the same way taskkill /T does.
-        from gateway.status import terminate_pid as _terminate_pid
-        from gateway.status import _pid_exists
+        from hermes_agent.gateway.status import terminate_pid as _terminate_pid
+        from hermes_agent.gateway.status import _pid_exists
         _terminate_pid(pid)  # graceful first
         # Wait up to 10s for graceful shutdown. On Windows, os.kill(pid, 0)
         # is NOT a no-op — use the handle-based existence check.
@@ -1443,7 +1443,7 @@ def get_active_profile_name() -> str:
     Returns the profile name if HERMES_HOME points into ``~/.hermes/profiles/<name>``.
     Returns ``"custom"`` if HERMES_HOME is set to an unrecognized path.
     """
-    from hermes_constants import get_hermes_home
+    from hermes_agent.hermes_constants import get_hermes_home
     hermes_home = get_hermes_home()
     resolved = hermes_home.resolve()
 

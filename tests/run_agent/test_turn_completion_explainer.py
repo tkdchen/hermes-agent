@@ -22,7 +22,7 @@ import uuid
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from run_agent import AIAgent
+from hermes_agent.run_agent import AIAgent
 
 
 # --------------------------------------------------------------------------
@@ -36,10 +36,10 @@ def _mock_response(content="Hello", finish_reason="stop", tool_calls=None):
 
 def _make_agent(max_iterations: int = 10, config: dict | None = None) -> AIAgent:
     with (
-        patch("run_agent.get_tool_definitions", return_value=[]),
-        patch("run_agent.check_toolset_requirements", return_value={}),
-        patch("hermes_cli.config.load_config", return_value=config or {}),
-        patch("run_agent.OpenAI"),
+        patch("hermes_agent.run_agent.get_tool_definitions", return_value=[]),
+        patch("hermes_agent.run_agent.check_toolset_requirements", return_value={}),
+        patch("hermes_agent.hermes_cli.config.load_config", return_value=config or {}),
+        patch("hermes_agent.run_agent.OpenAI"),
     ):
         agent = AIAgent(
             api_key="test-key-1234567890",
@@ -113,7 +113,7 @@ def test_explainer_enabled_by_default():
     agent = _make_agent()
     with patch.dict(os.environ, {}, clear=False):
         os.environ.pop("HERMES_TURN_COMPLETION_EXPLAINER", None)
-        with patch("hermes_cli.config.load_config", return_value={}):
+        with patch("hermes_agent.hermes_cli.config.load_config", return_value={}):
             assert agent._turn_completion_explainer_enabled() is True
 
 
@@ -130,7 +130,7 @@ def test_explainer_disabled_via_config():
     with patch.dict(os.environ, {}, clear=False):
         os.environ.pop("HERMES_TURN_COMPLETION_EXPLAINER", None)
         with patch(
-            "hermes_cli.config.load_config",
+            "hermes_agent.hermes_cli.config.load_config",
             return_value={"display": {"turn_completion_explainer": False}},
         ):
             assert agent._turn_completion_explainer_enabled() is False

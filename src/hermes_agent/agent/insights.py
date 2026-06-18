@@ -10,7 +10,7 @@ multi-platform architecture with additional cost estimation and platform
 breakdown capabilities.
 
 Usage:
-    from agent.insights import InsightsEngine
+    from hermes_agent.agent.insights import InsightsEngine
     engine = InsightsEngine(db)
     report = engine.generate(days=30)
     print(engine.format_terminal(report))
@@ -22,7 +22,7 @@ from collections import Counter, defaultdict
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from agent.usage_pricing import (
+from hermes_agent.agent.usage_pricing import (
     CanonicalUsage,
     estimate_usage_cost,
     format_duration_compact,

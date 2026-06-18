@@ -19,9 +19,9 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from hermes_constants import get_hermes_home
+from hermes_agent.hermes_constants import get_hermes_home
 from typing import Any, Optional
-from utils import atomic_json_write
+from hermes_agent.utils import atomic_json_write
 
 if sys.platform == "win32":
     import msvcrt
@@ -33,7 +33,7 @@ _RUNTIME_STATUS_FILE = "gateway_state.json"
 _LOCKS_DIRNAME = "gateway-locks"
 _IS_WINDOWS = sys.platform == "win32"
 _UNSET = object()
-_GATEWAY_LOCK_FILENAME = "gateway.lock"
+_GATEWAY_LOCK_FILENAME = "hermes_agent.gateway.lock"
 _gateway_lock_handle = None
 # Windows byte-range locks are mandatory for other readers. Lock a byte well
 # past the JSON payload so runtime status / PID readers can still read the file
@@ -44,7 +44,7 @@ _WINDOWS_LOCK_OFFSET = 1024 * 1024
 def _get_pid_path() -> Path:
     """Return the path to the gateway PID file, respecting HERMES_HOME."""
     home = get_hermes_home()
-    return home / "gateway.pid"
+    return home / "hermes_agent.gateway.pid"
 
 
 def _get_gateway_lock_path(pid_path: Optional[Path] = None) -> Path:
@@ -171,7 +171,7 @@ def _looks_like_gateway_process(pid: int) -> bool:
         return False
 
     patterns = (
-        "hermes_cli.main gateway",
+        "hermes_agent.hermes_cli.main gateway",
         "hermes_cli/main.py gateway",
         "hermes gateway",
         "hermes-gateway",
@@ -192,7 +192,7 @@ def _record_looks_like_gateway(record: dict[str, Any]) -> bool:
     # Normalize Windows backslashes so patterns match cross-platform.
     cmdline = " ".join(str(part) for part in argv).replace("\\", "/")
     patterns = (
-        "hermes_cli.main gateway",
+        "hermes_agent.hermes_cli.main gateway",
         "hermes_cli/main.py gateway",
         "hermes gateway",
         "gateway/run.py",

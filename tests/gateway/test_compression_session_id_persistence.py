@@ -24,8 +24,8 @@ import inspect
 import textwrap
 from unittest.mock import MagicMock, call
 
-from gateway import run as gateway_run
-from gateway.session_context import set_current_session_id, get_session_env
+from hermes_agent.gateway import run as gateway_run
+from hermes_agent.gateway.session_context import set_current_session_id, get_session_env
 
 
 def _session_id_assignments_followed_by_save(source: str) -> list[tuple[int, bool]]:

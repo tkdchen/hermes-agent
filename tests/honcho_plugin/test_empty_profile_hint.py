@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock
 
-from plugins.memory.honcho import HonchoMemoryProvider
+from hermes_agent.plugins.memory.honcho import HonchoMemoryProvider
 
 
 def _make_provider(**cfg_overrides) -> HonchoMemoryProvider:

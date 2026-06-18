@@ -11,8 +11,8 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from hermes_cli.config import get_hermes_home
-from utils import atomic_json_write
+from hermes_agent.hermes_cli.config import get_hermes_home
+from hermes_agent.utils import atomic_json_write
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +114,7 @@ async def build_channel_directory(adapters: Dict[Any, Any]) -> Dict[str, Any]:
 
     Returns the directory dict and writes it to DIRECTORY_PATH.
     """
-    from gateway.config import Platform
+    from hermes_agent.gateway.config import Platform
 
     platforms: Dict[str, List[Dict[str, str]]] = {}
 
@@ -140,7 +140,7 @@ async def build_channel_directory(adapters: Dict[Any, Any]) -> Dict[str, Any]:
     # Include plugin-registered platforms (dynamic enum members aren't in
     # Platform.__members__, so the loop above misses them).
     try:
-        from gateway.platform_registry import platform_registry
+        from hermes_agent.gateway.platform_registry import platform_registry
         for entry in platform_registry.plugin_entries():
             if entry.name not in _SKIP_SESSION_DISCOVERY and entry.name not in platforms:
                 platforms[entry.name] = _build_from_sessions(entry.name)

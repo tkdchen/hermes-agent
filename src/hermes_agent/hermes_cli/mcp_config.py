@@ -15,7 +15,7 @@ import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from hermes_cli.config import (
+from hermes_agent.hermes_cli.config import (
     cfg_get,
     load_config,
     save_config,
@@ -23,10 +23,10 @@ from hermes_cli.config import (
     save_env_value,
     get_hermes_home,  # noqa: F401 — used by test mocks
 )
-from hermes_cli.colors import Colors, color
-from hermes_constants import display_hermes_home
-from hermes_cli.mcp_security import validate_mcp_server_entry
-from tools.mcp_tool import _ENV_VAR_PATTERN
+from hermes_agent.hermes_cli.colors import Colors, color
+from hermes_agent.hermes_constants import display_hermes_home
+from hermes_agent.hermes_cli.mcp_security import validate_mcp_server_entry
+from hermes_agent.tools.mcp_tool import _ENV_VAR_PATTERN
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ def _confirm(question: str, default: bool = True) -> bool:
 
 
 def _prompt(question: str, *, password: bool = False, default: str = "") -> str:
-    from hermes_cli.cli_output import prompt as _shared_prompt
+    from hermes_agent.hermes_cli.cli_output import prompt as _shared_prompt
     return _shared_prompt(question, default=default, password=password)
 
 
@@ -203,10 +203,10 @@ def _resolve_mcp_server_config(config: dict) -> dict:
     auth-requiring servers (e.g. n8n) returned 401 — while runtime tool
     loading worked because it interpolates. (#37792)
     """
-    from tools.mcp_tool import _interpolate_env_vars
+    from hermes_agent.tools.mcp_tool import _interpolate_env_vars
 
     try:
-        from hermes_cli.env_loader import load_hermes_dotenv
+        from hermes_agent.hermes_cli.env_loader import load_hermes_dotenv
         load_hermes_dotenv()
     except Exception:  # pragma: no cover — defensive
         pass
@@ -225,7 +225,7 @@ def _probe_single_server(
     if issues:
         raise ValueError("; ".join(issues))
 
-    from tools.mcp_tool import (
+    from hermes_agent.tools.mcp_tool import (
         _ensure_mcp_loop,
         _run_on_mcp_loop,
         _connect_server,
@@ -270,7 +270,7 @@ def _oauth_tokens_present(name: str) -> bool:
     initialize/tools-list without auth (so no token was ever acquired).
     """
     try:
-        from tools.mcp_oauth import HermesTokenStorage
+        from hermes_agent.tools.mcp_oauth import HermesTokenStorage
         return HermesTokenStorage(name).has_cached_tokens()
     except Exception as exc:  # pragma: no cover — defensive
         logger.debug("Could not check OAuth tokens for '%s': %s", name, exc)
@@ -370,7 +370,7 @@ def cmd_mcp_add(args):
         _info(f"Starting OAuth flow for '{name}'...")
         oauth_ok = False
         try:
-            from tools.mcp_oauth_manager import get_manager
+            from hermes_agent.tools.mcp_oauth_manager import get_manager
             oauth_auth = get_manager().get_or_build_provider(name, url, None)
             if oauth_auth:
                 server_config["auth"] = "oauth"
@@ -464,7 +464,7 @@ def cmd_mcp_add(args):
 
     if choice in {"s", "select"}:
         # Interactive tool selection
-        from hermes_cli.curses_ui import curses_checklist
+        from hermes_agent.hermes_cli.curses_ui import curses_checklist
 
         labels = [f"{t[0]}  —  {t[1]}" for t in tools]
         pre_selected = set(range(len(tools)))
@@ -523,7 +523,7 @@ def cmd_mcp_remove(args):
     # any provider instance cached in the current process (e.g. from an
     # earlier `hermes mcp test` in the same session) is evicted too.
     try:
-        from tools.mcp_oauth_manager import get_manager
+        from hermes_agent.tools.mcp_oauth_manager import get_manager
         get_manager().remove(name)
         _success("Cleaned up OAuth tokens")
     except Exception:
@@ -700,7 +700,7 @@ def cmd_mcp_login(args):
     # Wipe both disk and in-memory cache so the next probe forces a fresh
     # OAuth flow.
     try:
-        from tools.mcp_oauth_manager import get_manager
+        from hermes_agent.tools.mcp_oauth_manager import get_manager
         mgr = get_manager()
         mgr.remove(name)
     except Exception as exc:
@@ -814,7 +814,7 @@ def cmd_mcp_configure(args):
     print()
 
     # Interactive checklist
-    from hermes_cli.curses_ui import curses_checklist
+    from hermes_agent.hermes_cli.curses_ui import curses_checklist
 
     labels = [f"{t[0]}  —  {t[1]}" for t in all_tools]
 
@@ -856,22 +856,22 @@ def mcp_command(args):
     action = getattr(args, "mcp_action", None)
 
     if action == "serve":
-        from mcp_serve import run_mcp_server
+        from hermes_agent.mcp_serve import run_mcp_server
         run_mcp_server(verbose=getattr(args, "verbose", False))
         return
 
     # Catalog subcommands live in mcp_picker / mcp_catalog. Import lazily so
     # the original `mcp_config` module stays import-cheap.
     if action == "picker":
-        from hermes_cli.mcp_picker import run_picker
+        from hermes_agent.hermes_cli.mcp_picker import run_picker
         run_picker()
         return
     if action == "catalog":
-        from hermes_cli.mcp_picker import show_catalog
+        from hermes_agent.hermes_cli.mcp_picker import show_catalog
         show_catalog()
         return
     if action == "install":
-        from hermes_cli.mcp_picker import install_by_name
+        from hermes_agent.hermes_cli.mcp_picker import install_by_name
         import sys as _sys
         rc = install_by_name(getattr(args, "identifier", "") or "")
         if rc:
@@ -896,7 +896,7 @@ def mcp_command(args):
     else:
         # No subcommand — drop the user into the catalog picker. This is the
         # "try enabling and it flows you into setup" UX matching `hermes plugin`.
-        from hermes_cli.mcp_picker import run_picker
+        from hermes_agent.hermes_cli.mcp_picker import run_picker
         run_picker()
         print(color("  Commands:", Colors.CYAN))
         _info("hermes mcp                                    Open the catalog picker (default)")

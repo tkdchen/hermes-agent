@@ -7,9 +7,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import BasePlatformAdapter, MessageEvent, MessageType, ProcessingOutcome, SendResult
-from gateway.session import SessionSource, build_session_key
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import BasePlatformAdapter, MessageEvent, MessageType, ProcessingOutcome, SendResult
+from hermes_agent.gateway.session import SessionSource, build_session_key
 
 
 class DummyTelegramAdapter(BasePlatformAdapter):
@@ -285,8 +285,8 @@ class TestTelegramAutoTtsCaptionDelivery:
         tts_path.write_text("audio", encoding="utf-8")
         event = self._make_voice_event()
 
-        with patch("tools.tts_tool.check_tts_requirements", return_value=True), patch(
-            "tools.tts_tool.text_to_speech_tool",
+        with patch("hermes_agent.tools.tts_tool.check_tts_requirements", return_value=True), patch(
+            "hermes_agent.tools.tts_tool.text_to_speech_tool",
             return_value=json.dumps({"file_path": str(tts_path)}),
         ):
             await adapter._process_message_background(event, build_session_key(event.source))
@@ -308,8 +308,8 @@ class TestTelegramAutoTtsCaptionDelivery:
         tts_path.write_text("audio", encoding="utf-8")
         event = self._make_voice_event()
 
-        with patch("tools.tts_tool.check_tts_requirements", return_value=True), patch(
-            "tools.tts_tool.text_to_speech_tool",
+        with patch("hermes_agent.tools.tts_tool.check_tts_requirements", return_value=True), patch(
+            "hermes_agent.tools.tts_tool.text_to_speech_tool",
             return_value=json.dumps({"file_path": str(tts_path)}),
         ):
             await adapter._process_message_background(event, build_session_key(event.source))
@@ -337,8 +337,8 @@ class TestTelegramAutoTtsCaptionDelivery:
         tts_path.write_text("audio", encoding="utf-8")
         event = self._make_voice_event()
 
-        with patch("tools.tts_tool.check_tts_requirements", return_value=True), patch(
-            "tools.tts_tool.text_to_speech_tool",
+        with patch("hermes_agent.tools.tts_tool.check_tts_requirements", return_value=True), patch(
+            "hermes_agent.tools.tts_tool.text_to_speech_tool",
             return_value=json.dumps({"file_path": str(tts_path)}),
         ):
             await adapter._process_message_background(event, build_session_key(event.source))

@@ -4,13 +4,13 @@ from unittest.mock import patch
 
 import pytest
 
-from gateway.config import GatewayConfig, Platform
-from gateway.platforms.base import MessageEvent, MessageType
-from gateway.session import SessionSource
+from hermes_agent.gateway.config import GatewayConfig, Platform
+from hermes_agent.gateway.platforms.base import MessageEvent, MessageType
+from hermes_agent.gateway.session import SessionSource
 
 
 def _make_runner() -> "GatewayRunner":  # type: ignore[name-defined]
-    from gateway.run import GatewayRunner
+    from hermes_agent.gateway.run import GatewayRunner
 
     runner = GatewayRunner.__new__(GatewayRunner)
     runner.config = GatewayConfig()
@@ -21,7 +21,7 @@ def _make_runner() -> "GatewayRunner":  # type: ignore[name-defined]
 
 @pytest.mark.asyncio
 async def test_video_attachment_adds_path_note_without_document_wording():
-    from gateway.run import _build_media_placeholder
+    from hermes_agent.gateway.run import _build_media_placeholder
 
     runner = _make_runner()
     source = SessionSource(platform=Platform.SLACK, chat_id="D123", chat_type="dm")
@@ -34,7 +34,7 @@ async def test_video_attachment_adds_path_note_without_document_wording():
     )
 
     with patch(
-        "tools.credential_files.to_agent_visible_cache_path",
+        "hermes_agent.tools.credential_files.to_agent_visible_cache_path",
         side_effect=lambda path: path,
     ):
         result = await runner._prepare_inbound_message_text(

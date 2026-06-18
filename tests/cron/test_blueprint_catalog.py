@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 import pytest
 
-from cron.blueprint_catalog import (
+from hermes_agent.cron.blueprint_catalog import (
     CATALOG,
     BlueprintFillError,
     BlueprintSlot,
@@ -159,23 +159,23 @@ def isolated_home(tmp_path, monkeypatch):
     home = tmp_path / ".hermes"
     home.mkdir()
     monkeypatch.setenv("HERMES_HOME", str(home))
-    import hermes_constants
+    import hermes_agent.hermes_constants as hermes_constants
     importlib.reload(hermes_constants)
-    import cron.jobs as jobs
+    import hermes_agent.cron.jobs as jobs
     importlib.reload(jobs)
     return jobs
 
 
 class TestCommandHandler:
     def test_bare_lists_catalog(self, isolated_home):
-        from hermes_cli.blueprint_cmd import handle_blueprint_command
+        from hermes_agent.hermes_cli.blueprint_cmd import handle_blueprint_command
 
         res = handle_blueprint_command("")
         assert "morning-brief" in res.text and "Automation Blueprints" in res.text
         assert res.agent_seed is None
 
     def test_name_seeds_agent(self, isolated_home):
-        from hermes_cli.blueprint_cmd import handle_blueprint_command
+        from hermes_agent.hermes_cli.blueprint_cmd import handle_blueprint_command
 
         # `/blueprint <name>` (no inline slots) now seeds the agent to ask
         # the user for each value conversationally instead of dumping fields.
@@ -187,7 +187,7 @@ class TestCommandHandler:
         assert "* * *" in res.agent_seed
 
     def test_name_match_is_forgiving(self, isolated_home):
-        from hermes_cli.blueprint_cmd import handle_blueprint_command, match_blueprint
+        from hermes_agent.hermes_cli.blueprint_cmd import handle_blueprint_command, match_blueprint
 
         # prefix match
         r, cands = match_blueprint("morning")
@@ -200,7 +200,7 @@ class TestCommandHandler:
         assert res.agent_seed is not None
 
     def test_fill_creates_job(self, isolated_home):
-        from hermes_cli.blueprint_cmd import handle_blueprint_command
+        from hermes_agent.hermes_cli.blueprint_cmd import handle_blueprint_command
 
         res = handle_blueprint_command("morning-brief time=07:30 deliver=telegram")
         assert "Scheduled" in res.text
@@ -211,14 +211,14 @@ class TestCommandHandler:
         assert jobs[0].get("deliver") == "telegram"
 
     def test_unknown_blueprint(self, isolated_home):
-        from hermes_cli.blueprint_cmd import handle_blueprint_command
+        from hermes_agent.hermes_cli.blueprint_cmd import handle_blueprint_command
 
         res = handle_blueprint_command("zzz-nope-nothing")
         assert "No automation blueprint" in res.text
         assert res.agent_seed is None
 
     def test_bad_value_names_slot(self, isolated_home):
-        from hermes_cli.blueprint_cmd import handle_blueprint_command
+        from hermes_agent.hermes_cli.blueprint_cmd import handle_blueprint_command
 
         res = handle_blueprint_command("morning-brief time=99:99")
         assert "Can't set up" in res.text and "time" in res.text

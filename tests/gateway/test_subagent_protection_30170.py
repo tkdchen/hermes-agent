@@ -48,13 +48,13 @@ sys.modules.setdefault("telegram", _tg)
 sys.modules.setdefault("telegram.constants", _tg.constants)
 sys.modules.setdefault("telegram.ext", types.ModuleType("telegram.ext"))
 
-from gateway.platforms.base import (  # noqa: E402
+from hermes_agent.gateway.platforms.base import (  # noqa: E402
     MessageEvent,
     MessageType,
     SessionSource,
     build_session_key,
 )
-from gateway.run import GatewayRunner, _AGENT_PENDING_SENTINEL  # noqa: E402
+from hermes_agent.gateway.run import GatewayRunner, _AGENT_PENDING_SENTINEL  # noqa: E402
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -221,7 +221,7 @@ class TestBusyHandlerDemotesInterruptForSubagents:
         runner._running_agents[sk] = parent
         runner.adapters[event.source.platform] = adapter
 
-        with patch("gateway.run.merge_pending_message_event") as merge_mock:
+        with patch("hermes_agent.gateway.run.merge_pending_message_event") as merge_mock:
             handled = await runner._handle_active_session_busy_message(event, sk)
 
         assert handled is True
@@ -243,7 +243,7 @@ class TestBusyHandlerDemotesInterruptForSubagents:
         runner._running_agents_ts[sk] = time.time() - 120
         runner.adapters[event.source.platform] = adapter
 
-        with patch("gateway.run.merge_pending_message_event"):
+        with patch("hermes_agent.gateway.run.merge_pending_message_event"):
             await runner._handle_active_session_busy_message(event, sk)
 
         adapter._send_with_retry.assert_called_once()
@@ -267,7 +267,7 @@ class TestBusyHandlerDemotesInterruptForSubagents:
         runner._running_agents[sk] = parent
         runner.adapters[event.source.platform] = adapter
 
-        with patch("gateway.run.merge_pending_message_event"):
+        with patch("hermes_agent.gateway.run.merge_pending_message_event"):
             await runner._handle_active_session_busy_message(event, sk)
 
         parent.interrupt.assert_called_once_with("please stop")
@@ -288,7 +288,7 @@ class TestBusyHandlerDemotesInterruptForSubagents:
         runner._running_agents[sk] = parent
         runner.adapters[event.source.platform] = adapter
 
-        with patch("gateway.run.merge_pending_message_event"):
+        with patch("hermes_agent.gateway.run.merge_pending_message_event"):
             await runner._handle_active_session_busy_message(event, sk)
 
         parent.interrupt.assert_not_called()
@@ -316,7 +316,7 @@ class TestBusyHandlerDemotesInterruptForSubagents:
         runner._running_agents[sk] = parent
         runner.adapters[event.source.platform] = adapter
 
-        with patch("gateway.run.merge_pending_message_event"):
+        with patch("hermes_agent.gateway.run.merge_pending_message_event"):
             await runner._handle_active_session_busy_message(event, sk)
 
         parent.steer.assert_called_once_with("course-correct")
@@ -336,7 +336,7 @@ class TestBusyHandlerDemotesInterruptForSubagents:
         runner._running_agents[sk] = _AGENT_PENDING_SENTINEL
         runner.adapters[event.source.platform] = adapter
 
-        with patch("gateway.run.merge_pending_message_event"):
+        with patch("hermes_agent.gateway.run.merge_pending_message_event"):
             handled = await runner._handle_active_session_busy_message(event, sk)
 
         assert handled is True

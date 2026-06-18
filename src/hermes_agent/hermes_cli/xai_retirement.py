@@ -115,7 +115,7 @@ def find_retired_xai_refs(config: Dict[str, Any]) -> List[RetirementIssue]:
         if isinstance(image_gen, dict):
             ig_xai = image_gen.get("xai")
             if isinstance(ig_xai, dict):
-                _check("plugins.image_gen.xai.model", ig_xai.get("model"))
+                _check("hermes_agent.plugins.image_gen.xai.model", ig_xai.get("model"))
 
     return issues
 

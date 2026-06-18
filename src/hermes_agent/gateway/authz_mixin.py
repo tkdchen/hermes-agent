@@ -12,7 +12,7 @@ module top; the module-level ``logger`` is imported lazily inside the one method
 that uses it (``from gateway.run import logger`` resolves at call time, when
 ``gateway.run`` is fully loaded) so this module never imports ``gateway.run`` at
 import time -> no import cycle. The lazy import preserves the exact logger name
-(``"gateway.run"``) so log records are unchanged.
+(``"hermes_agent.gateway.run"``) so log records are unchanged.
 """
 
 from __future__ import annotations
@@ -20,9 +20,9 @@ from __future__ import annotations
 import os
 from typing import Optional
 
-from gateway.config import Platform
-from gateway.session import SessionSource
-from gateway.whatsapp_identity import (
+from hermes_agent.gateway.config import Platform
+from hermes_agent.gateway.session import SessionSource
+from hermes_agent.gateway.whatsapp_identity import (
     expand_whatsapp_aliases as _expand_whatsapp_auth_aliases,
     normalize_whatsapp_identifier as _normalize_whatsapp_identifier,
 )
@@ -184,7 +184,7 @@ class GatewayAuthorizationMixin:
         4. Global allow-all (GATEWAY_ALLOW_ALL_USERS=true)
         5. Default: deny
         """
-        from gateway.run import logger
+        from hermes_agent.gateway.run import logger
         # Home Assistant events are system-generated (state changes), not
         # user-initiated messages.  The HASS_TOKEN already authenticates the
         # connection, so HA events are always authorized.
@@ -280,7 +280,7 @@ class GatewayAuthorizationMixin:
         # Plugin platforms: check the registry for auth env var names
         if source.platform not in platform_env_map:
             try:
-                from gateway.platform_registry import platform_registry
+                from hermes_agent.gateway.platform_registry import platform_registry
                 entry = platform_registry.get(source.platform.value)
                 if entry:
                     if entry.allowed_users_env:

@@ -8,7 +8,7 @@ primed the way conversation_loop does it.
 """
 import time
 
-from agent.credits_tracker import CreditsState, evaluate_credits_notices
+from hermes_agent.agent.credits_tracker import CreditsState, evaluate_credits_notices
 
 
 def _cold_start_notices(state: CreditsState):
@@ -105,7 +105,7 @@ def test_dev_fixtures_drive_cold_start():
     """Every HERMES_DEV_CREDITS_FIXTURE state produces a valid seed CreditsState."""
     import os
 
-    from agent.credits_tracker import dev_fixture_credits_state
+    from hermes_agent.agent.credits_tracker import dev_fixture_credits_state
 
     expected = {
         "healthy": [],
@@ -133,7 +133,7 @@ class _FakeAgent:
     including the free-model suppression flag)."""
 
     def __init__(self, provider="nous", model=""):
-        from agent.credits_tracker import evaluate_credits_notices, is_free_tier_model
+        from hermes_agent.agent.credits_tracker import evaluate_credits_notices, is_free_tier_model
 
         self.provider = provider
         self.model = model
@@ -158,7 +158,7 @@ class _FakeAgent:
 def _seed(agent, fixture):
     import os
 
-    from agent.credits_tracker import seed_credits_at_session_start
+    from hermes_agent.agent.credits_tracker import seed_credits_at_session_start
 
     os.environ["HERMES_DEV_CREDITS"] = "1"  # fixtures gate on the dev flag
     os.environ["HERMES_DEV_CREDITS_FIXTURE"] = fixture
@@ -206,7 +206,7 @@ def test_seed_is_idempotent():
 
 
 def test_seed_skips_non_nous():
-    from agent.credits_tracker import seed_credits_at_session_start
+    from hermes_agent.agent.credits_tracker import seed_credits_at_session_start
 
     a = _FakeAgent(provider="openrouter")
     assert seed_credits_at_session_start(a) is False

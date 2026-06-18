@@ -28,7 +28,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from hermes_cli.web_server import _SESSION_TOKEN, app
+from hermes_agent.hermes_cli.web_server import _SESSION_TOKEN, app
 
 client = TestClient(app)
 HEADERS = {"X-Hermes-Session-Token": _SESSION_TOKEN}
@@ -78,13 +78,13 @@ def test_minimax_login_does_not_launch_anthropic_flow():
         "state": "stub-state",
     }
     with patch(
-        "hermes_cli.auth._minimax_request_user_code",
+        "hermes_agent.hermes_cli.auth._minimax_request_user_code",
         return_value=fake_user_code_resp,
     ), patch(
-        "hermes_cli.auth._minimax_pkce_pair",
+        "hermes_agent.hermes_cli.auth._minimax_pkce_pair",
         return_value=("verifier-stub", "challenge-stub", "stub-state"),
     ), patch(
-        "hermes_cli.web_server._minimax_poller",
+        "hermes_agent.hermes_cli.web_server._minimax_poller",
         return_value=None,
     ):
         resp = client.post(
@@ -108,8 +108,8 @@ def test_minimax_login_does_not_launch_anthropic_flow():
 
 
 def test_nous_dashboard_device_flow_ignores_legacy_scope_override(monkeypatch):
-    from hermes_cli import auth as auth_mod
-    from hermes_cli import web_server as ws
+    from hermes_agent.hermes_cli import auth as auth_mod
+    from hermes_agent.hermes_cli import web_server as ws
 
     requested_scopes = []
 
@@ -135,8 +135,8 @@ def test_nous_dashboard_device_flow_ignores_legacy_scope_override(monkeypatch):
 
 
 def test_oauth_provider_status_uses_profile_query(tmp_path, monkeypatch):
-    from hermes_cli import web_server as ws
-    from hermes_constants import get_hermes_home
+    from hermes_agent.hermes_cli import web_server as ws
+    from hermes_agent.hermes_constants import get_hermes_home
 
     profile_home = _make_profile_home(tmp_path, monkeypatch)
     observed_homes = []
@@ -162,7 +162,7 @@ def test_oauth_provider_status_uses_profile_query(tmp_path, monkeypatch):
 
 
 def test_oauth_start_stores_profile_for_background_completion(tmp_path, monkeypatch):
-    from hermes_cli import web_server as ws
+    from hermes_agent.hermes_cli import web_server as ws
 
     _make_profile_home(tmp_path, monkeypatch)
     fake_user_code_resp = {
@@ -173,13 +173,13 @@ def test_oauth_start_stores_profile_for_background_completion(tmp_path, monkeypa
         "state": "stub-state",
     }
     with patch(
-        "hermes_cli.auth._minimax_request_user_code",
+        "hermes_agent.hermes_cli.auth._minimax_request_user_code",
         return_value=fake_user_code_resp,
     ), patch(
-        "hermes_cli.auth._minimax_pkce_pair",
+        "hermes_agent.hermes_cli.auth._minimax_pkce_pair",
         return_value=("verifier-stub", "challenge-stub", "stub-state"),
     ), patch(
-        "hermes_cli.web_server._minimax_poller",
+        "hermes_agent.hermes_cli.web_server._minimax_poller",
         return_value=None,
     ):
         resp = client.post(
@@ -196,8 +196,8 @@ def test_oauth_start_stores_profile_for_background_completion(tmp_path, monkeypa
 
 
 def test_nous_dashboard_device_flow_does_not_retry_legacy_scope_on_invoke_refusal(monkeypatch):
-    from hermes_cli import auth as auth_mod
-    from hermes_cli import web_server as ws
+    from hermes_agent.hermes_cli import auth as auth_mod
+    from hermes_agent.hermes_cli import web_server as ws
 
     requested_scopes = []
 
@@ -215,9 +215,9 @@ def test_nous_dashboard_device_flow_does_not_retry_legacy_scope_on_invoke_refusa
 
 
 def test_codex_dashboard_worker_persists_runtime_provider(tmp_path, monkeypatch):
-    from hermes_cli import web_server as ws
-    from hermes_cli.auth import get_active_provider
-    from hermes_cli.runtime_provider import resolve_runtime_provider
+    from hermes_agent.hermes_cli import web_server as ws
+    from hermes_agent.hermes_cli.auth import get_active_provider
+    from hermes_agent.hermes_cli.runtime_provider import resolve_runtime_provider
 
     access_token = "h.eyJleHAiOjk5OTk5OTk5OTl9.s"
 
@@ -276,9 +276,9 @@ def test_codex_dashboard_worker_persists_runtime_provider(tmp_path, monkeypatch)
 
 
 def test_codex_dashboard_worker_persists_inside_session_profile(tmp_path, monkeypatch):
-    from hermes_cli import auth as auth_mod
-    from hermes_cli import web_server as ws
-    from hermes_constants import get_hermes_home
+    from hermes_agent.hermes_cli import auth as auth_mod
+    from hermes_agent.hermes_cli import web_server as ws
+    from hermes_agent.hermes_constants import get_hermes_home
 
     profile_home = _make_profile_home(tmp_path, monkeypatch)
 
@@ -341,8 +341,8 @@ def test_codex_dashboard_worker_persists_inside_session_profile(tmp_path, monkey
 
 
 def test_nous_dashboard_poller_preserves_effective_scope_when_token_omits_scope(monkeypatch):
-    from hermes_cli import auth as auth_mod
-    from hermes_cli import web_server as ws
+    from hermes_agent.hermes_cli import auth as auth_mod
+    from hermes_agent.hermes_cli import web_server as ws
 
     session_id = "nous-effective-scope-test"
     ws._oauth_sessions[session_id] = {
@@ -392,7 +392,7 @@ def test_nous_dashboard_poller_preserves_effective_scope_when_token_omits_scope(
 
 def test_minimax_dashboard_poller_accepts_absolute_ms_expired_in():
     """Dashboard MiniMax completion must accept unix-ms token expiry values."""
-    from hermes_cli import web_server as ws
+    from hermes_agent.hermes_cli import web_server as ws
 
     now = datetime.now(timezone.utc)
     abs_ms = int((now.timestamp() + 1800) * 1000)
@@ -416,7 +416,7 @@ def test_minimax_dashboard_poller_accepts_absolute_ms_expired_in():
 
     try:
         with patch(
-            "hermes_cli.auth._minimax_poll_token",
+            "hermes_agent.hermes_cli.auth._minimax_poll_token",
             return_value={
                 "status": "success",
                 "access_token": "access",
@@ -425,7 +425,7 @@ def test_minimax_dashboard_poller_accepts_absolute_ms_expired_in():
                 "token_type": "Bearer",
             },
         ), patch(
-            "hermes_cli.auth._minimax_save_auth_state",
+            "hermes_agent.hermes_cli.auth._minimax_save_auth_state",
             side_effect=lambda state: captured_state.update(state),
         ):
             ws._minimax_poller(session_id)
@@ -446,7 +446,7 @@ def test_anthropic_pkce_branch_still_works():
         "expires_in": 600,
     }
     with patch(
-        "hermes_cli.web_server._start_anthropic_pkce",
+        "hermes_agent.hermes_cli.web_server._start_anthropic_pkce",
         return_value=fake_anthropic_response,
     ):
         resp = client.post(
@@ -495,7 +495,7 @@ def test_oauth_catalog_marks_external_providers_not_disconnectable():
 
 def test_external_oauth_disconnect_rejected_before_auth_mutation(monkeypatch):
     """DELETE must not pretend to remove credentials owned by another CLI."""
-    from hermes_cli import auth as auth_mod
+    from hermes_agent.hermes_cli import auth as auth_mod
 
     def fail_clear_provider_auth(provider_id=None):
         raise AssertionError("external providers must not reach clear_provider_auth")
@@ -527,8 +527,8 @@ def test_env_sourced_oauth_status_is_not_disconnectable(monkeypatch):
 
 def test_xai_loopback_start_returns_authorize_url(monkeypatch):
     """Start MUST bind the loopback listener and hand back an xAI authorize URL."""
-    from hermes_cli import auth as auth_mod
-    from hermes_cli import web_server as ws
+    from hermes_agent.hermes_cli import auth as auth_mod
+    from hermes_agent.hermes_cli import web_server as ws
 
     class _FakeServer:
         def shutdown(self):
@@ -579,8 +579,8 @@ def test_xai_loopback_start_returns_authorize_url(monkeypatch):
 
 def test_xai_loopback_worker_persists_tokens_on_success(monkeypatch):
     """The worker exchanges the callback code and marks the session approved."""
-    from hermes_cli import auth as auth_mod
-    from hermes_cli import web_server as ws
+    from hermes_agent.hermes_cli import auth as auth_mod
+    from hermes_agent.hermes_cli import web_server as ws
 
     saved = {}
     session_id = "xai-loopback-success-test"
@@ -635,8 +635,8 @@ def test_xai_loopback_worker_persists_tokens_on_success(monkeypatch):
 
 def test_xai_loopback_worker_fails_on_state_mismatch(monkeypatch):
     """A mismatched OAuth state must fail the session, not persist tokens."""
-    from hermes_cli import auth as auth_mod
-    from hermes_cli import web_server as ws
+    from hermes_agent.hermes_cli import auth as auth_mod
+    from hermes_agent.hermes_cli import web_server as ws
 
     session_id = "xai-loopback-state-test"
     ws._oauth_sessions[session_id] = {
@@ -679,8 +679,8 @@ def test_xai_loopback_worker_fails_on_state_mismatch(monkeypatch):
 
 def test_xai_loopback_worker_skips_persist_when_cancelled(monkeypatch):
     """If the session is cancelled while waiting, the worker must not persist."""
-    from hermes_cli import auth as auth_mod
-    from hermes_cli import web_server as ws
+    from hermes_agent.hermes_cli import auth as auth_mod
+    from hermes_agent.hermes_cli import web_server as ws
 
     session_id = "xai-loopback-cancel-test"
     ws._oauth_sessions[session_id] = {
@@ -723,7 +723,7 @@ def test_xai_loopback_worker_skips_persist_when_cancelled(monkeypatch):
 
 def test_cancel_loopback_session_shuts_down_callback_server():
     """Cancelling a loopback session must free the bound callback port now."""
-    from hermes_cli import web_server as ws
+    from hermes_agent.hermes_cli import web_server as ws
 
     shutdown_calls = {"shutdown": 0, "close": 0, "join": 0}
 
@@ -776,7 +776,7 @@ def test_unknown_pkce_provider_rejected_cleanly():
     branch, then hit "Unsupported flow" — proving the bug class is
     structurally prevented.
     """
-    from hermes_cli import web_server as ws
+    from hermes_agent.hermes_cli import web_server as ws
 
     # Inject a hypothetical catalog entry that's pkce-flagged but isn't
     # anthropic. This shape mirrors what would happen if a developer

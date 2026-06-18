@@ -7,7 +7,7 @@ import threading
 import time
 from types import SimpleNamespace
 
-from plugins.memory.honcho import HonchoMemoryProvider
+from hermes_agent.plugins.memory.honcho import HonchoMemoryProvider
 
 
 class _FakeHonchoConfig(SimpleNamespace):
@@ -47,7 +47,7 @@ def test_honcho_hybrid_initialize_returns_without_waiting_for_session_init(monke
     release = threading.Event()
 
     monkeypatch.setattr(
-        "plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
+        "hermes_agent.plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
         lambda: cfg,
     )
 
@@ -199,11 +199,11 @@ def test_honcho_sync_turn_waits_for_full_background_startup(monkeypatch):
             pass
 
     monkeypatch.setattr(
-        "plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
+        "hermes_agent.plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
         lambda: cfg,
     )
-    monkeypatch.setattr("plugins.memory.honcho.client.get_honcho_client", lambda cfg: object())
-    monkeypatch.setattr("plugins.memory.honcho.session.HonchoSessionManager", StartupManager)
+    monkeypatch.setattr("hermes_agent.plugins.memory.honcho.client.get_honcho_client", lambda cfg: object())
+    monkeypatch.setattr("hermes_agent.plugins.memory.honcho.session.HonchoSessionManager", StartupManager)
 
     provider.initialize("session-1", platform="cli")
     try:
@@ -234,7 +234,7 @@ def test_honcho_system_prompt_advertises_active_while_background_init_runs(monke
     release = threading.Event()
 
     monkeypatch.setattr(
-        "plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
+        "hermes_agent.plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
         lambda: cfg,
     )
 
@@ -262,7 +262,7 @@ def test_honcho_tools_eager_init_still_ready_on_return(monkeypatch):
     cfg = _configured_tools_config(init_on_session_start=True)
 
     monkeypatch.setattr(
-        "plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
+        "hermes_agent.plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
         lambda: cfg,
     )
 
@@ -286,7 +286,7 @@ def test_honcho_tools_eager_init_failure_does_not_leave_ready_manager(monkeypatc
     cfg = _configured_tools_config(init_on_session_start=True)
 
     monkeypatch.setattr(
-        "plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
+        "hermes_agent.plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
         lambda: cfg,
     )
 
@@ -320,7 +320,7 @@ def test_honcho_tools_lazy_hooks_do_not_prestart_background_init(monkeypatch):
     cfg = _configured_tools_config(init_on_session_start=False)
 
     monkeypatch.setattr(
-        "plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
+        "hermes_agent.plugins.memory.honcho.client.HonchoClientConfig.from_global_config",
         lambda: cfg,
     )
 

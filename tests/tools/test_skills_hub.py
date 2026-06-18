@@ -8,7 +8,7 @@ from unittest.mock import patch, MagicMock
 import httpx
 import pytest
 
-from tools.skills_hub import (
+from hermes_agent.tools.skills_hub import (
     GitHubAuth,
     GitHubSource,
     LobeHubSource,
@@ -170,7 +170,7 @@ class TestSkillsShGroupings:
              patch.object(src, "_write_cache"), \
              patch.object(src, "_get_skillsh_groupings", return_value=groupings), \
              patch.object(src, "inspect", return_value=meta), \
-             patch("tools.skills_hub.httpx.get", return_value=resp):
+             patch("hermes_agent.tools.skills_hub.httpx.get", return_value=resp):
             skills = src._list_skills_in_repo("NVIDIA/skills", "skills/")
 
         assert len(skills) == 1
@@ -192,7 +192,7 @@ class TestSkillsShGroupings:
              patch.object(src, "_write_cache"), \
              patch.object(src, "_get_skillsh_groupings", return_value=None), \
              patch.object(src, "inspect", return_value=meta), \
-             patch("tools.skills_hub.httpx.get", return_value=resp):
+             patch("hermes_agent.tools.skills_hub.httpx.get", return_value=resp):
             skills = src._list_skills_in_repo("acme/skills", "skills/")
 
         assert len(skills) == 1
@@ -224,7 +224,7 @@ class TestTrustLevelFor:
     def test_trusted_repo(self):
         src = self._source()
         # TRUSTED_REPOS is imported from skills_guard, test with known trusted repo
-        from tools.skills_guard import TRUSTED_REPOS
+        from hermes_agent.tools.skills_guard import TRUSTED_REPOS
         if TRUSTED_REPOS:
             repo = next(iter(TRUSTED_REPOS))
             assert src.trust_level_for(f"{repo}/some-skill") == "trusted"
@@ -249,7 +249,7 @@ class TestTrustLevelFor:
         # appear as a default tap on GitHubSource. Without the tap, the
         # repo's skills don't show up in search results or the docs-site
         # Skills Hub page even though the trust level is correct.
-        from tools.skills_guard import TRUSTED_REPOS
+        from hermes_agent.tools.skills_guard import TRUSTED_REPOS
 
         assert "NVIDIA/skills" in TRUSTED_REPOS
         tap_repos = {tap["repo"] for tap in GitHubSource.DEFAULT_TAPS}
@@ -263,7 +263,7 @@ class TestTrustLevelFor:
         # that publish under a single `skills/`-style path. openai/skills
         # is the deliberate exception — it has two taps (`.curated/` and
         # `.system/`) — so we just assert membership not path equality.
-        from tools.skills_guard import TRUSTED_REPOS
+        from hermes_agent.tools.skills_guard import TRUSTED_REPOS
 
         tap_repos = {tap["repo"] for tap in GitHubSource.DEFAULT_TAPS}
         for repo in TRUSTED_REPOS:
@@ -284,9 +284,9 @@ class TestSkillsShSource:
         auth = MagicMock(spec=GitHubAuth)
         return SkillsShSource(auth=auth)
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_search_maps_skills_sh_results_to_prefixed_identifiers(self, mock_get, _mock_read_cache, _mock_write_cache):
         mock_get.return_value = MagicMock(
             status_code=200,
@@ -313,9 +313,9 @@ class TestSkillsShSource:
         assert results[0].path == "vercel-react-best-practices"
         assert results[0].extra["installs"] == 207679
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_empty_search_uses_featured_homepage_links(self, mock_get, _mock_read_cache, _mock_write_cache):
         mock_get.return_value = MagicMock(
             status_code=200,
@@ -369,9 +369,9 @@ class TestSkillsShSource:
         assert bundle.identifier == "skills-sh/anthropics/skills/frontend-design"
         assert mock_fetch.call_args_list[0] == ((expected_identifier,), {})
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     @patch.object(GitHubSource, "inspect")
     def test_inspect_delegates_to_github_source_and_relabels_meta(self, mock_inspect, mock_get, _mock_read_cache, _mock_write_cache):
         mock_inspect.return_value = SkillMeta(
@@ -444,9 +444,9 @@ class TestSkillsShSource:
         assert meta.identifier == "skills-sh/vercel-labs/agent-skills/vercel-react-best-practices"
         assert mock_list_skills.called
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     @patch.object(GitHubSource, "_list_skills_in_repo")
     @patch.object(GitHubSource, "inspect")
     def test_inspect_uses_detail_page_to_resolve_alias_skill(self, mock_inspect, mock_list_skills, mock_get, _mock_read_cache, _mock_write_cache):
@@ -477,9 +477,9 @@ class TestSkillsShSource:
         assert meta.path == "skills/react"
         assert mock_get.called
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     @patch.object(GitHubSource, "_list_skills_in_repo")
     @patch.object(GitHubSource, "fetch")
     def test_fetch_uses_detail_page_to_resolve_alias_skill(self, mock_fetch, mock_list_skills, mock_get, _mock_read_cache, _mock_write_cache):
@@ -517,8 +517,8 @@ class TestSkillsShSource:
         assert bundle.files["SKILL.md"] == "# react"
         assert mock_get.called
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
     @patch.object(SkillsShSource, "_discover_identifier")
     @patch.object(SkillsShSource, "_fetch_detail_page")
     @patch.object(GitHubSource, "fetch")
@@ -550,9 +550,9 @@ class TestSkillsShSource:
         assert mock_fetch.call_args_list[-1] == ((resolved_identifier,), {})
         assert mock_fetch.call_args_list[0] == (("owner/repo/product-designer",), {})
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     @patch.object(GitHubSource, "fetch")
     def test_fetch_falls_back_to_tree_search_for_deeply_nested_skills(
         self, mock_fetch, mock_get, _mock_read_cache, _mock_write_cache,
@@ -614,7 +614,7 @@ class TestSkillsShSource:
 
     @patch.object(GitHubSource, "_find_skill_in_repo_tree")
     @patch.object(GitHubSource, "_list_skills_in_repo")
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_discover_identifier_uses_tree_search_before_root_scan(
         self,
         mock_get,
@@ -642,9 +642,9 @@ class TestSkillsShSource:
         requested_urls = [call.args[0] for call in mock_get.call_args_list]
         assert root_url not in requested_urls
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_empty_query_walks_sitemap_not_homepage(
         self, mock_get, _mock_read_cache, _mock_write_cache,
     ):
@@ -713,7 +713,7 @@ class TestFindSkillInRepoTree:
         auth.get_headers.return_value = {"Accept": "application/vnd.github.v3+json"}
         return GitHubSource(auth=auth)
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_finds_deeply_nested_skill(self, mock_get):
         tree_entries = [
             {"path": "README.md", "type": "blob"},
@@ -738,7 +738,7 @@ class TestFindSkillInRepoTree:
         result = self._source()._find_skill_in_repo_tree("davila7/claude-code-templates", "senior-backend")
         assert result == "davila7/claude-code-templates/cli-tool/components/skills/development/senior-backend"
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_finds_root_level_skill(self, mock_get):
         tree_entries = [
             {"path": "my-skill/SKILL.md", "type": "blob"},
@@ -761,7 +761,7 @@ class TestFindSkillInRepoTree:
         result = self._source()._find_skill_in_repo_tree("owner/repo", "my-skill")
         assert result == "owner/repo/my-skill"
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_returns_none_when_skill_not_found(self, mock_get):
         tree_entries = [
             {"path": "other-skill/SKILL.md", "type": "blob"},
@@ -784,7 +784,7 @@ class TestFindSkillInRepoTree:
         result = self._source()._find_skill_in_repo_tree("owner/repo", "nonexistent")
         assert result is None
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_returns_none_when_repo_api_fails(self, mock_get):
         mock_get.return_value = MagicMock(status_code=404)
         result = self._source()._find_skill_in_repo_tree("owner/repo", "my-skill")
@@ -794,15 +794,15 @@ class TestFindSkillInRepoTree:
 class TestWellKnownSkillSource:
     @pytest.fixture(autouse=True)
     def _allow_public_skill_fetches(self, monkeypatch):
-        monkeypatch.setattr("tools.skills_hub.is_safe_url", lambda _url: True)
-        monkeypatch.setattr("tools.skills_hub.check_website_access", lambda _url: None)
+        monkeypatch.setattr("hermes_agent.tools.skills_hub.is_safe_url", lambda _url: True)
+        monkeypatch.setattr("hermes_agent.tools.skills_hub.check_website_access", lambda _url: None)
 
     def _source(self):
         return WellKnownSkillSource()
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_search_reads_index_from_well_known_url(self, mock_get, _mock_read_cache, _mock_write_cache):
         mock_get.return_value = MagicMock(
             status_code=200,
@@ -822,9 +822,9 @@ class TestWellKnownSkillSource:
         ]
         assert all(r.source == "well-known" for r in results)
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_search_accepts_domain_root_and_resolves_index(self, mock_get, _mock_read_cache, _mock_write_cache):
         mock_get.return_value = MagicMock(
             status_code=200,
@@ -837,9 +837,9 @@ class TestWellKnownSkillSource:
         called_url = mock_get.call_args.args[0]
         assert called_url == "https://example.com/.well-known/skills/index.json"
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_inspect_fetches_skill_md_from_well_known_endpoint(self, mock_get, _mock_read_cache, _mock_write_cache):
         def fake_get(url, *args, **kwargs):
             if url.endswith("/index.json"):
@@ -859,9 +859,9 @@ class TestWellKnownSkillSource:
         assert meta.source == "well-known"
         assert meta.extra["base_url"] == "https://example.com/.well-known/skills"
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_fetch_downloads_skill_files_from_well_known_endpoint(self, mock_get, _mock_read_cache, _mock_write_cache):
         def fake_get(url, *args, **kwargs):
             if url.endswith("/index.json"):
@@ -887,9 +887,9 @@ class TestWellKnownSkillSource:
         assert bundle.files["SKILL.md"] == "# Code Review\n"
         assert bundle.files["references/checklist.md"] == "- [ ] security\n"
 
-    @patch("tools.skills_hub._write_index_cache")
-    @patch("tools.skills_hub._read_index_cache", return_value=None)
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub._write_index_cache")
+    @patch("hermes_agent.tools.skills_hub._read_index_cache", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_fetch_rejects_unsafe_file_paths_from_well_known_endpoint(self, mock_get, _mock_read_cache, _mock_write_cache):
         def fake_get(url, *args, **kwargs):
             if url.endswith("/index.json"):
@@ -914,8 +914,8 @@ class TestWellKnownSkillSource:
 class TestUrlSource:
     @pytest.fixture(autouse=True)
     def _allow_public_skill_fetches(self, monkeypatch):
-        monkeypatch.setattr("tools.skills_hub.is_safe_url", lambda _url: True)
-        monkeypatch.setattr("tools.skills_hub.check_website_access", lambda _url: None)
+        monkeypatch.setattr("hermes_agent.tools.skills_hub.is_safe_url", lambda _url: True)
+        monkeypatch.setattr("hermes_agent.tools.skills_hub.check_website_access", lambda _url: None)
 
     def _source(self):
         return UrlSource()
@@ -954,7 +954,7 @@ class TestUrlSource:
         assert self._source().search("anything") == []
 
     # ── inspect ─────────────────────────────────────────────────────────
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_inspect_reads_frontmatter_from_url(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
@@ -978,31 +978,31 @@ class TestUrlSource:
         assert meta.tags == ["sharing", "chat"]
         assert meta.extra["awaiting_name"] is False
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_inspect_returns_none_when_url_not_md(self, mock_get):
         # _matches filters first — no HTTP call.
         meta = self._source().inspect("https://example.com/not-a-skill")
         assert meta is None
         mock_get.assert_not_called()
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_inspect_returns_none_on_404(self, mock_get):
         mock_get.return_value = MagicMock(status_code=404)
         assert self._source().inspect("https://example.com/SKILL.md") is None
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_inspect_returns_none_on_http_error(self, mock_get):
         mock_get.side_effect = httpx.HTTPError("boom")
         assert self._source().inspect("https://example.com/SKILL.md") is None
 
-    @patch("tools.skills_hub.httpx.get")
-    @patch("tools.skills_hub.check_website_access", return_value=None)
-    @patch("tools.skills_hub.is_safe_url", return_value=False)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.check_website_access", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.is_safe_url", return_value=False)
     def test_inspect_blocks_private_url(self, _mock_safe, _mock_policy, mock_get):
         assert self._source().inspect("http://127.0.0.1/SKILL.md") is None
         mock_get.assert_not_called()
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_inspect_flags_awaiting_name_when_unresolvable(self, mock_get):
         # No frontmatter name + a URL path that can't produce a valid slug
         # (``SKILL`` isn't a valid skill name).
@@ -1016,7 +1016,7 @@ class TestUrlSource:
         assert meta.extra["awaiting_name"] is True
 
     # ── fetch ───────────────────────────────────────────────────────────
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_fetch_builds_single_file_bundle(self, mock_get):
         skill_md = (
             "---\n"
@@ -1037,7 +1037,7 @@ class TestUrlSource:
         assert bundle.metadata["url"] == "https://sharethis.chat/SKILL.md"
         assert bundle.metadata["awaiting_name"] is False
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_fetch_falls_back_to_url_directory_name(self, mock_get):
         # Frontmatter has no ``name:`` — we slug from the URL directory.
         mock_get.return_value = MagicMock(
@@ -1049,7 +1049,7 @@ class TestUrlSource:
         assert bundle.name == "my-skill"
         assert bundle.metadata["awaiting_name"] is False
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_fetch_falls_back_to_filename_when_no_parent_dir(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
@@ -1060,7 +1060,7 @@ class TestUrlSource:
         assert bundle.name == "my-skill"
         assert bundle.metadata["awaiting_name"] is False
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_fetch_awaiting_name_when_unresolvable(self, mock_get):
         # Bare ``SKILL.md`` at the domain root with no frontmatter name.
         mock_get.return_value = MagicMock(
@@ -1074,7 +1074,7 @@ class TestUrlSource:
         # File content still present — CLI will reuse it after picking a name.
         assert bundle.files["SKILL.md"].startswith("---\n")
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_fetch_awaiting_name_rejects_sentinel_slug(self, mock_get):
         # Frontmatter has no name AND the URL filename slug is ``README`` —
         # our valid-name check rejects it, so we flag awaiting_name.
@@ -1087,7 +1087,7 @@ class TestUrlSource:
         assert bundle.name == ""
         assert bundle.metadata["awaiting_name"] is True
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_fetch_ignores_unsafe_frontmatter_name_and_falls_through_to_slug(self, mock_get):
         # Traversal / unsafe names are rejected by ``_is_valid_skill_name``;
         # resolver falls through to URL slug (``my-skill`` here) and succeeds.
@@ -1099,14 +1099,14 @@ class TestUrlSource:
         assert bundle is not None
         assert bundle.name == "my-skill"
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_fetch_returns_none_on_404(self, mock_get):
         mock_get.return_value = MagicMock(status_code=404)
         assert self._source().fetch("https://example.com/SKILL.md") is None
 
-    @patch("tools.skills_hub.httpx.get")
-    @patch("tools.skills_hub.check_website_access", return_value=None)
-    @patch("tools.skills_hub.is_safe_url", side_effect=[True, False])
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.check_website_access", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.is_safe_url", side_effect=[True, False])
     def test_fetch_blocks_redirect_to_private_url(self, _mock_safe, _mock_policy, mock_get):
         redirect = MagicMock(status_code=302)
         redirect.headers = {"location": "http://127.0.0.1/private/SKILL.md"}
@@ -1115,14 +1115,14 @@ class TestUrlSource:
         assert self._source().fetch("https://example.com/SKILL.md") is None
         assert mock_get.call_count == 1
 
-    @patch("tools.skills_hub.httpx.get")
-    @patch("tools.skills_hub.check_website_access", return_value=None)
-    @patch("tools.skills_hub.is_safe_url", return_value=False)
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.check_website_access", return_value=None)
+    @patch("hermes_agent.tools.skills_hub.is_safe_url", return_value=False)
     def test_fetch_blocks_private_url(self, _mock_safe, _mock_policy, mock_get):
         assert self._source().fetch("http://127.0.0.1/SKILL.md") is None
         mock_get.assert_not_called()
 
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_fetch_skips_non_matching_identifier(self, mock_get):
         assert self._source().fetch("owner/repo/skill") is None
         mock_get.assert_not_called()
@@ -1148,7 +1148,7 @@ class TestUrlSource:
 
 class TestCheckForSkillUpdates:
     def test_bundle_content_hash_matches_installed_content_hash(self, tmp_path):
-        from tools.skills_guard import content_hash
+        from hermes_agent.tools.skills_guard import content_hash
 
         bundle = SkillBundle(
             name="demo-skill",
@@ -1211,7 +1211,7 @@ class TestCheckForSkillUpdates:
 
     def test_bundle_content_hash_mixed_matches_on_disk(self, tmp_path):
         """In-memory bundle hash must equal on-disk content_hash for mixed bytes+str."""
-        from tools.skills_guard import content_hash
+        from hermes_agent.tools.skills_guard import content_hash
 
         bundle = SkillBundle(
             name="demo-skill",
@@ -1614,7 +1614,7 @@ class TestUnifiedSearchDedup:
 class TestAppendAuditLog:
     def test_creates_log_entry(self, tmp_path):
         log_file = tmp_path / "audit.log"
-        with patch("tools.skills_hub.AUDIT_LOG", log_file):
+        with patch("hermes_agent.tools.skills_hub.AUDIT_LOG", log_file):
             append_audit_log("INSTALL", "test-skill", "github", "trusted", "pass")
         content = log_file.read_text()
         assert "INSTALL" in content
@@ -1624,7 +1624,7 @@ class TestAppendAuditLog:
 
     def test_appends_multiple_entries(self, tmp_path):
         log_file = tmp_path / "audit.log"
-        with patch("tools.skills_hub.AUDIT_LOG", log_file):
+        with patch("hermes_agent.tools.skills_hub.AUDIT_LOG", log_file):
             append_audit_log("INSTALL", "s1", "github", "trusted", "pass")
             append_audit_log("UNINSTALL", "s1", "github", "trusted", "n/a")
         lines = log_file.read_text().strip().split("\n")
@@ -1632,7 +1632,7 @@ class TestAppendAuditLog:
 
     def test_extra_field_included(self, tmp_path):
         log_file = tmp_path / "audit.log"
-        with patch("tools.skills_hub.AUDIT_LOG", log_file):
+        with patch("hermes_agent.tools.skills_hub.AUDIT_LOG", log_file):
             append_audit_log("INSTALL", "s1", "github", "trusted", "pass", extra="hash123")
         content = log_file.read_text()
         assert "hash123" in content
@@ -1682,7 +1682,7 @@ class TestOptionalSkillSourceBinaryAssets:
         )
         pycache_dir = skill_dir / "assets" / "neutts-cli" / "src" / "neutts_cli" / "__pycache__"
         pycache_dir.mkdir(parents=True)
-        (pycache_dir / "cli.cpython-312.pyc").write_bytes(b"junk")
+        (pycache_dir / "hermes_agent.cli.cpython-312.pyc").write_bytes(b"junk")
 
         src = OptionalSkillSource()
         src._optional_dir = optional_root
@@ -1697,7 +1697,7 @@ class TestOptionalSkillSourceBinaryAssets:
 
 class TestQuarantineBundleBinaryAssets:
     def test_quarantine_bundle_writes_binary_files(self, tmp_path):
-        import tools.skills_hub as hub
+        import hermes_agent.tools.skills_hub as hub
 
         hub_dir = tmp_path / "skills" / ".hub"
         with patch.object(hub, "SKILLS_DIR", tmp_path / "skills"), \
@@ -1724,7 +1724,7 @@ class TestQuarantineBundleBinaryAssets:
         assert (q_path / "assets" / "neutts-cli" / "samples" / "jo.wav").read_bytes() == b"RIFF\x00\x01fakewav"
 
     def test_quarantine_bundle_rejects_traversal_file_paths(self, tmp_path):
-        import tools.skills_hub as hub
+        import hermes_agent.tools.skills_hub as hub
 
         hub_dir = tmp_path / "skills" / ".hub"
         with patch.object(hub, "SKILLS_DIR", tmp_path / "skills"), \
@@ -1751,7 +1751,7 @@ class TestQuarantineBundleBinaryAssets:
         assert not (tmp_path / "skills" / "escape.txt").exists()
 
     def test_quarantine_bundle_rejects_absolute_file_paths(self, tmp_path):
-        import tools.skills_hub as hub
+        import hermes_agent.tools.skills_hub as hub
 
         hub_dir = tmp_path / "skills" / ".hub"
         absolute_target = tmp_path / "outside.txt"
@@ -1793,7 +1793,7 @@ class TestDownloadDirectoryViaTree:
         return GitHubSource(auth=auth)
 
     @patch.object(GitHubSource, "_fetch_file_content")
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_tree_api_downloads_subdirectories(self, mock_get, mock_fetch):
         """Tree API returns files from nested subdirectories."""
         repo_resp = MagicMock(status_code=200, json=lambda: {"default_branch": "main"})
@@ -1820,7 +1820,7 @@ class TestDownloadDirectoryViaTree:
         assert len(files) == 3
 
     @patch.object(GitHubSource, "_download_directory_recursive", return_value={"SKILL.md": "# ok"})
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_falls_back_on_truncated_tree(self, mock_get, mock_fallback):
         """When tree is truncated, fall back to recursive Contents API."""
         repo_resp = MagicMock(status_code=200, json=lambda: {"default_branch": "main"})
@@ -1834,7 +1834,7 @@ class TestDownloadDirectoryViaTree:
         mock_fallback.assert_called_once_with("owner/repo", "skills/my-skill")
 
     @patch.object(GitHubSource, "_download_directory_recursive", return_value={"SKILL.md": "# ok"})
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_falls_back_on_repo_api_failure(self, mock_get, mock_fallback):
         """When the repo endpoint returns non-200, fall back to Contents API."""
         mock_get.return_value = MagicMock(status_code=404)
@@ -1846,7 +1846,7 @@ class TestDownloadDirectoryViaTree:
         mock_fallback.assert_called_once()
 
     @patch.object(GitHubSource, "_fetch_file_content")
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_tree_api_skips_failed_file_fetches(self, mock_get, mock_fetch):
         """Files that fail to fetch are skipped, not fatal."""
         repo_resp = MagicMock(status_code=200, json=lambda: {"default_branch": "main"})
@@ -1869,7 +1869,7 @@ class TestDownloadDirectoryViaTree:
         assert "scripts/run.py" not in files
 
     @patch.object(GitHubSource, "_download_directory_recursive", return_value={})
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_falls_back_on_network_error(self, mock_get, mock_fallback):
         """Network errors in tree API trigger fallback."""
         mock_get.side_effect = httpx.ConnectError("connection refused")
@@ -1889,7 +1889,7 @@ class TestDownloadDirectoryRecursive:
         return GitHubSource(auth=auth)
 
     @patch.object(GitHubSource, "_fetch_file_content")
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_recursive_downloads_subdirectories(self, mock_get, mock_fetch):
         """Contents API recursion includes subdirectories."""
         root_resp = MagicMock(status_code=200, json=lambda: [
@@ -1909,7 +1909,7 @@ class TestDownloadDirectoryRecursive:
         assert "scripts/run.py" in files
 
     @patch.object(GitHubSource, "_fetch_file_content")
-    @patch("tools.skills_hub.httpx.get")
+    @patch("hermes_agent.tools.skills_hub.httpx.get")
     def test_recursive_handles_subdir_failure(self, mock_get, mock_fetch):
         """Subdirectory 403/rate-limit returns empty but doesn't crash."""
         root_resp = MagicMock(status_code=200, json=lambda: [
@@ -1945,7 +1945,7 @@ class TestInstallPathSafety:
     def isolated_skills_dir(self, tmp_path, monkeypatch):
         skills_dir = tmp_path / "skills"
         skills_dir.mkdir()
-        monkeypatch.setattr("tools.skills_hub.SKILLS_DIR", skills_dir)
+        monkeypatch.setattr("hermes_agent.tools.skills_hub.SKILLS_DIR", skills_dir)
         return skills_dir
 
     @pytest.fixture
@@ -2035,7 +2035,7 @@ class TestInstallPathSafety:
 
     def test_uninstall_rejects_poisoned_absolute_path(self, tmp_path, isolated_skills_dir, patch_lock_file):
         """Hand-edited lock.json with absolute install_path must not delete anything."""
-        from tools.skills_hub import uninstall_skill
+        from hermes_agent.tools.skills_hub import uninstall_skill
 
         lock_path = tmp_path / "lock.json"
         target = tmp_path / "victim"
@@ -2068,7 +2068,7 @@ class TestInstallPathSafety:
         assert (target / "file.txt").read_text() == "important"
 
     def test_uninstall_rejects_traversal(self, tmp_path, isolated_skills_dir, patch_lock_file):
-        from tools.skills_hub import uninstall_skill
+        from hermes_agent.tools.skills_hub import uninstall_skill
 
         lock_path = tmp_path / "lock.json"
         sibling = tmp_path / "sibling"
@@ -2096,7 +2096,7 @@ class TestInstallPathSafety:
 
     def test_uninstall_rejects_empty_install_path(self, tmp_path, isolated_skills_dir, patch_lock_file):
         """Empty install_path resolves to SKILLS_DIR itself — must be refused."""
-        from tools.skills_hub import uninstall_skill
+        from hermes_agent.tools.skills_hub import uninstall_skill
 
         # Put a sibling skill alongside to prove rmtree doesn't fire.
         (isolated_skills_dir / "bystander").mkdir()
@@ -2125,7 +2125,7 @@ class TestInstallPathSafety:
         self, tmp_path, isolated_skills_dir, patch_lock_file
     ):
         """A symlinked skill dir that points outside skills/ must not be followed."""
-        from tools.skills_hub import uninstall_skill
+        from hermes_agent.tools.skills_hub import uninstall_skill
 
         # Outside-tree victim
         victim = tmp_path / "victim"
@@ -2162,8 +2162,8 @@ class TestInstallPathSafety:
     def test_install_from_quarantine_rejects_symlinks(self, tmp_path):
         """Skill install must not follow symlinks that leak file contents
         from outside the quarantine directory."""
-        import tools.skills_hub as hub
-        from tools.skills_guard import ScanResult
+        import hermes_agent.tools.skills_hub as hub
+        from hermes_agent.tools.skills_guard import ScanResult
 
         skills_dir = tmp_path / "skills"
         quarantine_root = skills_dir / ".hub" / "quarantine"

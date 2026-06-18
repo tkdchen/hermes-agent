@@ -17,9 +17,9 @@ from urllib.parse import urlparse
 import requests
 import yaml
 
-from utils import atomic_json_write, base_url_host_matches, base_url_hostname
+from hermes_agent.utils import atomic_json_write, base_url_host_matches, base_url_hostname
 
-from hermes_constants import OPENROUTER_MODELS_URL
+from hermes_agent.hermes_constants import OPENROUTER_MODELS_URL
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +115,7 @@ _ENDPOINT_MODEL_CACHE_TTL = 300
 
 def _get_model_metadata_cache_path() -> Path:
     """Return path to the OpenRouter model metadata disk cache."""
-    from hermes_constants import get_hermes_home
+    from hermes_agent.hermes_constants import get_hermes_home
     return get_hermes_home() / "cache" / "openrouter_model_metadata.json"
 
 
@@ -446,7 +446,7 @@ _URL_TO_PROVIDER: Dict[str, str] = {
 # Auto-extend with hostnames derived from provider profiles.
 # Any provider with a base_url not already in the map gets added automatically.
 try:
-    from providers import list_providers as _list_providers
+    from hermes_agent.providers import list_providers as _list_providers
     for _pp in _list_providers():
         _host = _pp.get_hostname()
         if _host and _host not in _URL_TO_PROVIDER:
@@ -904,7 +904,7 @@ def _resolve_endpoint_context_length(
 
 def _get_context_cache_path() -> Path:
     """Return path to the persistent context length cache file."""
-    from hermes_constants import get_hermes_home
+    from hermes_agent.hermes_constants import get_hermes_home
     return get_hermes_home() / "context_length_cache.yaml"
 
 
@@ -1647,7 +1647,7 @@ def get_model_context_length(
     # See #15779.
     if custom_providers and base_url and model:
         try:
-            from hermes_cli.config import get_custom_provider_context_length
+            from hermes_agent.hermes_cli.config import get_custom_provider_context_length
             cp_ctx = get_custom_provider_context_length(
                 model=model,
                 base_url=base_url,
@@ -1749,7 +1749,7 @@ def get_model_context_length(
         and base_url_host_matches(base_url, "amazonaws.com")
     ):
         try:
-            from agent.bedrock_adapter import get_bedrock_context_length
+            from hermes_agent.agent.bedrock_adapter import get_bedrock_context_length
             return get_bedrock_context_length(model)
         except ImportError:
             pass  # boto3 not installed — fall through to generic resolution
@@ -1841,7 +1841,7 @@ def get_model_context_length(
     # returns the provider-enforced limit which is what users can actually use.
     if effective_provider in {"copilot", "copilot-acp", "github-copilot"}:
         try:
-            from hermes_cli.models import get_copilot_model_context
+            from hermes_agent.hermes_cli.models import get_copilot_model_context
             ctx = get_copilot_model_context(model, api_key=api_key)
             if ctx:
                 return ctx
@@ -1914,7 +1914,7 @@ def get_model_context_length(
                 return or_ctx
 
     if effective_provider:
-        from agent.models_dev import lookup_models_dev_context
+        from hermes_agent.agent.models_dev import lookup_models_dev_context
         ctx = lookup_models_dev_context(effective_provider, model)
         if ctx:
             # MiniMax M3: models.dev reports 512K but actual context is 1M.

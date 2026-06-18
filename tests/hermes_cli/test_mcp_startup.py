@@ -10,9 +10,9 @@ import types
 
 import pytest
 
-import cli as cli_mod
-from hermes_cli import main as main_mod
-from hermes_cli import mcp_startup
+import hermes_agent.cli as cli_mod
+from hermes_agent.hermes_cli import main as main_mod
+from hermes_agent.hermes_cli import mcp_startup
 
 
 @pytest.fixture(autouse=True)
@@ -54,12 +54,12 @@ def test_prepare_agent_startup_backgrounds_blocking_mcp_for_chat(monkeypatch):
 
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.plugins",
+        "hermes_agent.hermes_cli.plugins",
         types.SimpleNamespace(discover_plugins=lambda: None),
     )
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.config",
+        "hermes_agent.hermes_cli.config",
         types.SimpleNamespace(
             read_raw_config=lambda: {"mcp_servers": {"demo": {"transport": "stdio"}}},
             load_config=lambda: {},
@@ -67,12 +67,12 @@ def test_prepare_agent_startup_backgrounds_blocking_mcp_for_chat(monkeypatch):
     )
     monkeypatch.setitem(
         sys.modules,
-        "agent.shell_hooks",
+        "hermes_agent.agent.shell_hooks",
         types.SimpleNamespace(register_from_config=lambda *_a, **_k: None),
     )
     monkeypatch.setitem(
         sys.modules,
-        "tools.mcp_tool",
+        "hermes_agent.tools.mcp_tool",
         types.SimpleNamespace(discover_mcp_tools=_blocking_discover),
     )
 
@@ -93,22 +93,22 @@ def test_prepare_agent_startup_skips_mcp_bootstrap_for_tui_chat(monkeypatch):
 
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.plugins",
+        "hermes_agent.hermes_cli.plugins",
         types.SimpleNamespace(discover_plugins=lambda: None),
     )
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.config",
+        "hermes_agent.hermes_cli.config",
         types.SimpleNamespace(load_config=lambda: {}),
     )
     monkeypatch.setitem(
         sys.modules,
-        "agent.shell_hooks",
+        "hermes_agent.agent.shell_hooks",
         types.SimpleNamespace(register_from_config=lambda *_a, **_k: None),
     )
     monkeypatch.setitem(
         sys.modules,
-        "tools.mcp_tool",
+        "hermes_agent.tools.mcp_tool",
         types.SimpleNamespace(
             discover_mcp_tools=lambda: calls.__setitem__("mcp", calls["mcp"] + 1)
         ),

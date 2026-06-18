@@ -50,8 +50,8 @@ except ImportError:
     WEBSOCKETS_AVAILABLE = False
     websockets = None  # type: ignore[assignment]
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
@@ -60,8 +60,8 @@ from gateway.platforms.base import (
     cache_image_from_bytes,
     cache_video_from_bytes,
 )
-from gateway.platforms.helpers import MessageDeduplicator
-from gateway.platforms.yuanbao_media import (
+from hermes_agent.gateway.platforms.helpers import MessageDeduplicator
+from hermes_agent.gateway.platforms.yuanbao_media import (
     download_url as media_download_url,
     get_cos_credentials,
     upload_to_cos,
@@ -70,7 +70,7 @@ from gateway.platforms.yuanbao_media import (
     guess_mime_type,
     md5_hex,
 )
-from gateway.platforms.yuanbao_proto import (
+from hermes_agent.gateway.platforms.yuanbao_proto import (
     CMD_TYPE,
     _fields_to_dict,
     _get_string,
@@ -95,7 +95,7 @@ from gateway.platforms.yuanbao_proto import (
     encode_get_group_member_list,
     next_seq_no,
 )
-from gateway.session import build_session_key
+from hermes_agent.gateway.session import build_session_key
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +103,7 @@ logger = logging.getLogger(__name__)
 # Version / platform constants (used in AUTH_BIND and sign-token headers)
 # ---------------------------------------------------------------------------
 try:
-    from hermes_cli import __version__ as _HERMES_VERSION
+    from hermes_agent.hermes_cli import __version__ as _HERMES_VERSION
 except ImportError:
     _HERMES_VERSION = "0.0.0"
 
@@ -1617,8 +1617,8 @@ class AutoSetHomeMiddleware(InboundMiddleware):
                 adapter._auto_sethome_done = True  # DM seen — no further upgrades needed
             if _should_set:
                 try:
-                    from hermes_constants import get_hermes_home
-                    from utils import atomic_yaml_write
+                    from hermes_agent.hermes_constants import get_hermes_home
+                    from hermes_agent.utils import atomic_yaml_write
                     import yaml
 
                     _home = get_hermes_home()
@@ -4113,7 +4113,7 @@ class StickerHandler(MediaSendHandler):
         return b"", "sticker", "application/octet-stream"
 
     def build_msg_body(self, upload_result, **kwargs):
-        from gateway.platforms.yuanbao_sticker import (
+        from hermes_agent.gateway.platforms.yuanbao_sticker import (
             get_sticker_by_name,
             get_random_sticker,
             build_face_msg_body,
@@ -4160,7 +4160,7 @@ class GroupQueryService:
         if adapter._connection.ws is None:
             return None
         encoded = encode_query_group_info(group_code)
-        from gateway.platforms.yuanbao_proto import decode_conn_msg as _decode
+        from hermes_agent.gateway.platforms.yuanbao_proto import decode_conn_msg as _decode
         decoded = _decode(encoded)
         req_id = decoded["head"]["msg_id"]
         try:
@@ -4193,7 +4193,7 @@ class GroupQueryService:
         if adapter._connection.ws is None:
             return None
         encoded = encode_get_group_member_list(group_code, offset=offset, limit=limit)
-        from gateway.platforms.yuanbao_proto import decode_conn_msg as _decode
+        from hermes_agent.gateway.platforms.yuanbao_proto import decode_conn_msg as _decode
         decoded = _decode(encoded)
         req_id = decoded["head"]["msg_id"]
         try:

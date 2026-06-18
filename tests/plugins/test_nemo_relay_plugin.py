@@ -15,7 +15,7 @@ from types import SimpleNamespace
 import pytest
 import yaml
 
-from hermes_cli.plugins import PluginManager
+from hermes_agent.hermes_cli.plugins import PluginManager
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -148,8 +148,8 @@ class _FakeAtifExporter:
 
 def _fresh_plugin(monkeypatch, fake):
     monkeypatch.setitem(sys.modules, "nemo_relay", fake)
-    sys.modules.pop("plugins.observability.nemo_relay", None)
-    plugin = importlib.import_module("plugins.observability.nemo_relay")
+    sys.modules.pop("hermes_agent.plugins.observability.nemo_relay", None)
+    plugin = importlib.import_module("hermes_agent.plugins.observability.nemo_relay")
     plugin.reset_for_tests()
     return plugin
 
@@ -164,7 +164,7 @@ def _wrapped_downstream_error(original):
 
 
 def _enable_adaptive_plugin(tmp_path, monkeypatch) -> None:
-    plugins_toml = tmp_path / "plugins.toml"
+    plugins_toml = tmp_path / "hermes_agent.plugins.toml"
     plugins_toml.write_text(
         """
 version = 1
@@ -452,7 +452,7 @@ def test_nemo_relay_plugin_can_write_embedded_child_atif_file_in_all_mode(tmp_pa
 def test_nemo_relay_plugin_can_initialize_plugins_toml(tmp_path, monkeypatch):
     fake = _FakeNemoRelay()
     plugin = _fresh_plugin(monkeypatch, fake)
-    plugins_toml = tmp_path / "plugins.toml"
+    plugins_toml = tmp_path / "hermes_agent.plugins.toml"
     atof_dir = tmp_path / "exports" / "events"
     atif_dir = tmp_path / "exports" / "trajectories"
     plugins_toml.write_text(
@@ -486,7 +486,7 @@ output_directory = "{atif_dir}"
 def test_nemo_relay_plugin_clears_plugins_toml_on_final_session_finalize_and_reinitializes(tmp_path, monkeypatch):
     fake = _FakeNemoRelay()
     plugin = _fresh_plugin(monkeypatch, fake)
-    plugins_toml = tmp_path / "plugins.toml"
+    plugins_toml = tmp_path / "hermes_agent.plugins.toml"
     plugins_toml.write_text(
         """
 version = 1
@@ -511,7 +511,7 @@ enabled = true
 def test_nemo_relay_plugin_keeps_plugins_toml_active_while_other_sessions_remain(tmp_path, monkeypatch):
     fake = _FakeNemoRelay()
     plugin = _fresh_plugin(monkeypatch, fake)
-    plugins_toml = tmp_path / "plugins.toml"
+    plugins_toml = tmp_path / "hermes_agent.plugins.toml"
     plugins_toml.write_text(
         """
 version = 1
@@ -537,7 +537,7 @@ enabled = true
 def test_nemo_relay_plugin_reinitializes_plugins_toml_inside_active_event_loop(tmp_path, monkeypatch):
     fake = _FakeNemoRelay()
     plugin = _fresh_plugin(monkeypatch, fake)
-    plugins_toml = tmp_path / "plugins.toml"
+    plugins_toml = tmp_path / "hermes_agent.plugins.toml"
     plugins_toml.write_text(
         """
 version = 1
@@ -586,7 +586,7 @@ def test_nemo_relay_plugin_retries_plugins_toml_after_clear_failure(tmp_path, mo
     fake.plugin.initialize = _counting_initialize
     fake.plugin.clear = _failing_clear
     plugin = _fresh_plugin(monkeypatch, fake)
-    plugins_toml = tmp_path / "plugins.toml"
+    plugins_toml = tmp_path / "hermes_agent.plugins.toml"
     plugins_toml.write_text(
         """
 version = 1
@@ -613,7 +613,7 @@ enabled = true
 def test_nemo_relay_plugin_disables_direct_atif_when_plugins_toml_owns_atif(tmp_path, monkeypatch):
     fake = _FakeNemoRelay()
     plugin = _fresh_plugin(monkeypatch, fake)
-    plugins_toml = tmp_path / "plugins.toml"
+    plugins_toml = tmp_path / "hermes_agent.plugins.toml"
     plugins_toml.write_text(
         f"""
 version = 1
@@ -651,7 +651,7 @@ def test_nemo_relay_plugin_keeps_direct_atif_when_plugins_toml_init_fails(tmp_pa
 
     fake.plugin.initialize = _failing_initialize
     plugin = _fresh_plugin(monkeypatch, fake)
-    plugins_toml = tmp_path / "plugins.toml"
+    plugins_toml = tmp_path / "hermes_agent.plugins.toml"
     plugins_toml.write_text(
         f"""
 version = 1
@@ -697,7 +697,7 @@ def test_nemo_relay_plugin_retries_plugins_toml_after_fallback_only_session_and_
 
     fake.plugin.initialize = _flaky_initialize
     plugin = _fresh_plugin(monkeypatch, fake)
-    plugins_toml = tmp_path / "plugins.toml"
+    plugins_toml = tmp_path / "hermes_agent.plugins.toml"
     plugins_toml.write_text(
         f"""
 version = 1
@@ -732,7 +732,7 @@ output_directory = "{(tmp_path / "managed-atof").as_posix()}"
 def test_nemo_relay_adaptive_llm_execution_middleware_preserves_raw_response(tmp_path, monkeypatch):
     fake = _FakeNemoRelay()
     plugin = _fresh_plugin(monkeypatch, fake)
-    plugins_toml = tmp_path / "plugins.toml"
+    plugins_toml = tmp_path / "hermes_agent.plugins.toml"
     plugins_toml.write_text(
         """
 version = 1
@@ -986,9 +986,9 @@ def test_nemo_relay_downstream_unwrap_matches_real_middleware_wrapper_shape(monk
     # callback's ``next_call`` and assert the plugin's detector unwraps it to the
     # original exception. If core middleware changes the wrapper shape, this fails
     # here instead of silently defeating the unwrap in production.
-    from hermes_cli import middleware
+    from hermes_agent.hermes_cli import middleware
 
-    from plugins.observability.nemo_relay import _original_downstream_error
+    from hermes_agent.plugins.observability.nemo_relay import _original_downstream_error
 
     class ProviderError(Exception):
         status_code = 403
@@ -1028,7 +1028,7 @@ def test_nemo_relay_downstream_unwrap_matches_real_middleware_wrapper_shape(monk
 def _adaptive_llm_execute_mode(tmp_path, monkeypatch, plugins_toml_text: str) -> str:
     fake = _FakeNemoRelay()
     plugin = _fresh_plugin(monkeypatch, fake)
-    plugins_toml = tmp_path / "plugins.toml"
+    plugins_toml = tmp_path / "hermes_agent.plugins.toml"
     plugins_toml.write_text(plugins_toml_text, encoding="utf-8")
     monkeypatch.setenv("HERMES_NEMO_RELAY_PLUGINS_TOML", str(plugins_toml))
 
@@ -1122,7 +1122,7 @@ def test_nemo_relay_llm_execution_middleware_calls_through_without_adaptive(monk
 def test_nemo_relay_adaptive_tool_execution_middleware_preserves_raw_response(tmp_path, monkeypatch):
     fake = _FakeNemoRelay()
     plugin = _fresh_plugin(monkeypatch, fake)
-    plugins_toml = tmp_path / "plugins.toml"
+    plugins_toml = tmp_path / "hermes_agent.plugins.toml"
     plugins_toml.write_text(
         """
 version = 1
@@ -1301,7 +1301,7 @@ def test_nemo_relay_tool_execution_middleware_calls_through_without_adaptive(mon
 def test_nemo_relay_adaptive_execution_skips_duplicate_observer_spans(tmp_path, monkeypatch):
     fake = _FakeNemoRelay()
     plugin = _fresh_plugin(monkeypatch, fake)
-    plugins_toml = tmp_path / "plugins.toml"
+    plugins_toml = tmp_path / "hermes_agent.plugins.toml"
     plugins_toml.write_text(
         """
 version = 1
@@ -1359,8 +1359,8 @@ mode = "observe_only"
 
 def test_nemo_relay_plugin_noops_without_dependency(monkeypatch):
     monkeypatch.delitem(sys.modules, "nemo_relay", raising=False)
-    sys.modules.pop("plugins.observability.nemo_relay", None)
-    plugin = importlib.import_module("plugins.observability.nemo_relay")
+    sys.modules.pop("hermes_agent.plugins.observability.nemo_relay", None)
+    plugin = importlib.import_module("hermes_agent.plugins.observability.nemo_relay")
     plugin.reset_for_tests()
 
     real_import = builtins.__import__

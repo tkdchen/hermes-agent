@@ -3,7 +3,7 @@
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from agent.system_prompt import build_system_prompt_parts
+from hermes_agent.agent.system_prompt import build_system_prompt_parts
 
 
 def _make_agent(**overrides):
@@ -36,10 +36,10 @@ def _captured_context_cwd(agent):
         return ""
 
     with (
-        patch("run_agent.load_soul_md", return_value=""),
-        patch("run_agent.build_nous_subscription_prompt", return_value=""),
-        patch("run_agent.build_environment_hints", return_value=""),
-        patch("run_agent.build_context_files_prompt", side_effect=fake_context_files),
+        patch("hermes_agent.run_agent.load_soul_md", return_value=""),
+        patch("hermes_agent.run_agent.build_nous_subscription_prompt", return_value=""),
+        patch("hermes_agent.run_agent.build_environment_hints", return_value=""),
+        patch("hermes_agent.run_agent.build_context_files_prompt", side_effect=fake_context_files),
     ):
         build_system_prompt_parts(agent)
     return captured["cwd"]
@@ -59,10 +59,10 @@ class TestContextFileCwd:
 
 def _stable_prompt(agent):
     with (
-        patch("run_agent.load_soul_md", return_value=""),
-        patch("run_agent.build_nous_subscription_prompt", return_value=""),
-        patch("run_agent.build_environment_hints", return_value=""),
-        patch("run_agent.build_context_files_prompt", return_value=""),
+        patch("hermes_agent.run_agent.load_soul_md", return_value=""),
+        patch("hermes_agent.run_agent.build_nous_subscription_prompt", return_value=""),
+        patch("hermes_agent.run_agent.build_environment_hints", return_value=""),
+        patch("hermes_agent.run_agent.build_context_files_prompt", return_value=""),
     ):
         return build_system_prompt_parts(agent)["stable"]
 
@@ -85,7 +85,7 @@ class TestCodingContextBlock:
         monkeypatch.setenv("TERMINAL_CWD", str(tmp_path))
         agent = _make_agent(valid_tool_names=["read_file"], platform="cli")
         # Drive the real path: force the resolved mode to "off" via config.
-        with patch("agent.coding_context._coding_mode", return_value="off"):
+        with patch("hermes_agent.agent.coding_context._coding_mode", return_value="off"):
             stable = _stable_prompt(agent)
         assert "coding agent" not in stable
 

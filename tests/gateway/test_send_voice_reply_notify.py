@@ -15,10 +15,10 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from gateway.config import Platform
-from gateway.platforms.base import MessageEvent, MessageType
-from gateway.run import GatewayRunner
-from gateway.session import SessionSource
+from hermes_agent.gateway.config import Platform
+from hermes_agent.gateway.platforms.base import MessageEvent, MessageType
+from hermes_agent.gateway.run import GatewayRunner
+from hermes_agent.gateway.session import SessionSource
 
 
 def _make_event(thread_id=None):
@@ -57,11 +57,11 @@ def _fake_tts_call(monkeypatch, audio_bytes=b"\x00" * 32):
         return json.dumps({"success": True, "file_path": output_path})
 
     monkeypatch.setattr(
-        "tools.tts_tool.text_to_speech_tool",
+        "hermes_agent.tools.tts_tool.text_to_speech_tool",
         _fake_text_to_speech_tool,
     )
     monkeypatch.setattr(
-        "tools.tts_tool._strip_markdown_for_tts",
+        "hermes_agent.tools.tts_tool._strip_markdown_for_tts",
         lambda text: text,
     )
 

@@ -14,9 +14,9 @@ from typing import List
 
 import pytest
 
-from gateway.config import PlatformConfig
-from gateway.platforms.base import MessageEvent
-from plugins.platforms.photon.adapter import PhotonAdapter
+from hermes_agent.gateway.config import PlatformConfig
+from hermes_agent.gateway.platforms.base import MessageEvent
+from hermes_agent.plugins.platforms.photon.adapter import PhotonAdapter
 
 
 def _make_adapter(monkeypatch: pytest.MonkeyPatch, extra: dict | None = None) -> PhotonAdapter:

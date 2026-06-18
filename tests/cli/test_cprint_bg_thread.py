@@ -18,7 +18,7 @@ from types import SimpleNamespace
 
 import pytest
 
-import cli
+import hermes_agent.cli as cli
 
 
 @pytest.fixture(autouse=True)

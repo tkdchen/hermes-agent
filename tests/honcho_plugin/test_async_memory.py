@@ -14,8 +14,8 @@ import time
 from unittest.mock import MagicMock, patch
 
 
-from plugins.memory.honcho.client import HonchoClientConfig
-from plugins.memory.honcho.session import (
+from hermes_agent.plugins.memory.honcho.client import HonchoClientConfig
+from hermes_agent.plugins.memory.honcho.session import (
     HonchoSession,
     HonchoSessionManager,
 )

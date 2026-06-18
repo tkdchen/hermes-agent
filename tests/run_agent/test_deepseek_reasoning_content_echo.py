@@ -33,7 +33,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from run_agent import AIAgent
+from hermes_agent.run_agent import AIAgent
 
 
 def _make_agent(provider: str = "", model: str = "", base_url: str = "") -> AIAgent:
@@ -520,7 +520,7 @@ class TestReapplyReasoningEchoForProviderSwitch:
         ]
 
     def test_switch_to_deepseek_pads_bare_turns(self) -> None:
-        from agent.agent_runtime_helpers import reapply_reasoning_echo_for_provider
+        from hermes_agent.agent.agent_runtime_helpers import reapply_reasoning_echo_for_provider
 
         agent = _make_agent(provider="deepseek", model="deepseek-v4-pro")
         msgs = self._codex_built_history()
@@ -533,7 +533,7 @@ class TestReapplyReasoningEchoForProviderSwitch:
         assert msgs[4]["reasoning_content"] == " "
 
     def test_noop_under_non_require_provider(self) -> None:
-        from agent.agent_runtime_helpers import reapply_reasoning_echo_for_provider
+        from hermes_agent.agent.agent_runtime_helpers import reapply_reasoning_echo_for_provider
 
         agent = _make_agent(
             provider="openai-codex",
@@ -547,7 +547,7 @@ class TestReapplyReasoningEchoForProviderSwitch:
         assert "reasoning_content" not in msgs[4]
 
     def test_idempotent(self) -> None:
-        from agent.agent_runtime_helpers import reapply_reasoning_echo_for_provider
+        from hermes_agent.agent.agent_runtime_helpers import reapply_reasoning_echo_for_provider
 
         agent = _make_agent(provider="deepseek", model="deepseek-v4-pro")
         msgs = self._codex_built_history()
@@ -555,7 +555,7 @@ class TestReapplyReasoningEchoForProviderSwitch:
         assert reapply_reasoning_echo_for_provider(agent, msgs) == 0
 
     def test_non_assistant_messages_untouched(self) -> None:
-        from agent.agent_runtime_helpers import reapply_reasoning_echo_for_provider
+        from hermes_agent.agent.agent_runtime_helpers import reapply_reasoning_echo_for_provider
 
         agent = _make_agent(provider="deepseek", model="deepseek-v4-pro")
         msgs = self._codex_built_history()

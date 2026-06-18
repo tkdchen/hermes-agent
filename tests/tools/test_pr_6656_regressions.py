@@ -26,12 +26,12 @@ from unittest.mock import patch
 
 import pytest
 
-from tools.skills_hub import (
+from hermes_agent.tools.skills_hub import (
     SkillBundle,
     bundle_content_hash,
     uninstall_skill,
 )
-from tools.skills_guard import content_hash
+from hermes_agent.tools.skills_guard import content_hash
 
 
 # =============================================================================
@@ -56,7 +56,7 @@ class TestUninstallPathTraversal:
         function default. Patching ``HubLockFile.__init__.__defaults__``
         is the standard tool for this.
         """
-        import tools.skills_hub as hub
+        import hermes_agent.tools.skills_hub as hub
         skills_dir = tmp_path / "skills"
         hub_dir = skills_dir / ".hub"
         hub_dir.mkdir(parents=True)
@@ -256,7 +256,7 @@ class TestListPendingLock:
         """Source-grep contract: ``list_pending`` body must be wrapped
         in ``with self._lock:``. If anyone unwraps it again, the TOCTOU
         bug returns."""
-        import gateway.pairing as _pairing_mod
+        import hermes_agent.gateway.pairing as _pairing_mod
         source = Path(_pairing_mod.__file__).read_text(encoding="utf-8")
         # Find the list_pending function body and assert the lock
         # context manager appears inside it. We grep the function
@@ -283,8 +283,8 @@ class TestListPendingLock:
 
     def test_list_pending_returns_correct_data(self, tmp_path):
         """End-to-end smoke: even with the lock held, basic operation works."""
-        from gateway.pairing import PairingStore
-        with patch("gateway.pairing.PAIRING_DIR", tmp_path):
+        from hermes_agent.gateway.pairing import PairingStore
+        with patch("hermes_agent.gateway.pairing.PAIRING_DIR", tmp_path):
             store = PairingStore()
             store.generate_code("telegram", "user1", "Alice")
             pending = store.list_pending("telegram")

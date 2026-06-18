@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from agent.skill_bundles import (
+from hermes_agent.agent.skill_bundles import (
     _slugify,
     build_bundle_invocation_message,
     delete_bundle,
@@ -60,10 +60,10 @@ def bundles_env(tmp_path, monkeypatch):
     skills_dir.mkdir()
     monkeypatch.setenv("HERMES_BUNDLES_DIR", str(bundles_dir))
     # Patch SKILLS_DIR so skill loading hits our temp tree.
-    import tools.skills_tool as skills_tool_module
+    import hermes_agent.tools.skills_tool as skills_tool_module
     monkeypatch.setattr(skills_tool_module, "SKILLS_DIR", skills_dir)
     # Reset module-level cache between tests.
-    import agent.skill_bundles as mod
+    import hermes_agent.agent.skill_bundles as mod
     mod._bundles_cache = {}
     mod._bundles_cache_mtime = None
     return bundles_dir, skills_dir

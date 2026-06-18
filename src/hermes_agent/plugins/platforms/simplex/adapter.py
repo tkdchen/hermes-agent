@@ -59,8 +59,8 @@ from typing import Any, Dict, List, Optional
 # Lazy import: BasePlatformAdapter and friends live in the main repo.
 # Imported at module top because they're stdlib-only inside Hermes — no
 # external dependency that would block the plugin from loading.
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
@@ -941,7 +941,7 @@ class SimplexAdapter(BasePlatformAdapter):
             file_path = unquote(image_url[7:])
         else:
             try:
-                from gateway.platforms.base import cache_image_from_url
+                from hermes_agent.gateway.platforms.base import cache_image_from_url
 
                 file_path = await cache_image_from_url(image_url)
             except Exception as e:
@@ -1234,10 +1234,10 @@ def interactive_setup() -> None:
     print()
 
     try:
-        from hermes_cli.config import get_env_value, save_env_value
+        from hermes_agent.hermes_cli.config import get_env_value, save_env_value
     except ImportError:
         print(
-            "hermes_cli.config not available; set SIMPLEX_* vars manually in "
+            "hermes_agent.hermes_cli.config not available; set SIMPLEX_* vars manually in "
             "~/.hermes/.env"
         )
         return
@@ -1247,7 +1247,7 @@ def interactive_setup() -> None:
         suffix = " [keep current]" if existing else ""
         try:
             if secret:
-                from hermes_cli.secret_prompt import masked_secret_prompt
+                from hermes_agent.hermes_cli.secret_prompt import masked_secret_prompt
                 value = masked_secret_prompt(f"{prompt}{suffix}: ")
             else:
                 value = input(f"{prompt}{suffix}: ").strip()

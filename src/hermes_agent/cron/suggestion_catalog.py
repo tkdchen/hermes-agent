@@ -135,7 +135,7 @@ def seed_catalog_suggestions(
     list of suggestion records actually created.
     """
     if add_fn is None:
-        from cron.suggestions import add_suggestion as add_fn  # type: ignore[assignment]
+        from hermes_agent.cron.suggestions import add_suggestion as add_fn  # type: ignore[assignment]
 
     wanted = set(keys) if keys else None
     created: List[Dict[str, Any]] = []

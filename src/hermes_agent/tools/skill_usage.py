@@ -33,8 +33,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from hermes_constants import get_hermes_home
-from agent.skill_utils import is_excluded_skill_path
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.agent.skill_utils import is_excluded_skill_path
 
 logger = logging.getLogger(__name__)
 
@@ -249,7 +249,7 @@ def _prune_builtins_enabled() -> bool:
     flag — built-ins only archive after a fresh inactivity window.
     """
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
 
         cfg = load_config()
         cur = cfg.get("curator") if isinstance(cfg, dict) else None

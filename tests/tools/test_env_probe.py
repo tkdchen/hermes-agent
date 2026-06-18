@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from tools import env_probe
+from hermes_agent.tools import env_probe
 
 
 @pytest.fixture(autouse=True)

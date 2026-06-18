@@ -1,8 +1,8 @@
 """Tests for acp_adapter.tools — tool kind mapping and ACP content building."""
 
 
-from acp_adapter.edit_approval import EditProposal
-from acp_adapter.tools import (
+from hermes_agent.acp_adapter.edit_approval import EditProposal
+from hermes_agent.acp_adapter.tools import (
     TOOL_KIND_MAP,
     build_tool_complete,
     build_tool_start,

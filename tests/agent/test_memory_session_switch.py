@@ -10,8 +10,8 @@ for scoped writes) keep writing into the old session's record.
 
 import pytest
 
-from agent.memory_manager import MemoryManager
-from agent.memory_provider import MemoryProvider
+from hermes_agent.agent.memory_manager import MemoryManager
+from hermes_agent.agent.memory_provider import MemoryProvider
 
 
 class _RecordingProvider(MemoryProvider):
@@ -169,7 +169,7 @@ def test_manager_reset_flag_preserved():
 
 
 def test_sync_all_propagates_session_id_to_providers():
-    """run_agent.py's sync_all call must pass session_id through to providers.
+    """hermes_agent.run_agent.py's sync_all call must pass session_id through to providers.
 
     Without this, a provider that updates _session_id defensively in
     sync_turn (as Hindsight does at hindsight/__init__.py:1199) never
@@ -207,7 +207,7 @@ def _make_hindsight_provider():
     reads/writes. This keeps the test hermetic.
     """
     import threading
-    hindsight_mod = pytest.importorskip("plugins.memory.hindsight")
+    hindsight_mod = pytest.importorskip("hermes_agent.plugins.memory.hindsight")
     provider = object.__new__(hindsight_mod.HindsightMemoryProvider)
     provider._session_id = "old-sid"
     provider._parent_session_id = ""

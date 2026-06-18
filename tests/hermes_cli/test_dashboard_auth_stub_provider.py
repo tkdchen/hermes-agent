@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from hermes_cli.dashboard_auth.base import (
+from hermes_agent.hermes_cli.dashboard_auth.base import (
     InvalidCodeError, RefreshExpiredError, assert_protocol_compliance,
 )
 from tests.hermes_cli.conftest_dashboard_auth import StubAuthProvider

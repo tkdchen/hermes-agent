@@ -25,24 +25,24 @@ from unittest.mock import MagicMock
 
 class TestFalImageGenProviderSurface:
     def test_name(self):
-        from plugins.image_gen.fal import FalImageGenProvider
+        from hermes_agent.plugins.image_gen.fal import FalImageGenProvider
 
         assert FalImageGenProvider().name == "fal"
 
     def test_display_name(self):
-        from plugins.image_gen.fal import FalImageGenProvider
+        from hermes_agent.plugins.image_gen.fal import FalImageGenProvider
 
         assert FalImageGenProvider().display_name == "FAL.ai"
 
     def test_default_model_matches_legacy(self):
-        from plugins.image_gen.fal import FalImageGenProvider
-        from tools.image_generation_tool import DEFAULT_MODEL
+        from hermes_agent.plugins.image_gen.fal import FalImageGenProvider
+        from hermes_agent.tools.image_generation_tool import DEFAULT_MODEL
 
         assert FalImageGenProvider().default_model() == DEFAULT_MODEL
 
     def test_list_models_uses_legacy_catalog(self):
-        from plugins.image_gen.fal import FalImageGenProvider
-        from tools.image_generation_tool import FAL_MODELS
+        from hermes_agent.plugins.image_gen.fal import FalImageGenProvider
+        from hermes_agent.tools.image_generation_tool import FAL_MODELS
 
         provider = FalImageGenProvider()
         models = provider.list_models()
@@ -55,7 +55,7 @@ class TestFalImageGenProviderSurface:
                 assert field in entry
 
     def test_setup_schema_advertises_fal_key(self):
-        from plugins.image_gen.fal import FalImageGenProvider
+        from hermes_agent.plugins.image_gen.fal import FalImageGenProvider
 
         schema = FalImageGenProvider().get_setup_schema()
         assert schema["name"] == "FAL.ai"
@@ -66,22 +66,22 @@ class TestFalImageGenProviderSurface:
 
 class TestFalImageGenProviderAvailability:
     def test_is_available_when_legacy_check_passes(self, monkeypatch):
-        import tools.image_generation_tool as image_tool
-        from plugins.image_gen.fal import FalImageGenProvider
+        import hermes_agent.tools.image_generation_tool as image_tool
+        from hermes_agent.plugins.image_gen.fal import FalImageGenProvider
 
         monkeypatch.setattr(image_tool, "check_fal_api_key", lambda: True)
         assert FalImageGenProvider().is_available() is True
 
     def test_is_available_false_when_legacy_check_fails(self, monkeypatch):
-        import tools.image_generation_tool as image_tool
-        from plugins.image_gen.fal import FalImageGenProvider
+        import hermes_agent.tools.image_generation_tool as image_tool
+        from hermes_agent.plugins.image_gen.fal import FalImageGenProvider
 
         monkeypatch.setattr(image_tool, "check_fal_api_key", lambda: False)
         assert FalImageGenProvider().is_available() is False
 
     def test_is_available_handles_legacy_exception(self, monkeypatch):
-        import tools.image_generation_tool as image_tool
-        from plugins.image_gen.fal import FalImageGenProvider
+        import hermes_agent.tools.image_generation_tool as image_tool
+        from hermes_agent.plugins.image_gen.fal import FalImageGenProvider
 
         def _boom():
             raise RuntimeError("config broke")
@@ -101,8 +101,8 @@ class TestFalImageGenProviderGenerate:
         """Plugin must look up ``image_generate_tool`` at call time so
         ``monkeypatch.setattr(image_tool, "image_generate_tool", ...)``
         takes effect."""
-        import tools.image_generation_tool as image_tool
-        from plugins.image_gen.fal import FalImageGenProvider
+        import hermes_agent.tools.image_generation_tool as image_tool
+        from hermes_agent.plugins.image_gen.fal import FalImageGenProvider
 
         captured = {}
 
@@ -134,8 +134,8 @@ class TestFalImageGenProviderGenerate:
         assert result["model"] == "fal-ai/flux-2/klein/9b"
 
     def test_generate_invalid_aspect_ratio_is_coerced(self, monkeypatch):
-        import tools.image_generation_tool as image_tool
-        from plugins.image_gen.fal import FalImageGenProvider
+        import hermes_agent.tools.image_generation_tool as image_tool
+        from hermes_agent.plugins.image_gen.fal import FalImageGenProvider
 
         seen_aspect = {}
 
@@ -152,8 +152,8 @@ class TestFalImageGenProviderGenerate:
         assert seen_aspect["v"] == "landscape"
 
     def test_generate_passthrough_drops_none_kwargs(self, monkeypatch):
-        import tools.image_generation_tool as image_tool
-        from plugins.image_gen.fal import FalImageGenProvider
+        import hermes_agent.tools.image_generation_tool as image_tool
+        from hermes_agent.plugins.image_gen.fal import FalImageGenProvider
 
         seen = {}
 
@@ -180,8 +180,8 @@ class TestFalImageGenProviderGenerate:
         assert seen.get("num_images") == 2
 
     def test_generate_catches_exception_from_legacy(self, monkeypatch):
-        import tools.image_generation_tool as image_tool
-        from plugins.image_gen.fal import FalImageGenProvider
+        import hermes_agent.tools.image_generation_tool as image_tool
+        from hermes_agent.plugins.image_gen.fal import FalImageGenProvider
 
         def boom(*args, **kwargs):
             raise RuntimeError("FAL endpoint exploded")
@@ -195,8 +195,8 @@ class TestFalImageGenProviderGenerate:
         assert result["provider"] == "fal"
 
     def test_generate_invalid_json_response(self, monkeypatch):
-        import tools.image_generation_tool as image_tool
-        from plugins.image_gen.fal import FalImageGenProvider
+        import hermes_agent.tools.image_generation_tool as image_tool
+        from hermes_agent.plugins.image_gen.fal import FalImageGenProvider
 
         monkeypatch.setattr(image_tool, "image_generate_tool", lambda **kw: "not-json")
         monkeypatch.setattr(image_tool, "_resolve_fal_model",
@@ -215,7 +215,7 @@ class TestFalImageGenProviderGenerate:
 
 class TestFalImageGenPluginRegistration:
     def test_register_wires_provider_into_registry(self):
-        from plugins.image_gen.fal import FalImageGenProvider, register
+        from hermes_agent.plugins.image_gen.fal import FalImageGenProvider, register
 
         ctx = MagicMock()
         register(ctx)

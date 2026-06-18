@@ -23,7 +23,7 @@ plugin layout.
 
 Usage::
 
-    from providers import get_provider_profile
+    from hermes_agent.providers import get_provider_profile
     profile = get_provider_profile("nvidia")   # ProviderProfile or None
     profile = get_provider_profile("kimi")     # checks name + aliases
 """
@@ -36,7 +36,7 @@ import logging
 import sys
 from pathlib import Path
 
-from providers.base import OMIT_TEMPERATURE, ProviderProfile  # noqa: F401
+from hermes_agent.providers.base import OMIT_TEMPERATURE, ProviderProfile  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +91,7 @@ def list_providers() -> list[ProviderProfile]:
 def _user_plugins_dir() -> Path | None:
     """Return ``$HERMES_HOME/plugins/model-providers/`` if it exists."""
     try:
-        from hermes_constants import get_hermes_home
+        from hermes_agent.hermes_constants import get_hermes_home
 
         d = get_hermes_home() / "plugins" / "model-providers"
         return d if d.is_dir() else None
@@ -114,7 +114,7 @@ def _import_plugin_dir(plugin_dir: Path, source: str) -> None:
     # multiple HERMES_HOME profiles don't alias each other.
     safe_name = plugin_dir.name.replace("-", "_")
     if source == "bundled":
-        module_name = f"plugins.model_providers.{safe_name}"
+        module_name = f"hermes_agent.plugins.model_providers.{safe_name}"
     else:
         module_name = f"_hermes_user_provider_{safe_name}"
 
@@ -176,13 +176,13 @@ def _discover_providers() -> None:
     try:
         import pkgutil
 
-        import providers as _pkg
+        import hermes_agent.providers as _pkg
 
         for _importer, modname, _ispkg in pkgutil.iter_modules(_pkg.__path__):
             if modname.startswith("_") or modname == "base":
                 continue
             try:
-                importlib.import_module(f"providers.{modname}")
+                importlib.import_module(f"hermes_agent.providers.{modname}")
             except ImportError as exc:
                 logger.warning(
                     "Failed to import legacy provider module %s: %s", modname, exc

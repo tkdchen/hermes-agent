@@ -43,7 +43,7 @@ class TestDotenvFallbackPerProvider:
     """
 
     def test_elevenlabs_reads_dotenv_key(self, tmp_path):
-        from tools import tts_tool
+        from hermes_agent.tools import tts_tool
 
         with patch.object(tts_tool, "get_env_value", return_value="el-dotenv-key"), \
              patch.object(tts_tool, "_import_elevenlabs") as mock_import:
@@ -61,8 +61,8 @@ class TestDotenvFallbackPerProvider:
         dotenv fallback contract from #17140 is preserved by patching the
         resolver's ``get_env_value`` rather than ``tts_tool.get_env_value``.
         """
-        from tools import tts_tool
-        from tools import xai_http
+        from hermes_agent.tools import tts_tool
+        from hermes_agent.tools import xai_http
 
         captured: dict = {}
 
@@ -81,7 +81,7 @@ class TestDotenvFallbackPerProvider:
         assert captured["headers"]["Authorization"] == "Bearer xai-dotenv-key"
 
     def test_minimax_reads_dotenv_key(self, tmp_path):
-        from tools import tts_tool
+        from hermes_agent.tools import tts_tool
 
         captured: dict = {}
 
@@ -104,7 +104,7 @@ class TestDotenvFallbackPerProvider:
     def test_mistral_reads_dotenv_key(self, tmp_path):
         import base64
 
-        from tools import tts_tool
+        from hermes_agent.tools import tts_tool
 
         seen_keys: list = []
 
@@ -125,7 +125,7 @@ class TestDotenvFallbackPerProvider:
         assert seen_keys == ["mistral-dotenv-key"]
 
     def test_gemini_reads_dotenv_key(self, tmp_path):
-        from tools import tts_tool
+        from hermes_agent.tools import tts_tool
 
         captured: dict = {}
 
@@ -184,8 +184,8 @@ class TestRegressionGuard:
         not freeze that temporary helper into this module forever.
         """
         import importlib
-        import hermes_cli.config as config_mod
-        from tools import tts_tool
+        import hermes_agent.hermes_cli.config as config_mod
+        from hermes_agent.tools import tts_tool
 
         monkeypatch.delenv("MINIMAX_API_KEY", raising=False)
 
@@ -207,7 +207,7 @@ class TestRegressionGuard:
                 return response
 
             with patch(
-                "hermes_cli.config.load_env",
+                "hermes_agent.hermes_cli.config.load_env",
                 return_value={"MINIMAX_API_KEY": "dotenv-secret"},
             ), patch("requests.post", side_effect=fake_post):
                 tts_tool._generate_minimax_tts(
@@ -219,7 +219,7 @@ class TestRegressionGuard:
             importlib.reload(tts_tool)
 
     def test_minimax_missing_when_only_in_dotenv_before_fix(self, tmp_path, monkeypatch):
-        from tools import tts_tool
+        from hermes_agent.tools import tts_tool
 
         monkeypatch.delenv("MINIMAX_API_KEY", raising=False)
 
@@ -227,12 +227,12 @@ class TestRegressionGuard:
         # that get_env_value falls back to). The pre-fix ``os.getenv`` call
         # ignores this entirely and raises ValueError.
         with patch(
-            "hermes_cli.config.load_env",
+            "hermes_agent.hermes_cli.config.load_env",
             return_value={"MINIMAX_API_KEY": "dotenv-secret"},
         ):
             # Sanity-check: get_env_value resolves through load_env when
             # os.environ is empty.
-            from hermes_cli.config import get_env_value as live_get
+            from hermes_agent.hermes_cli.config import get_env_value as live_get
             assert live_get("MINIMAX_API_KEY") == "dotenv-secret"
 
             # And the production code path now consumes the resolved value
@@ -262,12 +262,12 @@ class TestRegressionGuard:
         would say "no provider available" for users who keep MINIMAX_API_KEY
         in ``~/.hermes/.env``, even though the dispatcher would later succeed.
         """
-        from tools import tts_tool
+        from hermes_agent.tools import tts_tool
 
         monkeypatch.delenv("MINIMAX_API_KEY", raising=False)
 
         with patch(
-            "hermes_cli.config.load_env",
+            "hermes_agent.hermes_cli.config.load_env",
             return_value={"MINIMAX_API_KEY": "dotenv-secret"},
         ), patch.object(tts_tool, "_import_edge_tts", side_effect=ImportError), \
              patch.object(tts_tool, "_import_elevenlabs", side_effect=ImportError), \

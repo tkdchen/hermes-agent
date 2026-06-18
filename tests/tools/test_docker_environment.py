@@ -4,7 +4,7 @@ import subprocess
 
 import pytest
 
-from tools.environments import docker as docker_env
+from hermes_agent.tools.environments import docker as docker_env
 
 
 def _mock_subprocess_run(monkeypatch):
@@ -1049,7 +1049,7 @@ def test_cleanup_vm_default_honors_persist_mode(monkeypatch):
     _mock_subprocess_run(monkeypatch)
     _install_fake_thread(monkeypatch)
 
-    from tools import terminal_tool
+    from hermes_agent.tools import terminal_tool
 
     env = _make_dummy_env(task_id="session-close-test")
     container_id = env._container_id
@@ -1093,7 +1093,7 @@ def test_cleanup_vm_force_remove_tears_down_persist_container(monkeypatch):
     _mock_subprocess_run(monkeypatch)
     _install_fake_thread(monkeypatch)
 
-    from tools import terminal_tool
+    from hermes_agent.tools import terminal_tool
 
     env = _make_dummy_env(task_id="explicit-teardown-test")
     terminal_tool._active_environments["explicit-teardown-test"] = env
@@ -1501,15 +1501,15 @@ def test_credential_mount_skipped_when_source_is_directory(monkeypatch, tmp_path
         {"host_path": str(corrupted_dir), "container_path": "/root/.hermes/google_token.json"},
     ]
     monkeypatch.setattr(
-        "tools.credential_files.get_credential_file_mounts",
+        "hermes_agent.tools.credential_files.get_credential_file_mounts",
         lambda: fake_mounts,
     )
     monkeypatch.setattr(
-        "tools.credential_files.get_skills_directory_mount",
+        "hermes_agent.tools.credential_files.get_skills_directory_mount",
         lambda: [],
     )
     monkeypatch.setattr(
-        "tools.credential_files.get_cache_directory_mounts",
+        "hermes_agent.tools.credential_files.get_cache_directory_mounts",
         lambda: [],
     )
 
@@ -1541,15 +1541,15 @@ def test_credential_mount_skipped_when_source_missing(monkeypatch, tmp_path, cap
         {"host_path": str(missing_path), "container_path": "/root/.hermes/deleted_token.json"},
     ]
     monkeypatch.setattr(
-        "tools.credential_files.get_credential_file_mounts",
+        "hermes_agent.tools.credential_files.get_credential_file_mounts",
         lambda: fake_mounts,
     )
     monkeypatch.setattr(
-        "tools.credential_files.get_skills_directory_mount",
+        "hermes_agent.tools.credential_files.get_skills_directory_mount",
         lambda: [],
     )
     monkeypatch.setattr(
-        "tools.credential_files.get_cache_directory_mounts",
+        "hermes_agent.tools.credential_files.get_cache_directory_mounts",
         lambda: [],
     )
 
@@ -1579,15 +1579,15 @@ def test_credential_mount_works_when_source_is_valid_file(monkeypatch, tmp_path)
         {"host_path": str(valid_file), "container_path": "/root/.hermes/token.json"},
     ]
     monkeypatch.setattr(
-        "tools.credential_files.get_credential_file_mounts",
+        "hermes_agent.tools.credential_files.get_credential_file_mounts",
         lambda: fake_mounts,
     )
     monkeypatch.setattr(
-        "tools.credential_files.get_skills_directory_mount",
+        "hermes_agent.tools.credential_files.get_skills_directory_mount",
         lambda: [],
     )
     monkeypatch.setattr(
-        "tools.credential_files.get_cache_directory_mounts",
+        "hermes_agent.tools.credential_files.get_cache_directory_mounts",
         lambda: [],
     )
 

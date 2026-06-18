@@ -1,7 +1,7 @@
 """Tests for the diagnostic reporter (formatting layer)."""
 from __future__ import annotations
 
-from agent.lsp.reporter import (
+from hermes_agent.agent.lsp.reporter import (
     MAX_PER_FILE,
     format_diagnostic,
     report_for_file,

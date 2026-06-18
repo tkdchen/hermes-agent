@@ -22,8 +22,8 @@ import sys
 from types import SimpleNamespace
 
 
-from agent.conversation_loop import _image_error_max_dimension
-from agent.error_classifier import FailoverReason, classify_api_error
+from hermes_agent.agent.conversation_loop import _image_error_max_dimension
+from hermes_agent.agent.error_classifier import FailoverReason, classify_api_error
 
 
 class _FakeApiError(Exception):
@@ -131,7 +131,7 @@ def _install_fake_pillow(monkeypatch, size: tuple[int, int]) -> None:
 
 def _make_agent():
     """Build a bare AIAgent for method-level testing, no provider setup."""
-    from run_agent import AIAgent
+    from hermes_agent.run_agent import AIAgent
     agent = object.__new__(AIAgent)
     agent.provider = "anthropic"
     agent.model = "claude-sonnet-4-6"
@@ -159,7 +159,7 @@ class TestShrinkImagePartsHelper:
 
         resize_hits = {"count": 0}
         monkeypatch.setattr(
-            "tools.vision_tools._resize_image_for_vision",
+            "hermes_agent.tools.vision_tools._resize_image_for_vision",
             lambda *a, **kw: resize_hits.__setitem__("count", resize_hits["count"] + 1) or small_url,
             raising=False,
         )
@@ -186,7 +186,7 @@ class TestShrinkImagePartsHelper:
             return shrunk
 
         monkeypatch.setattr(
-            "tools.vision_tools._resize_image_for_vision",
+            "hermes_agent.tools.vision_tools._resize_image_for_vision",
             _fake_resize,
             raising=False,
         )
@@ -215,7 +215,7 @@ class TestShrinkImagePartsHelper:
             return shrunk
 
         monkeypatch.setattr(
-            "tools.vision_tools._resize_image_for_vision",
+            "hermes_agent.tools.vision_tools._resize_image_for_vision",
             _fake_resize,
             raising=False,
         )
@@ -241,7 +241,7 @@ class TestShrinkImagePartsHelper:
         shrunk = "data:image/jpeg;base64," + "B" * 1000
 
         monkeypatch.setattr(
-            "tools.vision_tools._resize_image_for_vision",
+            "hermes_agent.tools.vision_tools._resize_image_for_vision",
             lambda *a, **kw: shrunk,
             raising=False,
         )
@@ -264,7 +264,7 @@ class TestShrinkImagePartsHelper:
         shrunk = "data:image/jpeg;base64," + "C" * 500
 
         monkeypatch.setattr(
-            "tools.vision_tools._resize_image_for_vision",
+            "hermes_agent.tools.vision_tools._resize_image_for_vision",
             lambda *a, **kw: shrunk,
             raising=False,
         )
@@ -288,7 +288,7 @@ class TestShrinkImagePartsHelper:
 
         resize_hits = {"count": 0}
         monkeypatch.setattr(
-            "tools.vision_tools._resize_image_for_vision",
+            "hermes_agent.tools.vision_tools._resize_image_for_vision",
             lambda *a, **kw: resize_hits.__setitem__("count", resize_hits["count"] + 1) or "shrunk",
             raising=False,
         )
@@ -309,7 +309,7 @@ class TestShrinkImagePartsHelper:
         oversized_url = _big_png_data_url(5000)
 
         monkeypatch.setattr(
-            "tools.vision_tools._resize_image_for_vision",
+            "hermes_agent.tools.vision_tools._resize_image_for_vision",
             lambda *a, **kw: None,  # resize returned nothing usable
             raising=False,
         )
@@ -330,7 +330,7 @@ class TestShrinkImagePartsHelper:
         even_bigger = "data:image/png;base64," + "Z" * (10 * 1024 * 1024)
 
         monkeypatch.setattr(
-            "tools.vision_tools._resize_image_for_vision",
+            "hermes_agent.tools.vision_tools._resize_image_for_vision",
             lambda *a, **kw: even_bigger,
             raising=False,
         )
@@ -374,7 +374,7 @@ class TestShrinkImagePartsHelper:
             return small
 
         monkeypatch.setattr(
-            "tools.vision_tools._resize_image_for_vision",
+            "hermes_agent.tools.vision_tools._resize_image_for_vision",
             fake_resize,
             raising=False,
         )

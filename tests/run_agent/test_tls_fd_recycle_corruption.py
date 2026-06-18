@@ -67,7 +67,7 @@ def test_force_close_tcp_sockets_shutdown_only_no_close():
     FD-recycling race that corrupted ``kanban.db`` (issue #29507) will
     re-open. Pin the contract explicitly.
     """
-    from agent.agent_runtime_helpers import force_close_tcp_sockets
+    from hermes_agent.agent.agent_runtime_helpers import force_close_tcp_sockets
 
     sock = _FakeSocket()
     client = _build_fake_client(sock)
@@ -88,7 +88,7 @@ def test_force_close_tcp_sockets_uses_shut_rdwr():
     Half-close (e.g. SHUT_WR only) wouldn't unblock a worker blocked in
     ``recv``, defeating the whole point of the helper.
     """
-    from agent.agent_runtime_helpers import force_close_tcp_sockets
+    from hermes_agent.agent.agent_runtime_helpers import force_close_tcp_sockets
 
     captured = []
 
@@ -109,7 +109,7 @@ def test_force_close_tcp_sockets_uses_shut_rdwr():
 
 def test_force_close_tcp_sockets_swallows_oserror_on_shutdown():
     """A socket already shut down / not connected raises ``OSError`` — benign."""
-    from agent.agent_runtime_helpers import force_close_tcp_sockets
+    from hermes_agent.agent.agent_runtime_helpers import force_close_tcp_sockets
 
     class _AlreadyShut:
         def shutdown(self, _how):
@@ -126,7 +126,7 @@ def test_force_close_tcp_sockets_swallows_oserror_on_shutdown():
 
 def test_force_close_tcp_sockets_handles_multiple_pool_entries():
     """Walk every pool connection — the bug equally applies to all of them."""
-    from agent.agent_runtime_helpers import force_close_tcp_sockets
+    from hermes_agent.agent.agent_runtime_helpers import force_close_tcp_sockets
 
     socks = [_FakeSocket(), _FakeSocket(), _FakeSocket()]
     entries = [
@@ -358,7 +358,7 @@ def test_agent_abort_request_openai_client_does_not_call_client_close(caplog):
     the FD race is back. Pin both the shutdown side-effect AND the absence
     of any ``client.close()`` call.
     """
-    from run_agent import AIAgent
+    from hermes_agent.run_agent import AIAgent
 
     sock = _FakeSocket()
     client = _build_fake_client(sock)
@@ -394,7 +394,7 @@ def test_agent_abort_request_openai_client_does_not_call_client_close(caplog):
 
 def test_agent_abort_request_openai_client_null_client_is_noop():
     """A ``None`` client must short-circuit cleanly (defensive)."""
-    from run_agent import AIAgent
+    from hermes_agent.run_agent import AIAgent
 
     agent = AIAgent.__new__(AIAgent)
     agent._client_log_context = lambda: "provider=test"
@@ -415,7 +415,7 @@ def test_fd_recycle_window_closed_by_shutdown_only():
     With the fix, the worker's surviving socket reference cannot be
     confused with the recycled file descriptor.
     """
-    from agent.agent_runtime_helpers import force_close_tcp_sockets
+    from hermes_agent.agent.agent_runtime_helpers import force_close_tcp_sockets
 
     # Tracks "was the FD released by the abort path?" — that is the only
     # signal the kernel needs to recycle the integer to a new ``open()``.

@@ -17,10 +17,10 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from hermes_constants import get_hermes_home
+from hermes_agent.hermes_constants import get_hermes_home
 
-from plugins.google_meet import process_manager as pm
-from plugins.google_meet.meet_bot import _is_safe_meet_url
+from hermes_agent.plugins.google_meet import process_manager as pm
+from hermes_agent.plugins.google_meet.meet_bot import _is_safe_meet_url
 
 
 def _auth_state_path() -> Path:
@@ -86,7 +86,7 @@ def register_cli(subparser: argparse.ArgumentParser) -> None:
         help="Manage remote meet node hosts (run/list/approve/remove/status/ping)",
     )
     try:
-        from plugins.google_meet.node.cli import register_cli as _register_node_cli
+        from hermes_agent.plugins.google_meet.node.cli import register_cli as _register_node_cli
         _register_node_cli(node_p)
     except Exception as e:  # pragma: no cover — defensive
         # If the node module fails to import for any reason (optional dep
@@ -383,8 +383,8 @@ def _cmd_join(
     if node:
         # Remote: go through NodeClient.
         try:
-            from plugins.google_meet.node.registry import NodeRegistry
-            from plugins.google_meet.node.client import NodeClient
+            from hermes_agent.plugins.google_meet.node.registry import NodeRegistry
+            from hermes_agent.plugins.google_meet.node.client import NodeClient
         except ImportError as e:
             print(f"node module unavailable: {e}")
             return 1
@@ -424,8 +424,8 @@ def _cmd_say(text: str, node: Optional[str] = None) -> int:
         return 2
     if node:
         try:
-            from plugins.google_meet.node.registry import NodeRegistry
-            from plugins.google_meet.node.client import NodeClient
+            from hermes_agent.plugins.google_meet.node.registry import NodeRegistry
+            from hermes_agent.plugins.google_meet.node.client import NodeClient
         except ImportError as e:
             print(f"node module unavailable: {e}")
             return 1

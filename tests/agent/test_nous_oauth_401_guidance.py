@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import inspect
 
-from agent import conversation_loop
+from hermes_agent.agent import conversation_loop
 
 
 def test_nous_provider_is_in_oauth_401_set():

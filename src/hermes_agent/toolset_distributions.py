@@ -21,7 +21,7 @@ Usage:
 
 from typing import Dict, List, Optional
 import random
-from toolsets import validate_toolset
+from hermes_agent.toolsets import validate_toolset
 
 
 # Distribution definitions

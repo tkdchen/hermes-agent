@@ -49,7 +49,7 @@ from pathlib import Path
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Set
 from urllib.parse import quote, unquote
 
-from agent.lsp.protocol import (
+from hermes_agent.agent.lsp.protocol import (
     ERROR_CONTENT_MODIFIED,
     ERROR_METHOD_NOT_FOUND,
     LSPProtocolError,
@@ -63,7 +63,7 @@ from agent.lsp.protocol import (
     read_message,
 )
 
-logger = logging.getLogger("agent.lsp.client")
+logger = logging.getLogger("hermes_agent.agent.lsp.client")
 
 # Timeouts (seconds) — mirror OpenCode's constants, scaled to seconds.
 INITIALIZE_TIMEOUT = 45.0

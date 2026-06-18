@@ -40,9 +40,9 @@ import shutil
 import sys
 from pathlib import Path
 
-from hermes_constants import get_hermes_home
+from hermes_agent.hermes_constants import get_hermes_home
 
-from hermes_cli.colors import Colors, color
+from hermes_agent.hermes_cli.colors import Colors, color
 
 
 def log_info(msg: str):

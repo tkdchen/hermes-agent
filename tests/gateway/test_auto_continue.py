@@ -97,7 +97,7 @@ class TestAutoDetection:
 
 class TestInterruptedReplayFiltering:
     def test_interrupted_tool_tail_is_removed_from_agent_history(self):
-        from gateway.run import _build_gateway_agent_history
+        from hermes_agent.gateway.run import _build_gateway_agent_history
 
         history = [
             {"role": "user", "content": "transcribe this video"},
@@ -121,7 +121,7 @@ class TestInterruptedReplayFiltering:
         assert agent_history == [{"role": "user", "content": "transcribe this video"}]
 
     def test_mixed_tail_with_one_interrupted_result_is_removed(self):
-        from gateway.run import _build_gateway_agent_history
+        from hermes_agent.gateway.run import _build_gateway_agent_history
 
         history = [
             {"role": "user", "content": "search and transcribe"},
@@ -146,7 +146,7 @@ class TestInterruptedReplayFiltering:
         assert agent_history == [{"role": "user", "content": "search and transcribe"}]
 
     def test_successful_tool_tail_is_preserved(self):
-        from gateway.run import _build_gateway_agent_history
+        from hermes_agent.gateway.run import _build_gateway_agent_history
 
         history = [
             {"role": "user", "content": "deploy"},
@@ -166,7 +166,7 @@ class TestInterruptedReplayFiltering:
         assert agent_history[-1]["content"] == "deployed successfully"
 
     def test_persisted_auto_continue_note_is_not_replayed(self):
-        from gateway.run import _build_gateway_agent_history
+        from hermes_agent.gateway.run import _build_gateway_agent_history
 
         history = [
             {"role": "user", "content": "first real question"},

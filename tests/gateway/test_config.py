@@ -4,7 +4,7 @@ import logging
 import os
 from unittest.mock import patch
 
-from gateway.config import (
+from hermes_agent.gateway.config import (
     GatewayConfig,
     HomeChannel,
     Platform,
@@ -226,7 +226,7 @@ class TestGatewayConfigRoundtrip:
         assert config.max_concurrent_sessions == 3
 
     def test_max_concurrent_sessions_from_dict_ignores_invalid_values(self, caplog):
-        caplog.set_level(logging.WARNING, logger="gateway.config")
+        caplog.set_level(logging.WARNING, logger="hermes_agent.gateway.config")
 
         config = GatewayConfig.from_dict({"max_concurrent_sessions": "many"})
 
@@ -838,7 +838,7 @@ class TestLoadGatewayConfig:
 
         monkeypatch.setenv("HERMES_HOME", str(hermes_home))
 
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
 
         config = load_config()
 

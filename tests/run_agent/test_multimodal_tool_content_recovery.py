@@ -26,7 +26,7 @@ See: https://github.com/NousResearch/hermes-agent/issues/27344
 from __future__ import annotations
 
 
-from agent.error_classifier import FailoverReason, classify_api_error
+from hermes_agent.agent.error_classifier import FailoverReason, classify_api_error
 
 
 class _FakeApiError(Exception):
@@ -41,7 +41,7 @@ class _FakeApiError(Exception):
 
 def _make_agent(provider: str = "xiaomi", model: str = "mimo-v2.5"):
     """Build a bare AIAgent for method-level testing, no provider setup."""
-    from run_agent import AIAgent
+    from hermes_agent.run_agent import AIAgent
     agent = object.__new__(AIAgent)
     agent.provider = provider
     agent.model = model

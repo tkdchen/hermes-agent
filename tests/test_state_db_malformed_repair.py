@@ -18,8 +18,8 @@ from pathlib import Path
 
 import pytest
 
-import hermes_state
-from hermes_state import (
+import hermes_agent.hermes_state as hermes_state
+from hermes_agent.hermes_state import (
     SessionDB,
     is_malformed_db_error,
     repair_state_db_schema,

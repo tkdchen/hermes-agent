@@ -11,7 +11,7 @@ mergeAdjacentUserMessages in src/utils/messages.ts). See #16823 for the
 backstory on why the alternative — fabricating "." stub text — was rejected.
 """
 
-from run_agent import AIAgent
+from hermes_agent.run_agent import AIAgent
 
 
 # ---------------------------------------------------------------------------

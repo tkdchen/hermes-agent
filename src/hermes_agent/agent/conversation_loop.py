@@ -27,14 +27,14 @@ import time
 import uuid
 from typing import Any, Dict, List, Optional
 
-from agent.codex_responses_adapter import _summarize_user_message_for_log
-from agent.display import KawaiiSpinner
-from agent.error_classifier import FailoverReason, classify_api_error
-from agent.iteration_budget import IterationBudget
-from agent.turn_context import build_turn_context
-from agent.turn_retry_state import TurnRetryState
-from agent.memory_manager import build_memory_context_block
-from agent.message_sanitization import (
+from hermes_agent.agent.codex_responses_adapter import _summarize_user_message_for_log
+from hermes_agent.agent.display import KawaiiSpinner
+from hermes_agent.agent.error_classifier import FailoverReason, classify_api_error
+from hermes_agent.agent.iteration_budget import IterationBudget
+from hermes_agent.agent.turn_context import build_turn_context
+from hermes_agent.agent.turn_retry_state import TurnRetryState
+from hermes_agent.agent.memory_manager import build_memory_context_block
+from hermes_agent.agent.message_sanitization import (
     _repair_tool_call_arguments,
     _sanitize_messages_non_ascii,
     _sanitize_messages_surrogates,
@@ -45,7 +45,7 @@ from agent.message_sanitization import (
     _strip_images_from_messages,
     _strip_non_ascii,
 )
-from agent.model_metadata import (
+from hermes_agent.agent.model_metadata import (
     MINIMUM_CONTEXT_LENGTH,
     estimate_messages_tokens_rough,
     estimate_request_tokens_rough,
@@ -53,15 +53,15 @@ from agent.model_metadata import (
     parse_available_output_tokens_from_error,
     save_context_length,
 )
-from agent.process_bootstrap import _install_safe_stdio
-from agent.prompt_caching import apply_anthropic_cache_control
-from agent.retry_utils import jittered_backoff
-from agent.trajectory import has_incomplete_scratchpad
-from agent.usage_pricing import estimate_usage_cost, normalize_usage
-from hermes_constants import PARTIAL_STREAM_STUB_ID
-from hermes_logging import set_session_context
-from tools.skill_provenance import set_current_write_origin
-from utils import base_url_host_matches, env_var_enabled
+from hermes_agent.agent.process_bootstrap import _install_safe_stdio
+from hermes_agent.agent.prompt_caching import apply_anthropic_cache_control
+from hermes_agent.agent.retry_utils import jittered_backoff
+from hermes_agent.agent.trajectory import has_incomplete_scratchpad
+from hermes_agent.agent.usage_pricing import estimate_usage_cost, normalize_usage
+from hermes_agent.hermes_constants import PARTIAL_STREAM_STUB_ID
+from hermes_agent.hermes_logging import set_session_context
+from hermes_agent.tools.skill_provenance import set_current_write_origin
+from hermes_agent.utils import base_url_host_matches, env_var_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -149,13 +149,13 @@ def _ra():
     ``run_agent.handle_function_call`` / ``run_agent._set_interrupt`` /
     ``run_agent.OpenAI`` and have those patches reach this code path.
     """
-    import run_agent
+    import hermes_agent.run_agent as run_agent
     return run_agent
 
 
 def _nous_entitlement_message(capability: str) -> str:
     try:
-        from hermes_cli.nous_account import (
+        from hermes_agent.hermes_cli.nous_account import (
             format_nous_portal_entitlement_message,
             get_nous_portal_account_info,
         )
@@ -239,7 +239,7 @@ def _print_billing_or_entitlement_guidance(
 def _try_refresh_nous_paid_entitlement_credentials(agent) -> bool:
     """Refresh Nous runtime credentials after a fresh paid-entitlement check."""
     try:
-        from hermes_cli.nous_account import get_nous_portal_account_info
+        from hermes_agent.hermes_cli.nous_account import get_nous_portal_account_info
 
         account_info = get_nous_portal_account_info(force_fresh=True)
         if account_info.paid_service_access is not True:
@@ -336,7 +336,7 @@ def _restore_or_build_system_prompt(agent, system_message, conversation_history)
     # session is created (not on continuation).  Plugins can use this
     # to initialise session-scoped state (e.g. warm a memory cache).
     try:
-        from hermes_cli.plugins import invoke_hook as _invoke_hook
+        from hermes_agent.hermes_cli.plugins import invoke_hook as _invoke_hook
         _invoke_hook(
             "on_session_start",
             session_id=agent.session_id,
@@ -353,7 +353,7 @@ def _restore_or_build_system_prompt(agent, system_message, conversation_history)
     # at build, it primes credits state from /api/oauth/account (or a fixture) on the
     # first turn so depletion / usage-band warnings fire. Fail-open inside the helper.
     try:
-        from agent.credits_tracker import seed_credits_at_session_start
+        from hermes_agent.agent.credits_tracker import seed_credits_at_session_start
 
         seed_credits_at_session_start(agent)
     except Exception:
@@ -639,7 +639,7 @@ def run_conversation(
             for _si in range(len(messages) - 1, -1, -1):
                 _sm = messages[_si]
                 if isinstance(_sm, dict) and _sm.get("role") == "tool":
-                    from agent.prompt_builder import format_steer_marker
+                    from hermes_agent.agent.prompt_builder import format_steer_marker
                     marker = format_steer_marker(_pre_api_steer)
                     existing = _sm.get("content", "")
                     if isinstance(existing, str):
@@ -700,7 +700,7 @@ def run_conversation(
         # repair_message_sequence_with_cursor also recomputes the SessionDB
         # flush cursor (_last_flushed_db_idx) when repair compacts the list,
         # so the turn-end flush doesn't skip the assistant/tool chain (#44837).
-        from agent.agent_runtime_helpers import repair_message_sequence_with_cursor
+        from hermes_agent.agent.agent_runtime_helpers import repair_message_sequence_with_cursor
         repaired_seq = repair_message_sequence_with_cursor(agent, messages)
         if repaired_seq > 0:
             request_logger.info(
@@ -925,7 +925,7 @@ def run_conversation(
             # deepens the rate limit hole.
             if agent.provider == "nous":
                 try:
-                    from agent.nous_rate_guard import (
+                    from hermes_agent.agent.nous_rate_guard import (
                         nous_rate_limit_remaining,
                         format_remaining as _fmt_nous_remaining,
                     )
@@ -982,7 +982,7 @@ def run_conversation(
                 if agent.api_mode == "codex_responses":
                     api_kwargs = agent._get_transport().preflight_kwargs(api_kwargs, allow_stream=False)
                 try:
-                    from hermes_cli.middleware import apply_llm_request_middleware
+                    from hermes_agent.hermes_cli.middleware import apply_llm_request_middleware
 
                     _llm_request_mw = apply_llm_request_middleware(
                         api_kwargs,
@@ -1005,7 +1005,7 @@ def run_conversation(
                     _llm_middleware_trace = []
 
                 try:
-                    from hermes_cli.plugins import (
+                    from hermes_agent.hermes_cli.plugins import (
                         has_hook,
                         invoke_hook as _invoke_hook,
                     )
@@ -1114,7 +1114,7 @@ def run_conversation(
                         )
                     return agent._interruptible_api_call(next_api_kwargs)
 
-                from hermes_cli.middleware import run_llm_execution_middleware
+                from hermes_agent.hermes_cli.middleware import run_llm_execution_middleware
 
                 response = run_llm_execution_middleware(
                     api_kwargs,
@@ -1922,7 +1922,7 @@ def run_conversation(
                 # resume hitting Nous.
                 if agent.provider == "nous":
                     try:
-                        from agent.nous_rate_guard import clear_nous_rate_limit
+                        from hermes_agent.agent.nous_rate_guard import clear_nous_rate_limit
                         clear_nous_rate_limit()
                     except Exception:
                         pass
@@ -2368,7 +2368,7 @@ def run_conversation(
                     # Credential refresh didn't help — show diagnostic info.
                     # Most common causes: Portal OAuth expired/revoked,
                     # account out of credits, or agent key blocked.
-                    from hermes_constants import display_hermes_home as _dhh_fn
+                    from hermes_agent.hermes_constants import display_hermes_home as _dhh_fn
                     _dhh = _dhh_fn()
                     _body_text = ""
                     try:
@@ -2403,8 +2403,8 @@ def run_conversation(
                     and not _retry.anthropic_auth_retry_attempted
                 ):
                     _retry.anthropic_auth_retry_attempted = True
-                    from agent.anthropic_adapter import _is_oauth_token
-                    from agent.azure_identity_adapter import is_token_provider
+                    from hermes_agent.agent.anthropic_adapter import _is_oauth_token
+                    from hermes_agent.agent.azure_identity_adapter import is_token_provider
                     if agent._try_refresh_anthropic_client_credentials():
                         print(f"{agent.log_prefix}🔐 Anthropic credentials refreshed after 401. Retrying request...")
                         continue
@@ -2425,7 +2425,7 @@ def run_conversation(
                         print(f"{agent.log_prefix}   Auth method: {auth_method}")
                         print(f"{agent.log_prefix}   Token prefix: {key[:12]}..." if isinstance(key, str) and len(key) > 12 else f"{agent.log_prefix}   Token: (empty or short)")
                     print(f"{agent.log_prefix}   Troubleshooting:")
-                    from hermes_constants import display_hermes_home as _dhh_fn
+                    from hermes_agent.hermes_constants import display_hermes_home as _dhh_fn
                     _dhh = _dhh_fn()
                     print(f"{agent.log_prefix}     • Check ANTHROPIC_TOKEN in {_dhh}/.env for Hermes-managed OAuth/setup tokens")
                     print(f"{agent.log_prefix}     • Check ANTHROPIC_API_KEY in {_dhh}/.env for API keys or legacy token values")
@@ -2543,7 +2543,7 @@ def run_conversation(
                 ):
                     _retry.llama_cpp_grammar_retry_attempted = True
                     try:
-                        from tools.schema_sanitizer import strip_pattern_and_format
+                        from hermes_agent.tools.schema_sanitizer import strip_pattern_and_format
                         _, _stripped = strip_pattern_and_format(agent.tools)
                     except Exception as _strip_exc:  # pragma: no cover — defensive
                         logger.warning(
@@ -2816,7 +2816,7 @@ def run_conversation(
                 ):
                     _genuine_nous_rate_limit = False
                     try:
-                        from agent.nous_rate_guard import (
+                        from hermes_agent.agent.nous_rate_guard import (
                             is_genuine_nous_rate_limit,
                             record_nous_rate_limit,
                         )
@@ -3546,7 +3546,7 @@ def run_conversation(
                     assistant_message.content = str(raw)
 
             try:
-                from hermes_cli.plugins import (
+                from hermes_agent.hermes_cli.plugins import (
                     has_hook,
                     invoke_hook as _invoke_hook,
                 )
@@ -4436,7 +4436,7 @@ def run_conversation(
     # Post-loop turn finalization extracted to agent/turn_finalizer.finalize_turn
     # (god-file decomposition Phase 1 step 4). Behavior-neutral: the assembled
     # result dict is returned exactly as before.
-    from agent.turn_finalizer import finalize_turn
+    from hermes_agent.agent.turn_finalizer import finalize_turn
     return finalize_turn(
         agent,
         final_response=final_response,

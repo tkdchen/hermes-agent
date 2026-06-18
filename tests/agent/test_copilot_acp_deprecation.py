@@ -2,7 +2,7 @@
 
 import pytest
 
-from agent.copilot_acp_client import _is_gh_copilot_deprecation_message
+from hermes_agent.agent.copilot_acp_client import _is_gh_copilot_deprecation_message
 
 
 class TestDeprecationPatternDetection:
@@ -59,19 +59,19 @@ class TestGitHubModelsAzureUrl:
     """Verify that the Azure GitHub Models URL is recognised."""
 
     def test_url_to_provider_contains_azure_models(self):
-        from agent.model_metadata import _URL_TO_PROVIDER
+        from hermes_agent.agent.model_metadata import _URL_TO_PROVIDER
 
         # Maps to the canonical "copilot" provider (same convention as the
         # other GitHub-family entries) — not the "github-models" alias.
         assert _URL_TO_PROVIDER.get("models.inference.ai.azure.com") == "copilot"
 
     def test_is_github_models_base_url_recognises_azure(self):
-        from hermes_cli.models import _is_github_models_base_url
+        from hermes_agent.hermes_cli.models import _is_github_models_base_url
 
         assert _is_github_models_base_url("https://models.inference.ai.azure.com")
         assert _is_github_models_base_url("https://models.inference.ai.azure.com/v1/chat")
 
     def test_is_github_models_base_url_still_recognises_github_ai(self):
-        from hermes_cli.models import _is_github_models_base_url
+        from hermes_agent.hermes_cli.models import _is_github_models_base_url
 
         assert _is_github_models_base_url("https://models.github.ai/inference")

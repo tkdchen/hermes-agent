@@ -6,8 +6,8 @@ This transport owns format conversion and normalization — NOT client lifecycle
 
 from typing import Any, Dict, List, Optional
 
-from agent.transports.base import ProviderTransport
-from agent.transports.types import NormalizedResponse
+from hermes_agent.agent.transports.base import ProviderTransport
+from hermes_agent.agent.transports.types import NormalizedResponse
 
 
 class AnthropicTransport(ProviderTransport):
@@ -27,14 +27,14 @@ class AnthropicTransport(ProviderTransport):
         kwargs:
             base_url: Optional[str] — affects thinking signature handling.
         """
-        from agent.anthropic_adapter import convert_messages_to_anthropic
+        from hermes_agent.agent.anthropic_adapter import convert_messages_to_anthropic
 
         base_url = kwargs.get("base_url")
         return convert_messages_to_anthropic(messages, base_url=base_url)
 
     def convert_tools(self, tools: List[Dict[str, Any]]) -> Any:
         """Convert OpenAI tool schemas to Anthropic input_schema format."""
-        from agent.anthropic_adapter import convert_tools_to_anthropic
+        from hermes_agent.agent.anthropic_adapter import convert_tools_to_anthropic
 
         return convert_tools_to_anthropic(tools)
 
@@ -60,7 +60,7 @@ class AnthropicTransport(ProviderTransport):
             fast_mode: bool
             drop_context_1m_beta: bool
         """
-        from agent.anthropic_adapter import build_anthropic_kwargs
+        from hermes_agent.agent.anthropic_adapter import build_anthropic_kwargs
 
         return build_anthropic_kwargs(
             model=model,
@@ -84,8 +84,8 @@ class AnthropicTransport(ProviderTransport):
         to OpenAI finish_reason, and collects reasoning_details in provider_data.
         """
         import json
-        from agent.anthropic_adapter import _to_plain_data, _sanitize_replay_block
-        from agent.transports.types import ToolCall
+        from hermes_agent.agent.anthropic_adapter import _to_plain_data, _sanitize_replay_block
+        from hermes_agent.agent.transports.types import ToolCall
 
         strip_tool_prefix = kwargs.get("strip_tool_prefix", False)
         _MCP_PREFIX = "mcp__"
@@ -143,7 +143,7 @@ class AnthropicTransport(ProviderTransport):
                     # Resolve by registry lookup, preferring whichever original
                     # is actually registered; never rewrite a name the LLM used
                     # that already resolves natively. GH-25255.
-                    from tools.registry import registry as _tool_registry
+                    from hermes_agent.tools.registry import registry as _tool_registry
                     if not _tool_registry.get_entry(name):
                         bare = name[len(_MCP_PREFIX):]            # read_file
                         single = "mcp_" + bare                    # mcp_read_file / mcp_linear_get_issue
@@ -246,6 +246,6 @@ class AnthropicTransport(ProviderTransport):
 
 
 # Auto-register on import
-from agent.transports import register_transport  # noqa: E402
+from hermes_agent.agent.transports import register_transport  # noqa: E402
 
 register_transport("anthropic_messages", AnthropicTransport)

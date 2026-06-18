@@ -30,9 +30,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Set
 
-from hermes_constants import get_hermes_home
-from tools import skill_usage
-from utils import atomic_json_write
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.tools import skill_usage
+from hermes_agent.utils import atomic_json_write
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +124,7 @@ def is_paused() -> bool:
 def _load_config() -> Dict[str, Any]:
     """Read curator.* config from ~/.hermes/config.yaml. Tolerates missing file."""
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         cfg = load_config()
     except Exception as e:
         logger.debug("Failed to load config for curator: %s", e)
@@ -285,7 +285,7 @@ def apply_automatic_transitions(now: Optional[datetime] = None) -> Dict[str, int
 
     Returns a counter dict describing what changed.
     """
-    from tools import skill_usage as _u
+    from hermes_agent.tools import skill_usage as _u
 
     if now is None:
         now = datetime.now(timezone.utc)
@@ -1142,7 +1142,7 @@ def _write_run_report(
             if isinstance(e, dict) and e.get("name")
         ]
         if consolidated_map or pruned_names:
-            from cron.jobs import rewrite_skill_refs as _rewrite_cron_refs
+            from hermes_agent.cron.jobs import rewrite_skill_refs as _rewrite_cron_refs
             cron_rewrites = _rewrite_cron_refs(
                 consolidated=consolidated_map,
                 pruned=pruned_names,
@@ -1481,7 +1481,7 @@ def run_curator_review(
         # which is worse). Users who want to require snapshots can disable
         # curator entirely until they can fix disk space.
         try:
-            from agent import curator_backup
+            from hermes_agent.agent import curator_backup
             snap = curator_backup.snapshot_skills(reason="pre-curator-run")
             if snap is not None and on_summary:
                 try:
@@ -1777,7 +1777,7 @@ def _run_llm_review(prompt: str) -> Dict[str, Any]:
         "error": None,
     }
     try:
-        from run_agent import AIAgent
+        from hermes_agent.run_agent import AIAgent
     except Exception as e:
         result_meta["error"] = f"AIAgent import failed: {e}"
         result_meta["summary"] = result_meta["error"]
@@ -1800,8 +1800,8 @@ def _run_llm_review(prompt: str) -> Dict[str, Any]:
     _resolved_provider = None
     _model_name = ""
     try:
-        from hermes_cli.config import load_config
-        from hermes_cli.runtime_provider import resolve_runtime_provider
+        from hermes_agent.hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.runtime_provider import resolve_runtime_provider
         _cfg = load_config()
         _binding = _resolve_review_runtime(_cfg)
         _provider, _model_name = _binding.provider, _binding.model

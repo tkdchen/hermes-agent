@@ -14,7 +14,7 @@ Features:
 - Support for multiple model providers
 
 Usage:
-    from run_agent import AIAgent
+    from hermes_agent.run_agent import AIAgent
     
     agent = AIAgent(base_url="http://localhost:30000/v1", model="claude-opus-4-20250514")
     response = agent.run_conversation("Tell me about the latest Python updates")
@@ -23,7 +23,7 @@ Usage:
 # IMPORTANT: hermes_bootstrap must be the very first import — UTF-8 stdio
 # on Windows.  No-op on POSIX.  See hermes_bootstrap.py for full rationale.
 try:
-    import hermes_bootstrap  # noqa: F401
+    import hermes_agent.hermes_bootstrap  # noqa: F401
 except ModuleNotFoundError:
     # Graceful fallback when hermes_bootstrap isn't registered in the venv
     # yet — happens during partial ``hermes update`` where git-reset landed
@@ -51,7 +51,7 @@ from typing import List, Dict, Any, Optional, Callable
 # that imports the SDK on first call/isinstance check. This preserves:
 #   (a) the single in-module `OpenAI(**client_kwargs)` call site at
 #       _create_openai_client, and
-#   (b) `patch("run_agent.OpenAI", ...)` test patterns used by ~28 test files.
+#   (b) `patch("hermes_agent.run_agent.OpenAI", ...)` test patterns used by ~28 test files.
 #
 # NOTE: `fire` is ONLY used in the `__main__` block below (for running
 # run_agent.py directly as a CLI) — it is NOT needed for library usage.
@@ -62,7 +62,7 @@ from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 
-from hermes_constants import get_hermes_home
+from hermes_agent.hermes_constants import get_hermes_home
 
 
 def _launch_cwd_for_session(source: str) -> Optional[str]:
@@ -90,21 +90,21 @@ def _launch_cwd_for_session(source: str) -> Optional[str]:
 
 
 # OpenAI lazy proxy + safe stdio + proxy URL helpers — see agent/process_bootstrap.py.
-# `OpenAI` is re-exported here so `patch("run_agent.OpenAI", ...)` in tests works.
+# `OpenAI` is re-exported here so `patch("hermes_agent.run_agent.OpenAI", ...)` in tests works.
 # The other `# noqa: F401` re-exports below cover names accessed via
-# `mock.patch("run_agent.<X>")`, `from run_agent import <X>` in production
+# `mock.patch("hermes_agent.run_agent.<X>")`, `from run_agent import <X>` in production
 # siblings, or the `_ra().<X>` indirection in agent/system_prompt.py — none
 # of which ruff's in-module usage scan can see.
-from agent.process_bootstrap import (
-    OpenAI,  # noqa: F401  # re-exported for tests that mock.patch("run_agent.OpenAI")
+from hermes_agent.agent.process_bootstrap import (
+    OpenAI,  # noqa: F401  # re-exported for tests that mock.patch("hermes_agent.run_agent.OpenAI")
     _SafeWriter,  # noqa: F401  # re-exported for tests that `from run_agent import _SafeWriter`
     _get_proxy_for_base_url,
 )
-from agent.iteration_budget import IterationBudget
+from hermes_agent.agent.iteration_budget import IterationBudget
 
 
-from hermes_cli.env_loader import load_hermes_dotenv
-from hermes_cli.timeouts import (
+from hermes_agent.hermes_cli.env_loader import load_hermes_dotenv
+from hermes_agent.hermes_cli.timeouts import (
     get_provider_request_timeout,
     get_provider_stale_timeout,
 )
@@ -120,30 +120,30 @@ else:
 
 
 # Import our tool system
-from model_tools import (
-    get_tool_definitions,  # noqa: F401  # re-exported for tests that mock.patch("run_agent.get_tool_definitions")
+from hermes_agent.model_tools import (
+    get_tool_definitions,  # noqa: F401  # re-exported for tests that mock.patch("hermes_agent.run_agent.get_tool_definitions")
     get_toolset_for_tool,
-    handle_function_call,  # noqa: F401  # re-exported for tests that mock.patch("run_agent.handle_function_call")
-    check_toolset_requirements,  # noqa: F401  # re-exported for tests that mock.patch("run_agent.check_toolset_requirements")
+    handle_function_call,  # noqa: F401  # re-exported for tests that mock.patch("hermes_agent.run_agent.handle_function_call")
+    check_toolset_requirements,  # noqa: F401  # re-exported for tests that mock.patch("hermes_agent.run_agent.check_toolset_requirements")
 )
-from tools.terminal_tool import cleanup_vm
-from tools.interrupt import set_interrupt as _set_interrupt
-from tools.browser_tool import cleanup_browser
+from hermes_agent.tools.terminal_tool import cleanup_vm
+from hermes_agent.tools.interrupt import set_interrupt as _set_interrupt
+from hermes_agent.tools.browser_tool import cleanup_browser
 
 
 # Agent internals extracted to agent/ package for modularity
-from agent.memory_manager import sanitize_context
-from agent.error_classifier import FailoverReason
-from agent.redact import redact_sensitive_text
-from agent.model_metadata import (
-    estimate_request_tokens_rough,  # noqa: F401  # re-exported for tests that mock.patch("run_agent.estimate_request_tokens_rough")
+from hermes_agent.agent.memory_manager import sanitize_context
+from hermes_agent.agent.error_classifier import FailoverReason
+from hermes_agent.agent.redact import redact_sensitive_text
+from hermes_agent.agent.model_metadata import (
+    estimate_request_tokens_rough,  # noqa: F401  # re-exported for tests that mock.patch("hermes_agent.run_agent.estimate_request_tokens_rough")
     is_local_endpoint,
 )
-from agent.usage_pricing import normalize_usage
+from hermes_agent.agent.usage_pricing import normalize_usage
 # Re-exported for tests that monkeypatch these symbols on run_agent.
-from agent.context_compressor import ContextCompressor  # noqa: F401
-from agent.retry_utils import jittered_backoff  # noqa: F401
-from agent.prompt_builder import (  # noqa: F401  # re-exported via _ra() / mock.patch("run_agent.<name>") / from run_agent import <name>
+from hermes_agent.agent.context_compressor import ContextCompressor  # noqa: F401
+from hermes_agent.agent.retry_utils import jittered_backoff  # noqa: F401
+from hermes_agent.agent.prompt_builder import (  # noqa: F401  # re-exported via _ra() / mock.patch("hermes_agent.run_agent.<name>") / from run_agent import <name>
     DEFAULT_AGENT_IDENTITY,
     build_skills_system_prompt,
     build_context_files_prompt,
@@ -151,8 +151,8 @@ from agent.prompt_builder import (  # noqa: F401  # re-exported via _ra() / mock
     build_nous_subscription_prompt,
     load_soul_md,
 )
-from agent.process_bootstrap import _get_proxy_from_env  # noqa: F401
-from agent.message_sanitization import (  # noqa: F401
+from hermes_agent.agent.process_bootstrap import _get_proxy_from_env  # noqa: F401
+from hermes_agent.agent.message_sanitization import (  # noqa: F401
     _SURROGATE_RE,
     _sanitize_surrogates,
     _sanitize_structure_surrogates,
@@ -165,26 +165,26 @@ from agent.message_sanitization import (  # noqa: F401
     _strip_images_from_messages,
     _sanitize_structure_non_ascii,
 )
-from agent.codex_responses_adapter import (
+from hermes_agent.agent.codex_responses_adapter import (
     _derive_responses_function_call_id as _codex_derive_responses_function_call_id,
     _deterministic_call_id as _codex_deterministic_call_id,
     _split_responses_tool_id as _codex_split_responses_tool_id,
     _summarize_user_message_for_log,  # also used by _sync_external_memory_for_turn (memory boundary)
 )
-from agent.tool_guardrails import (
+from hermes_agent.agent.tool_guardrails import (
     ToolGuardrailDecision,
     append_toolguard_guidance,
     toolguard_synthetic_result,
 )
-from agent.tool_result_classification import (
+from hermes_agent.agent.tool_result_classification import (
     FILE_MUTATING_TOOL_NAMES as _FILE_MUTATING_TOOLS,
     file_mutation_result_landed,
 )
-from agent.trajectory import (
+from hermes_agent.agent.trajectory import (
     convert_scratchpad_to_think,
     save_trajectory as _save_trajectory_to_file,
 )
-from agent.tool_dispatch_helpers import (
+from hermes_agent.agent.tool_dispatch_helpers import (
     _should_parallelize_tool_batch,
     _is_destructive_command,  # noqa: F401  # re-exported for tests that access `run_agent._is_destructive_command`
     _extract_parallel_scope_path,  # noqa: F401  # re-exported for tests that `from run_agent import _extract_parallel_scope_path`
@@ -196,7 +196,7 @@ from agent.tool_dispatch_helpers import (
     _extract_error_preview,
     _trajectory_normalize_msg,  # noqa: F401  # re-exported for tests that `from run_agent import _trajectory_normalize_msg`
 )
-from utils import atomic_json_write, base_url_host_matches, base_url_hostname, is_truthy_value, model_forces_max_completion_tokens
+from hermes_agent.utils import atomic_json_write, base_url_host_matches, base_url_hostname, is_truthy_value, model_forces_max_completion_tokens
 
 
 
@@ -223,7 +223,7 @@ _QWEN_CODE_VERSION = "0.14.1"
 
 def _routermint_headers() -> dict:
     """Return the User-Agent RouterMint needs to avoid Cloudflare 1010 blocks."""
-    from hermes_cli import __version__ as _HERMES_VERSION
+    from hermes_agent.hermes_cli import __version__ as _HERMES_VERSION
 
     return {
         "User-Agent": f"HermesAgent/{_HERMES_VERSION}",
@@ -414,7 +414,7 @@ class AIAgent:
         pass_session_id: bool = False,
     ):
         """Forwarder — see ``agent.agent_init.init_agent``."""
-        from agent.agent_init import init_agent
+        from hermes_agent.agent.agent_init import init_agent
         init_agent(
             self,
             base_url=base_url,
@@ -500,7 +500,7 @@ class AIAgent:
         if self._session_db is not None:
             return self._session_db
         try:
-            from hermes_state import SessionDB
+            from hermes_agent.hermes_state import SessionDB
 
             self._session_db = SessionDB()
             return self._session_db
@@ -660,8 +660,8 @@ class AIAgent:
         if (self.provider or "").strip().lower() != "lmstudio":
             return
         try:
-            from agent.model_metadata import MINIMUM_CONTEXT_LENGTH
-            from hermes_cli.models import ensure_lmstudio_model_loaded
+            from hermes_agent.agent.model_metadata import MINIMUM_CONTEXT_LENGTH
+            from hermes_agent.hermes_cli.models import ensure_lmstudio_model_loaded
             if config_context_length is None:
                 config_context_length = getattr(self, "_config_context_length", None)
             target_ctx = max(config_context_length or 0, MINIMUM_CONTEXT_LENGTH)
@@ -688,7 +688,7 @@ class AIAgent:
 
     def switch_model(self, new_model, new_provider, api_key='', base_url='', api_mode=''):
         """Forwarder — see ``agent.agent_runtime_helpers.switch_model``."""
-        from agent.agent_runtime_helpers import switch_model
+        from hermes_agent.agent.agent_runtime_helpers import switch_model
         return switch_model(self, new_model, new_provider, api_key, base_url, api_mode)
 
     def _safe_print(self, *args, **kwargs):
@@ -939,25 +939,25 @@ class AIAgent:
 
     # Stream-diagnostic class header preserved for backward compat —
     # actual list lives in ``agent.stream_diag.STREAM_DIAG_HEADERS``.
-    from agent.stream_diag import STREAM_DIAG_HEADERS as _STREAM_DIAG_HEADERS  # noqa: E402
+    from hermes_agent.agent.stream_diag import STREAM_DIAG_HEADERS as _STREAM_DIAG_HEADERS  # noqa: E402
 
     @staticmethod
     def _stream_diag_init() -> Dict[str, Any]:
         """Forwarder — see ``agent.stream_diag.stream_diag_init``."""
-        from agent.stream_diag import stream_diag_init
+        from hermes_agent.agent.stream_diag import stream_diag_init
         return stream_diag_init()
 
     def _stream_diag_capture_response(
         self, diag: Dict[str, Any], http_response: Any
     ) -> None:
         """Forwarder — see ``agent.stream_diag.stream_diag_capture_response``."""
-        from agent.stream_diag import stream_diag_capture_response
+        from hermes_agent.agent.stream_diag import stream_diag_capture_response
         stream_diag_capture_response(self, diag, http_response)
 
     @staticmethod
     def _flatten_exception_chain(error: BaseException) -> str:
         """Forwarder — see ``agent.stream_diag.flatten_exception_chain``."""
-        from agent.stream_diag import flatten_exception_chain
+        from hermes_agent.agent.stream_diag import flatten_exception_chain
         return flatten_exception_chain(error)
 
     def _is_provider_stream_parse_error(self, error: BaseException) -> bool:
@@ -989,7 +989,7 @@ class AIAgent:
         diag: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Forwarder — see ``agent.stream_diag.log_stream_retry``."""
-        from agent.stream_diag import log_stream_retry
+        from hermes_agent.agent.stream_diag import log_stream_retry
         log_stream_retry(
             self, kind=kind, error=error, attempt=attempt,
             max_attempts=max_attempts, mid_tool_call=mid_tool_call, diag=diag,
@@ -1005,7 +1005,7 @@ class AIAgent:
         diag: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Forwarder — see ``agent.stream_diag.emit_stream_drop``."""
-        from agent.stream_diag import emit_stream_drop
+        from hermes_agent.agent.stream_diag import emit_stream_drop
         emit_stream_drop(
             self, error=error, attempt=attempt, max_attempts=max_attempts,
             mid_tool_call=mid_tool_call, diag=diag,
@@ -1034,12 +1034,12 @@ class AIAgent:
 
     def _check_compression_model_feasibility(self) -> None:
         """Forwarder — see ``agent.conversation_compression.check_compression_model_feasibility``."""
-        from agent.conversation_compression import check_compression_model_feasibility
+        from hermes_agent.agent.conversation_compression import check_compression_model_feasibility
         check_compression_model_feasibility(self)
 
     def _replay_compression_warning(self) -> None:
         """Forwarder — see ``agent.conversation_compression.replay_compression_warning``."""
-        from agent.conversation_compression import replay_compression_warning
+        from hermes_agent.agent.conversation_compression import replay_compression_warning
         replay_compression_warning(self)
 
     def _is_direct_openai_url(self, base_url: str = None) -> bool:
@@ -1139,7 +1139,7 @@ class AIAgent:
         if uses_implicit_default and base_url and is_local_endpoint(base_url):
             return float("inf")
 
-        from agent.chat_completion_helpers import estimate_request_context_tokens
+        from hermes_agent.agent.chat_completion_helpers import estimate_request_context_tokens
         est_tokens = estimate_request_context_tokens(api_payload)
         if est_tokens > 100_000:
             return max(stale_base, 240.0)
@@ -1212,7 +1212,7 @@ class AIAgent:
         model: Optional[str] = None,
     ) -> tuple[bool, bool]:
         """Forwarder — see ``agent.agent_runtime_helpers.anthropic_prompt_cache_policy``."""
-        from agent.agent_runtime_helpers import anthropic_prompt_cache_policy
+        from hermes_agent.agent.agent_runtime_helpers import anthropic_prompt_cache_policy
         return anthropic_prompt_cache_policy(self, provider=provider, base_url=base_url, api_mode=api_mode, model=model)
 
     @staticmethod
@@ -1244,7 +1244,7 @@ class AIAgent:
             return False
         if normalized_provider == "copilot":
             try:
-                from hermes_cli.models import _should_use_copilot_responses_api
+                from hermes_agent.hermes_cli.models import _should_use_copilot_responses_api
                 return _should_use_copilot_responses_api(model)
             except Exception:
                 # Fall back to the generic GPT-5 rule if Copilot-specific
@@ -1316,7 +1316,7 @@ class AIAgent:
 
     def _strip_think_blocks(self, content: str) -> str:
         """Forwarder — see ``agent.agent_runtime_helpers.strip_think_blocks``."""
-        from agent.agent_runtime_helpers import strip_think_blocks
+        from hermes_agent.agent.agent_runtime_helpers import strip_think_blocks
         return strip_think_blocks(self, content)
 
     @staticmethod
@@ -1387,23 +1387,23 @@ class AIAgent:
         messages: List[Dict[str, Any]],
     ) -> bool:
         """Forwarder — see ``agent.agent_runtime_helpers.looks_like_codex_intermediate_ack``."""
-        from agent.agent_runtime_helpers import looks_like_codex_intermediate_ack
+        from hermes_agent.agent.agent_runtime_helpers import looks_like_codex_intermediate_ack
         return looks_like_codex_intermediate_ack(self, user_message, assistant_content, messages)
 
     def _extract_reasoning(self, assistant_message) -> Optional[str]:
         """Forwarder — see ``agent.agent_runtime_helpers.extract_reasoning``."""
-        from agent.agent_runtime_helpers import extract_reasoning
+        from hermes_agent.agent.agent_runtime_helpers import extract_reasoning
         return extract_reasoning(self, assistant_message)
 
     def _cleanup_task_resources(self, task_id: str) -> None:
         """Forwarder — see ``agent.chat_completion_helpers.cleanup_task_resources``."""
-        from agent.chat_completion_helpers import cleanup_task_resources
+        from hermes_agent.agent.chat_completion_helpers import cleanup_task_resources
         return cleanup_task_resources(self, task_id)
 
     # ------------------------------------------------------------------
     # Background memory/skill review — prompts live in agent.background_review
     # ------------------------------------------------------------------
-    from agent.background_review import (
+    from hermes_agent.agent.background_review import (
         _MEMORY_REVIEW_PROMPT,
         _SKILL_REVIEW_PROMPT,
         _COMBINED_REVIEW_PROMPT,
@@ -1416,7 +1416,7 @@ class AIAgent:
         notification_mode: str = "on",
     ) -> List[str]:
         """Forwarder — see ``agent.background_review.summarize_background_review_actions``."""
-        from agent.background_review import summarize_background_review_actions
+        from hermes_agent.agent.background_review import summarize_background_review_actions
         return summarize_background_review_actions(
             review_messages,
             prior_snapshot,
@@ -1437,7 +1437,7 @@ class AIAgent:
         here so existing tests that patch ``run_agent.threading.Thread``
         keep working.
         """
-        from agent.background_review import spawn_background_review_thread
+        from hermes_agent.agent.background_review import spawn_background_review_thread
         target, _prompt = spawn_background_review_thread(
             self,
             messages_snapshot,
@@ -1456,7 +1456,7 @@ class AIAgent:
         tool_call_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Forwarder — see ``agent.background_review.build_memory_write_metadata``."""
-        from agent.background_review import build_memory_write_metadata
+        from hermes_agent.agent.background_review import build_memory_write_metadata
         return build_memory_write_metadata(
             self,
             write_origin=write_origin,
@@ -1554,7 +1554,7 @@ class AIAgent:
 
     def _repair_message_sequence(self, messages: List[Dict]) -> int:
         """Forwarder — see ``agent.agent_runtime_helpers.repair_message_sequence``."""
-        from agent.agent_runtime_helpers import repair_message_sequence
+        from hermes_agent.agent.agent_runtime_helpers import repair_message_sequence
         return repair_message_sequence(self, messages)
 
     def _flush_messages_to_session_db(self, messages: List[Dict], conversation_history: List[Dict] = None):
@@ -1684,12 +1684,12 @@ class AIAgent:
 
     def _format_tools_for_system_message(self) -> str:
         """Forwarder — see ``agent.system_prompt.format_tools_for_system_message``."""
-        from agent.system_prompt import format_tools_for_system_message
+        from hermes_agent.agent.system_prompt import format_tools_for_system_message
         return format_tools_for_system_message(self)
 
     def _convert_to_trajectory_format(self, messages: List[Dict[str, Any]], user_query: str, completed: bool) -> List[Dict[str, Any]]:
         """Forwarder — see ``agent.agent_runtime_helpers.convert_to_trajectory_format``."""
-        from agent.agent_runtime_helpers import convert_to_trajectory_format
+        from hermes_agent.agent.agent_runtime_helpers import convert_to_trajectory_format
         return convert_to_trajectory_format(self, messages, user_query, completed)
 
     def _save_trajectory(self, messages: List[Dict[str, Any]], user_query: str, completed: bool):
@@ -1918,7 +1918,7 @@ class AIAgent:
     @staticmethod
     def _extract_api_error_context(error: Exception) -> Dict[str, Any]:
         """Forwarder — see ``agent.agent_runtime_helpers.extract_api_error_context``."""
-        from agent.agent_runtime_helpers import extract_api_error_context
+        from hermes_agent.agent.agent_runtime_helpers import extract_api_error_context
         return extract_api_error_context(error)
 
     def _usage_summary_for_api_request_hook(self, response: Any) -> Optional[Dict[str, Any]]:
@@ -2147,11 +2147,11 @@ class AIAgent:
         reason: Optional[str] = None,
     ) -> None:
         # Lazy module import (not from-import) so tests that
-        # ``monkeypatch.setattr("hermes_cli.plugins.has_hook", ...)`` still
+        # ``monkeypatch.setattr("hermes_agent.hermes_cli.plugins.has_hook", ...)`` still
         # take effect on this call site. After first call the import is a
         # ``sys.modules`` dict lookup, so retries don't repay any real cost.
         try:
-            from hermes_cli import plugins as _plugins
+            from hermes_agent.hermes_cli import plugins as _plugins
 
             if not _plugins.has_hook("api_request_error"):
                 return
@@ -2193,7 +2193,7 @@ class AIAgent:
         error: Optional[Exception] = None,
     ) -> Optional[Path]:
         """Forwarder — see ``agent.agent_runtime_helpers.dump_api_request_debug``."""
-        from agent.agent_runtime_helpers import dump_api_request_debug
+        from hermes_agent.agent.agent_runtime_helpers import dump_api_request_debug
         return dump_api_request_debug(self, api_kwargs, reason=reason, error=error)
 
     @staticmethod
@@ -2530,7 +2530,7 @@ class AIAgent:
             # Read from the persisted config.yaml so gateway and CLI share
             # the same setting.  Import lazily to avoid a startup-time cycle.
             try:
-                from hermes_cli.config import load_config as _load_config
+                from hermes_agent.hermes_cli.config import load_config as _load_config
                 _cfg = _load_config() or {}
             except Exception:
                 _cfg = {}
@@ -2627,7 +2627,7 @@ class AIAgent:
             # Read from the persisted config.yaml so gateway and CLI share
             # the same setting.  Import lazily to avoid a startup-time cycle.
             try:
-                from hermes_cli.config import load_config as _load_config
+                from hermes_agent.hermes_cli.config import load_config as _load_config
                 _cfg = _load_config() or {}
             except Exception:
                 _cfg = {}
@@ -2733,7 +2733,7 @@ class AIAgent:
 
     def _apply_pending_steer_to_tool_results(self, messages: list, num_tool_msgs: int) -> None:
         """Forwarder — see ``agent.agent_runtime_helpers.apply_pending_steer_to_tool_results``."""
-        from agent.agent_runtime_helpers import apply_pending_steer_to_tool_results
+        from hermes_agent.agent.agent_runtime_helpers import apply_pending_steer_to_tool_results
         return apply_pending_steer_to_tool_results(self, messages, num_tool_msgs)
 
     def _touch_activity(self, desc: str) -> None:
@@ -2749,7 +2749,7 @@ class AIAgent:
         self._last_activity_desc = desc
         if os.environ.get("HERMES_KANBAN_TASK"):
             try:
-                from tools.kanban_tools import heartbeat_current_worker_from_env
+                from hermes_agent.tools.kanban_tools import heartbeat_current_worker_from_env
                 heartbeat_current_worker_from_env()
             except Exception:
                 # Never let the bridge break the agent loop.  The function
@@ -2770,7 +2770,7 @@ class AIAgent:
         if not headers:
             return
         try:
-            from agent.rate_limit_tracker import parse_rate_limit_headers
+            from hermes_agent.agent.rate_limit_tracker import parse_rate_limit_headers
             state = parse_rate_limit_headers(headers, provider=self.provider)
             if state is not None:
                 self._rate_limit_state = state
@@ -2792,7 +2792,7 @@ class AIAgent:
         # Dev test fixture (HERMES_DEV_CREDITS_FIXTURE): inject a chosen notice state
         # each turn for repeatable testing, bypassing real headers. Throwaway scaffolding.
         try:
-            from agent.credits_tracker import dev_fixture_credits_state
+            from hermes_agent.agent.credits_tracker import dev_fixture_credits_state
             _fixture = dev_fixture_credits_state()
         except Exception:
             _fixture = None
@@ -2824,7 +2824,7 @@ class AIAgent:
 
         # ── Parse (fail-open → miss; never overwrite good state with None) ──
         try:
-            from agent.credits_tracker import parse_credits_headers
+            from hermes_agent.agent.credits_tracker import parse_credits_headers
             state = parse_credits_headers(headers, provider=self.provider)
         except Exception:
             return  # parse error → treat as a miss, keep last-known
@@ -2880,7 +2880,7 @@ class AIAgent:
         if state is None:
             return
         try:
-            from agent.credits_tracker import evaluate_credits_notices, is_free_tier_model
+            from hermes_agent.agent.credits_tracker import evaluate_credits_notices, is_free_tier_model
             latch = getattr(self, "_credits_latch", None)
             if latch is None:
                 latch = self._credits_latch = {"active": set(), "seen_below_90": False, "usage_band": None}
@@ -2912,7 +2912,7 @@ class AIAgent:
             return cached
         enabled = True
         try:
-            from hermes_cli.config import load_config as _load_config
+            from hermes_agent.hermes_cli.config import load_config as _load_config
             _cfg = _load_config() or {}
             _display = _cfg.get("display") if isinstance(_cfg, dict) else None
             if isinstance(_display, dict) and "credits_notices" in _display:
@@ -3149,7 +3149,7 @@ class AIAgent:
 
         # 1. Kill background processes for this task
         try:
-            from tools.process_registry import process_registry
+            from hermes_agent.tools.process_registry import process_registry
             process_registry.kill_all(task_id=task_id)
         except Exception:
             pass
@@ -3247,12 +3247,12 @@ class AIAgent:
 
     def _build_system_prompt_parts(self, system_message: str = None) -> Dict[str, str]:
         """Forwarder — see ``agent.system_prompt.build_system_prompt_parts``."""
-        from agent.system_prompt import build_system_prompt_parts
+        from hermes_agent.agent.system_prompt import build_system_prompt_parts
         return build_system_prompt_parts(self, system_message=system_message)
 
     def _build_system_prompt(self, system_message: str = None) -> str:
         """Forwarder — see ``agent.system_prompt.build_system_prompt``."""
-        from agent.system_prompt import build_system_prompt
+        from hermes_agent.agent.system_prompt import build_system_prompt
         return build_system_prompt(self, system_message=system_message)
 
     @staticmethod
@@ -3284,7 +3284,7 @@ class AIAgent:
     @staticmethod
     def _sanitize_api_messages(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Forwarder — see ``agent.agent_runtime_helpers.sanitize_api_messages``."""
-        from agent.agent_runtime_helpers import sanitize_api_messages
+        from hermes_agent.agent.agent_runtime_helpers import sanitize_api_messages
         return sanitize_api_messages(messages)
 
     @staticmethod
@@ -3362,7 +3362,7 @@ class AIAgent:
         drop_codex_reasoning_items: bool = True,
     ) -> List[Dict[str, Any]]:
         """Forwarder — see ``agent.agent_runtime_helpers.drop_thinking_only_and_merge_users``."""
-        from agent.agent_runtime_helpers import drop_thinking_only_and_merge_users
+        from hermes_agent.agent.agent_runtime_helpers import drop_thinking_only_and_merge_users
         return drop_thinking_only_and_merge_users(
             messages,
             drop_codex_reasoning_items=drop_codex_reasoning_items,
@@ -3378,7 +3378,7 @@ class AIAgent:
 
         Returns the original list if no truncation was needed.
         """
-        from tools.delegate_tool import _get_max_concurrent_children
+        from hermes_agent.tools.delegate_tool import _get_max_concurrent_children
         max_children = _get_max_concurrent_children()
         delegate_count = sum(1 for tc in tool_calls if tc.function.name == "delegate_task")
         if delegate_count <= max_children:
@@ -3419,12 +3419,12 @@ class AIAgent:
 
     def _repair_tool_call(self, tool_name: str) -> str | None:
         """Forwarder — see ``agent.agent_runtime_helpers.repair_tool_call``."""
-        from agent.agent_runtime_helpers import repair_tool_call
+        from hermes_agent.agent.agent_runtime_helpers import repair_tool_call
         return repair_tool_call(self, tool_name)
 
     def _invalidate_system_prompt(self):
         """Forwarder — see ``agent.system_prompt.invalidate_system_prompt``."""
-        from agent.system_prompt import invalidate_system_prompt
+        from hermes_agent.agent.system_prompt import invalidate_system_prompt
         invalidate_system_prompt(self)
 
     @staticmethod
@@ -3527,13 +3527,13 @@ class AIAgent:
 
     def _create_openai_client(self, client_kwargs: dict, *, reason: str, shared: bool) -> Any:
         """Forwarder — see ``agent.agent_runtime_helpers.create_openai_client``."""
-        from agent.agent_runtime_helpers import create_openai_client
+        from hermes_agent.agent.agent_runtime_helpers import create_openai_client
         return create_openai_client(self, client_kwargs, reason=reason, shared=shared)
 
     @staticmethod
     def _force_close_tcp_sockets(client: Any) -> int:
         """Forwarder — see ``agent.agent_runtime_helpers.force_close_tcp_sockets``."""
-        from agent.agent_runtime_helpers import force_close_tcp_sockets
+        from hermes_agent.agent.agent_runtime_helpers import force_close_tcp_sockets
         return force_close_tcp_sockets(client)
 
     def _close_openai_client(self, client: Any, *, reason: str, shared: bool) -> None:
@@ -3595,7 +3595,7 @@ class AIAgent:
 
     def _cleanup_dead_connections(self) -> bool:
         """Forwarder — see ``agent.agent_runtime_helpers.cleanup_dead_connections``."""
-        from agent.agent_runtime_helpers import cleanup_dead_connections
+        from hermes_agent.agent.agent_runtime_helpers import cleanup_dead_connections
         return cleanup_dead_connections(self)
 
     @staticmethod
@@ -3626,7 +3626,7 @@ class AIAgent:
         return any(_contains_image(item) for item in candidates)
 
     def _copilot_headers_for_request(self, *, is_vision: bool) -> dict:
-        from hermes_cli.copilot_auth import copilot_request_headers
+        from hermes_agent.hermes_cli.copilot_auth import copilot_request_headers
 
         return copilot_request_headers(is_agent_turn=True, is_vision=is_vision)
 
@@ -3694,12 +3694,12 @@ class AIAgent:
 
     def _run_codex_stream(self, api_kwargs: dict, client: Any = None, on_first_delta: callable = None):
         """Forwarder — see ``agent.codex_runtime.run_codex_stream``."""
-        from agent.codex_runtime import run_codex_stream
+        from hermes_agent.agent.codex_runtime import run_codex_stream
         return run_codex_stream(self, api_kwargs, client, on_first_delta)
 
     def _run_codex_create_stream_fallback(self, api_kwargs: dict, client: Any = None):
         """Forwarder — see ``agent.codex_runtime.run_codex_create_stream_fallback``."""
-        from agent.codex_runtime import run_codex_create_stream_fallback
+        from hermes_agent.agent.codex_runtime import run_codex_create_stream_fallback
         return run_codex_create_stream_fallback(self, api_kwargs, client)
 
     def _try_refresh_codex_client_credentials(self, *, force: bool = True) -> bool:
@@ -3720,13 +3720,13 @@ class AIAgent:
         # MUST only fire when the agent really is on singleton tokens.
         try:
             if self.provider == "openai-codex":
-                from hermes_cli.auth import resolve_codex_runtime_credentials
+                from hermes_agent.hermes_cli.auth import resolve_codex_runtime_credentials
 
                 singleton_now = resolve_codex_runtime_credentials(
                     refresh_if_expiring=False,
                 )
             else:
-                from hermes_cli.auth import resolve_xai_oauth_runtime_credentials
+                from hermes_agent.hermes_cli.auth import resolve_xai_oauth_runtime_credentials
 
                 singleton_now = resolve_xai_oauth_runtime_credentials(
                     refresh_if_expiring=False,
@@ -3748,11 +3748,11 @@ class AIAgent:
 
         try:
             if self.provider == "openai-codex":
-                from hermes_cli.auth import resolve_codex_runtime_credentials
+                from hermes_agent.hermes_cli.auth import resolve_codex_runtime_credentials
 
                 creds = resolve_codex_runtime_credentials(force_refresh=force)
             else:
-                from hermes_cli.auth import resolve_xai_oauth_runtime_credentials
+                from hermes_agent.hermes_cli.auth import resolve_xai_oauth_runtime_credentials
 
                 creds = resolve_xai_oauth_runtime_credentials(force_refresh=force)
         except Exception as exc:
@@ -3785,7 +3785,7 @@ class AIAgent:
             return False
 
         try:
-            from hermes_cli.auth import resolve_nous_runtime_credentials
+            from hermes_agent.hermes_cli.auth import resolve_nous_runtime_credentials
 
             creds = resolve_nous_runtime_credentials(
                 timeout_seconds=float(os.getenv("HERMES_NOUS_TIMEOUT_SECONDS", "15")),
@@ -3826,7 +3826,7 @@ class AIAgent:
             return False
 
         try:
-            from hermes_cli.copilot_auth import resolve_copilot_token
+            from hermes_agent.hermes_cli.copilot_auth import resolve_copilot_token
 
             new_token, token_source = resolve_copilot_token()
         except Exception as exc:
@@ -3863,7 +3863,7 @@ class AIAgent:
             return False
 
         try:
-            from agent.anthropic_adapter import resolve_anthropic_token, build_anthropic_client
+            from hermes_agent.agent.anthropic_adapter import resolve_anthropic_token, build_anthropic_client
 
             new_token = resolve_anthropic_token()
         except Exception as exc:
@@ -3896,12 +3896,12 @@ class AIAgent:
         # Only treat as OAuth on native Anthropic; third-party endpoints using
         # the Anthropic protocol must not trip OAuth paths (#1739 & third-party
         # identity-injection guard).
-        from agent.anthropic_adapter import _is_oauth_token
+        from hermes_agent.agent.anthropic_adapter import _is_oauth_token
         self._is_anthropic_oauth = _is_oauth_token(new_token) if self.provider == "anthropic" else False
         return True
 
     def _apply_client_headers_for_base_url(self, base_url: str) -> None:
-        from agent.auxiliary_client import (
+        from hermes_agent.agent.auxiliary_client import (
             build_nvidia_nim_headers,
             build_or_headers,
         )
@@ -3913,7 +3913,7 @@ class AIAgent:
         elif base_url_host_matches(base_url, "api.routermint.com"):
             self._client_kwargs["default_headers"] = _routermint_headers()
         elif base_url_host_matches(base_url, "api.githubcopilot.com"):
-            from hermes_cli.models import copilot_default_headers
+            from hermes_agent.hermes_cli.models import copilot_default_headers
 
             self._client_kwargs["default_headers"] = copilot_default_headers()
         elif base_url_host_matches(base_url, "api.kimi.com"):
@@ -3921,7 +3921,7 @@ class AIAgent:
         elif base_url_host_matches(base_url, "portal.qwen.ai"):
             self._client_kwargs["default_headers"] = _qwen_portal_headers()
         elif base_url_host_matches(base_url, "chatgpt.com"):
-            from agent.auxiliary_client import _codex_cloudflare_headers
+            from hermes_agent.agent.auxiliary_client import _codex_cloudflare_headers
             self._client_kwargs["default_headers"] = _codex_cloudflare_headers(
                 self._client_kwargs.get("api_key", "")
             )
@@ -3929,7 +3929,7 @@ class AIAgent:
             # No URL-specific headers — check profile.default_headers before clearing.
             _ph_headers = None
             try:
-                from providers import get_provider_profile as _gpf2
+                from hermes_agent.providers import get_provider_profile as _gpf2
                 _ph2 = _gpf2(self.provider)
                 if _ph2 and _ph2.default_headers:
                     _ph_headers = dict(_ph2.default_headers)
@@ -3968,7 +3968,7 @@ class AIAgent:
         """
         if self.api_mode in ("anthropic_messages", "bedrock_converse"):
             return
-        from agent.auxiliary_client import (
+        from hermes_agent.agent.auxiliary_client import (
             _apply_user_default_headers as _merge_user_headers,
         )
         merged = _merge_user_headers(self._client_kwargs.get("default_headers"))
@@ -3980,7 +3980,7 @@ class AIAgent:
         runtime_base = getattr(entry, "runtime_base_url", None) or getattr(entry, "base_url", None) or self.base_url
 
         if self.api_mode == "anthropic_messages":
-            from agent.anthropic_adapter import build_anthropic_client, _is_oauth_token
+            from hermes_agent.agent.anthropic_adapter import build_anthropic_client, _is_oauth_token
 
             try:
                 self._anthropic_client.close()
@@ -4014,7 +4014,7 @@ class AIAgent:
         error_context: Optional[Dict[str, Any]] = None,
     ) -> tuple[bool, bool]:
         """Forwarder — see ``agent.agent_runtime_helpers.recover_with_credential_pool``."""
-        from agent.agent_runtime_helpers import recover_with_credential_pool
+        from hermes_agent.agent.agent_runtime_helpers import recover_with_credential_pool
         return recover_with_credential_pool(self, status_code=status_code, has_retried_429=has_retried_429, classified_reason=classified_reason, error_context=error_context)
 
     def _credential_pool_may_recover_rate_limit(self) -> bool:
@@ -4038,7 +4038,7 @@ class AIAgent:
         # Defensive: strip Responses-only kwargs that can leak in under an
         # api_mode-flip race (the Anthropic SDK raises a non-retryable
         # TypeError on them). See #31673.
-        from agent.anthropic_adapter import sanitize_anthropic_kwargs
+        from hermes_agent.agent.anthropic_adapter import sanitize_anthropic_kwargs
         sanitize_anthropic_kwargs(
             api_kwargs, log_prefix=getattr(self, "log_prefix", "")
         )
@@ -4058,11 +4058,11 @@ class AIAgent:
         """
         _drop_1m = bool(getattr(self, "_oauth_1m_beta_disabled", False))
         if getattr(self, "provider", None) == "bedrock":
-            from agent.anthropic_adapter import build_anthropic_bedrock_client
+            from hermes_agent.agent.anthropic_adapter import build_anthropic_bedrock_client
             region = getattr(self, "_bedrock_region", "us-east-1") or "us-east-1"
             self._anthropic_client = build_anthropic_bedrock_client(region)
         else:
-            from agent.anthropic_adapter import build_anthropic_client
+            from hermes_agent.agent.anthropic_adapter import build_anthropic_client
             self._anthropic_client = build_anthropic_client(
                 self._anthropic_api_key,
                 getattr(self, "_anthropic_base_url", None),
@@ -4072,7 +4072,7 @@ class AIAgent:
 
     def _interruptible_api_call(self, api_kwargs: dict):
         """Forwarder — see ``agent.chat_completion_helpers.interruptible_api_call``."""
-        from agent.chat_completion_helpers import interruptible_api_call
+        from hermes_agent.agent.chat_completion_helpers import interruptible_api_call
         return interruptible_api_call(self, api_kwargs)
 
     # ── Unified streaming API call ─────────────────────────────────────────
@@ -4245,12 +4245,12 @@ class AIAgent:
         self, api_kwargs: dict, *, on_first_delta: callable = None
     ):
         """Forwarder — see ``agent.chat_completion_helpers.interruptible_streaming_api_call``."""
-        from agent.chat_completion_helpers import interruptible_streaming_api_call
+        from hermes_agent.agent.chat_completion_helpers import interruptible_streaming_api_call
         return interruptible_streaming_api_call(self, api_kwargs, on_first_delta=on_first_delta)
 
     def _try_activate_fallback(self, reason: "FailoverReason | None" = None) -> bool:
         """Forwarder — see ``agent.chat_completion_helpers.try_activate_fallback``."""
-        from agent.chat_completion_helpers import try_activate_fallback
+        from hermes_agent.agent.chat_completion_helpers import try_activate_fallback
         return try_activate_fallback(self, reason)
 
     def _has_pending_fallback(self) -> bool:
@@ -4269,14 +4269,14 @@ class AIAgent:
 
     def _restore_primary_runtime(self) -> bool:
         """Forwarder — see ``agent.agent_runtime_helpers.restore_primary_runtime``."""
-        from agent.agent_runtime_helpers import restore_primary_runtime
+        from hermes_agent.agent.agent_runtime_helpers import restore_primary_runtime
         return restore_primary_runtime(self)
 
     def _try_recover_primary_transport(
         self, api_error: Exception, *, retry_count: int, max_retries: int,
     ) -> bool:
         """Forwarder — see ``agent.agent_runtime_helpers.try_recover_primary_transport``."""
-        from agent.agent_runtime_helpers import try_recover_primary_transport
+        from hermes_agent.agent.agent_runtime_helpers import try_recover_primary_transport
         return try_recover_primary_transport(self, api_error, retry_count=retry_count, max_retries=max_retries)
 
     @staticmethod
@@ -4341,7 +4341,7 @@ class AIAgent:
 
         description = ""
         try:
-            from tools.vision_tools import vision_analyze_tool
+            from hermes_agent.tools.vision_tools import vision_analyze_tool
 
             result_json = asyncio.run(
                 vision_analyze_tool(image_url=vision_source, user_prompt=analysis_prompt)
@@ -4384,8 +4384,8 @@ class AIAgent:
         misclassified as non-vision and have their images stripped.
         """
         try:
-            from hermes_cli.config import load_config
-            from agent.image_routing import _lookup_supports_vision
+            from hermes_agent.hermes_cli.config import load_config
+            from hermes_agent.agent.image_routing import _lookup_supports_vision
             cfg = load_config()
             provider = (getattr(self, "provider", "") or "").strip()
             model = (getattr(self, "model", "") or "").strip()
@@ -4401,7 +4401,7 @@ class AIAgent:
         checks the provider profile's ``supports_vision_tool_messages`` field.
         """
         try:
-            from providers import get_provider_profile
+            from hermes_agent.providers import get_provider_profile
             provider = (getattr(self, "provider", "") or "").strip()
             profile = get_provider_profile(provider)
             if profile is not None:
@@ -4467,7 +4467,7 @@ class AIAgent:
             self._transport_cache = cache
         t = cache.get(mode)
         if t is None:
-            from agent.transports import get_transport
+            from hermes_agent.agent.transports import get_transport
             t = get_transport(mode)
             cache[mode] = t
         return t
@@ -4602,7 +4602,7 @@ class AIAgent:
         max_dimension: int = 8000,
     ) -> bool:
         """Forwarder — see ``agent.conversation_compression.try_shrink_image_parts_in_messages``."""
-        from agent.conversation_compression import try_shrink_image_parts_in_messages
+        from hermes_agent.agent.conversation_compression import try_shrink_image_parts_in_messages
         return try_shrink_image_parts_in_messages(
             api_messages,
             max_dimension=max_dimension,
@@ -4783,7 +4783,7 @@ class AIAgent:
 
     def _build_api_kwargs(self, api_messages: list) -> dict:
         """Forwarder — see ``agent.chat_completion_helpers.build_api_kwargs``."""
-        from agent.chat_completion_helpers import build_api_kwargs
+        from hermes_agent.agent.chat_completion_helpers import build_api_kwargs
         return build_api_kwargs(self, api_messages)
 
     def _supports_reasoning_extra_body(self) -> bool:
@@ -4800,7 +4800,7 @@ class AIAgent:
             or base_url_host_matches(self._base_url_lower, "api.githubcopilot.com")
         ):
             try:
-                from hermes_cli.models import github_model_reasoning_efforts
+                from hermes_agent.hermes_cli.models import github_model_reasoning_efforts
 
                 return bool(github_model_reasoning_efforts(self.model))
             except Exception:
@@ -4853,7 +4853,7 @@ class AIAgent:
             if opts or (_time.monotonic() - ts) < 60:
                 return opts
         try:
-            from hermes_cli.models import lmstudio_model_reasoning_options
+            from hermes_agent.hermes_cli.models import lmstudio_model_reasoning_options
             opts = lmstudio_model_reasoning_options(
                 self.model, self.base_url, getattr(self, "api_key", ""),
             )
@@ -4869,7 +4869,7 @@ class AIAgent:
         directly, bypassing the transport. Share the helper so the two paths
         can't drift on effort resolution and clamping.
         """
-        from agent.lmstudio_reasoning import resolve_lmstudio_effort
+        from hermes_agent.agent.lmstudio_reasoning import resolve_lmstudio_effort
         return resolve_lmstudio_effort(
             self.reasoning_config,
             self._lmstudio_reasoning_options_cached(),
@@ -4878,7 +4878,7 @@ class AIAgent:
     def _github_models_reasoning_extra_body(self) -> dict | None:
         """Format reasoning payload for GitHub Models/OpenAI-compatible routes."""
         try:
-            from hermes_cli.models import github_model_reasoning_efforts
+            from hermes_agent.hermes_cli.models import github_model_reasoning_efforts
         except Exception:
             return None
 
@@ -4909,7 +4909,7 @@ class AIAgent:
 
     def _build_assistant_message(self, assistant_message, finish_reason: str) -> dict:
         """Forwarder — see ``agent.chat_completion_helpers.build_assistant_message``."""
-        from agent.chat_completion_helpers import build_assistant_message
+        from hermes_agent.agent.chat_completion_helpers import build_assistant_message
         return build_assistant_message(self, assistant_message, finish_reason)
 
     def _needs_thinking_reasoning_pad(self) -> bool:
@@ -4992,12 +4992,12 @@ class AIAgent:
 
     def _copy_reasoning_content_for_api(self, source_msg: dict, api_msg: dict) -> None:
         """Forwarder — see ``agent.agent_runtime_helpers.copy_reasoning_content_for_api``."""
-        from agent.agent_runtime_helpers import copy_reasoning_content_for_api
+        from hermes_agent.agent.agent_runtime_helpers import copy_reasoning_content_for_api
         return copy_reasoning_content_for_api(self, source_msg, api_msg)
 
     def _reapply_reasoning_echo_for_provider(self, api_messages: list) -> int:
         """Forwarder — see ``agent.agent_runtime_helpers.reapply_reasoning_echo_for_provider``."""
-        from agent.agent_runtime_helpers import reapply_reasoning_echo_for_provider
+        from hermes_agent.agent.agent_runtime_helpers import reapply_reasoning_echo_for_provider
         return reapply_reasoning_echo_for_provider(self, api_messages)
 
     @staticmethod
@@ -5026,7 +5026,7 @@ class AIAgent:
         tool_calls = api_msg.get("tool_calls")
         if not isinstance(tool_calls, list):
             return api_msg
-        from agent.transports.chat_completions import _model_consumes_thought_signature
+        from hermes_agent.agent.transports.chat_completions import _model_consumes_thought_signature
         _STRIP_KEYS = {"call_id", "response_item_id"}
         if not _model_consumes_thought_signature(model):
             _STRIP_KEYS = _STRIP_KEYS | {"extra_content"}
@@ -5045,7 +5045,7 @@ class AIAgent:
         session_id: str = None,
     ) -> int:
         """Forwarder — see ``agent.agent_runtime_helpers.sanitize_tool_call_arguments``."""
-        from agent.agent_runtime_helpers import sanitize_tool_call_arguments
+        from hermes_agent.agent.agent_runtime_helpers import sanitize_tool_call_arguments
         return sanitize_tool_call_arguments(messages, logger=logger, session_id=session_id)
 
     def _should_sanitize_tool_calls(self) -> bool:
@@ -5069,7 +5069,7 @@ class AIAgent:
         auto-compress abort.  Auto-compress callers use the default
         ``force=False``.
         """
-        from agent.conversation_compression import compress_context
+        from hermes_agent.agent.conversation_compression import compress_context
         return compress_context(
             self, messages, system_message,
             approx_tokens=approx_tokens, task_id=task_id, focus_topic=focus_topic,
@@ -5143,7 +5143,7 @@ class AIAgent:
         New DELEGATE_TASK_SCHEMA fields only need to be added here to reach all
         invocation paths (concurrent, sequential, inline).
         """
-        from tools.delegate_tool import delegate_task as _delegate_task
+        from hermes_agent.tools.delegate_tool import delegate_task as _delegate_task
         return _delegate_task(
             goal=function_args.get("goal"),
             context=function_args.get("context"),
@@ -5163,7 +5163,7 @@ class AIAgent:
                      skip_tool_request_middleware: bool = False,
                      tool_request_middleware_trace: Optional[list[dict[str, Any]]] = None) -> str:
         """Forwarder — see ``agent.agent_runtime_helpers.invoke_tool``."""
-        from agent.agent_runtime_helpers import invoke_tool
+        from hermes_agent.agent.agent_runtime_helpers import invoke_tool
         return invoke_tool(
             self,
             function_name,
@@ -5203,17 +5203,17 @@ class AIAgent:
 
     def _execute_tool_calls_concurrent(self, assistant_message, messages: list, effective_task_id: str, api_call_count: int = 0) -> None:
         """Forwarder — see ``agent.tool_executor.execute_tool_calls_concurrent``."""
-        from agent.tool_executor import execute_tool_calls_concurrent
+        from hermes_agent.agent.tool_executor import execute_tool_calls_concurrent
         return execute_tool_calls_concurrent(self, assistant_message, messages, effective_task_id, api_call_count)
 
     def _execute_tool_calls_sequential(self, assistant_message, messages: list, effective_task_id: str, api_call_count: int = 0) -> None:
         """Forwarder — see ``agent.tool_executor.execute_tool_calls_sequential``."""
-        from agent.tool_executor import execute_tool_calls_sequential
+        from hermes_agent.agent.tool_executor import execute_tool_calls_sequential
         return execute_tool_calls_sequential(self, assistant_message, messages, effective_task_id, api_call_count)
 
     def _handle_max_iterations(self, messages: list, api_call_count: int) -> str:
         """Forwarder — see ``agent.chat_completion_helpers.handle_max_iterations``."""
-        from agent.chat_completion_helpers import handle_max_iterations
+        from hermes_agent.agent.chat_completion_helpers import handle_max_iterations
         return handle_max_iterations(self, messages, api_call_count)
 
     def run_conversation(
@@ -5227,7 +5227,7 @@ class AIAgent:
         persist_user_timestamp: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Forwarder — see ``agent.conversation_loop.run_conversation``."""
-        from agent.conversation_loop import run_conversation
+        from hermes_agent.agent.conversation_loop import run_conversation
         return run_conversation(
             self,
             user_message,
@@ -5263,7 +5263,7 @@ class AIAgent:
         should_review_memory: bool = False,
     ) -> Dict[str, Any]:
         """Forwarder — see ``agent.codex_runtime.run_codex_app_server_turn``."""
-        from agent.codex_runtime import run_codex_app_server_turn
+        from hermes_agent.agent.codex_runtime import run_codex_app_server_turn
         return run_codex_app_server_turn(self, user_message=user_message, original_user_message=original_user_message, messages=messages, effective_task_id=effective_task_id, should_review_memory=should_review_memory)
 
 def main(
@@ -5307,8 +5307,8 @@ def main(
     
     # Handle tool listing
     if list_tools:
-        from model_tools import get_all_tool_names, get_available_toolsets
-        from toolsets import get_all_toolsets, get_toolset_info
+        from hermes_agent.model_tools import get_all_tool_names, get_available_toolsets
+        from hermes_agent.toolsets import get_all_toolsets, get_toolset_info
         
         print("📋 Available Tools & Toolsets:")
         print("-" * 50)

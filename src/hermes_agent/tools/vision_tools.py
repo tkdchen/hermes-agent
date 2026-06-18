@@ -37,10 +37,10 @@ from pathlib import Path
 from typing import Any, Awaitable, Dict, Optional
 from urllib.parse import urlparse
 import httpx
-from agent.auxiliary_client import async_call_llm, extract_content_or_reasoning
-from hermes_constants import get_hermes_dir
-from tools.debug_helpers import DebugSession
-from tools.website_policy import check_website_access
+from hermes_agent.agent.auxiliary_client import async_call_llm, extract_content_or_reasoning
+from hermes_agent.hermes_constants import get_hermes_dir
+from hermes_agent.tools.debug_helpers import DebugSession
+from hermes_agent.tools.website_policy import check_website_access
 import sys
 
 logger = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ def _resolve_download_timeout() -> float:
         except ValueError:
             pass
     try:
-        from hermes_cli.config import cfg_get, load_config
+        from hermes_agent.hermes_cli.config import cfg_get, load_config
         cfg = load_config()
         val = cfg_get(cfg, "auxiliary", "vision", "download_timeout")
         if val is not None:
@@ -94,7 +94,7 @@ def _validate_image_url(url: str) -> bool:
     if not _image_url_shape_ok(url):
         return False
     # Block private/internal addresses to prevent SSRF
-    from tools.url_safety import is_safe_url
+    from hermes_agent.tools.url_safety import is_safe_url
     return is_safe_url(url)
 
 
@@ -102,7 +102,7 @@ async def _validate_image_url_async(url: str) -> bool:
     """Validate remote image URL without blocking the event loop on DNS."""
     if not _image_url_shape_ok(url):
         return False
-    from tools.url_safety import async_is_safe_url
+    from hermes_agent.tools.url_safety import async_is_safe_url
     return await async_is_safe_url(url)
 
 
@@ -182,7 +182,7 @@ async def _download_image(image_url: str, destination: Path, max_retries: int = 
         """
         if response.is_redirect and response.next_request:
             redirect_url = str(response.next_request.url)
-            from tools.url_safety import async_is_safe_url
+            from hermes_agent.tools.url_safety import async_is_safe_url
             if not await async_is_safe_url(redirect_url):
                 raise ValueError(
                     f"Blocked redirect to private/internal address: {redirect_url}"
@@ -421,7 +421,7 @@ def _resize_image_for_vision(image_path: Path, mime_type: Optional[str] = None,
         # offline), then re-import. If it still isn't importable, fall back to
         # the raw bytes and let the caller raise the size error.
         try:
-            from tools.lazy_deps import ensure as _ensure_dep
+            from hermes_agent.tools.lazy_deps import ensure as _ensure_dep
             # prompt=False: never raise a blocking input() prompt mid-session.
             # Under the interactive CLI prompt_toolkit owns stdin, so a bare
             # input() deadlocks the terminal (#40490). The install is already
@@ -587,7 +587,7 @@ def _supports_media_in_tool_results(provider: str, model: str) -> bool:
     # This covers vision-capable providers like xiaomi, minimax, etc. that
     # aren't in the hardcoded list above.
     try:
-        from providers import get_provider_profile
+        from hermes_agent.providers import get_provider_profile
         profile = get_provider_profile(p)
         if profile is not None and profile.supports_vision:
             return True
@@ -612,9 +612,9 @@ def _should_use_native_vision_fast_path() -> bool:
     the caller falls back to the legacy aux-LLM path.
     """
     try:
-        from agent.auxiliary_client import _read_main_provider, _read_main_model
-        from agent.image_routing import decide_image_input_mode, _lookup_supports_vision
-        from hermes_cli.config import load_config
+        from hermes_agent.agent.auxiliary_client import _read_main_provider, _read_main_model
+        from hermes_agent.agent.image_routing import decide_image_input_mode, _lookup_supports_vision
+        from hermes_agent.hermes_cli.config import load_config
 
         provider = _read_main_provider()
         model = _read_main_model()
@@ -707,7 +707,7 @@ async def _vision_analyze_native(
     temp_image_path: Optional[Path] = None
     should_cleanup = False
     try:
-        from tools.interrupt import is_interrupted
+        from hermes_agent.tools.interrupt import is_interrupted
         if is_interrupted():
             return tool_error("Interrupted", success=False)
 
@@ -857,7 +857,7 @@ async def vision_analyze_tool(
     detected_mime_type = None
     
     try:
-        from tools.interrupt import is_interrupted
+        from hermes_agent.tools.interrupt import is_interrupted
         if is_interrupted():
             return tool_error("Interrupted", success=False)
 
@@ -953,7 +953,7 @@ async def vision_analyze_tool(
         vision_timeout = 120.0
         vision_temperature = 0.1
         try:
-            from hermes_cli.config import cfg_get, load_config
+            from hermes_agent.hermes_cli.config import cfg_get, load_config
             _cfg = load_config()
             _vision_cfg = cfg_get(_cfg, "auxiliary", "vision", default={})
             _vt = _vision_cfg.get("timeout")
@@ -1092,7 +1092,7 @@ def check_vision_requirements() -> bool:
     when the auto chain would have served the request (issue #31179).
     """
     try:
-        from agent.auxiliary_client import resolve_vision_provider_client
+        from hermes_agent.agent.auxiliary_client import resolve_vision_provider_client
     except ImportError:
         return False
     try:
@@ -1163,7 +1163,7 @@ if __name__ == "__main__":
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
-from tools.registry import registry, tool_error
+from hermes_agent.tools.registry import registry, tool_error
 
 VISION_ANALYZE_SCHEMA = {
     "name": "vision_analyze",
@@ -1270,7 +1270,7 @@ async def _download_video(video_url: str, destination: Path, max_retries: int = 
     async def _ssrf_redirect_guard(response):
         if response.is_redirect and response.next_request:
             redirect_url = str(response.next_request.url)
-            from tools.url_safety import async_is_safe_url
+            from hermes_agent.tools.url_safety import async_is_safe_url
             if not await async_is_safe_url(redirect_url):
                 raise ValueError(
                     f"Blocked redirect to private/internal address: {redirect_url}"
@@ -1360,7 +1360,7 @@ async def video_analyze_tool(
     should_cleanup = True
 
     try:
-        from tools.interrupt import is_interrupted
+        from hermes_agent.tools.interrupt import is_interrupted
         if is_interrupted():
             return tool_error("Interrupted", success=False)
 
@@ -1437,7 +1437,7 @@ async def video_analyze_tool(
         vision_timeout = 180.0
         vision_temperature = 0.1
         try:
-            from hermes_cli.config import cfg_get, load_config
+            from hermes_agent.hermes_cli.config import cfg_get, load_config
             _cfg = load_config()
             _vision_cfg = cfg_get(_cfg, "auxiliary", "vision", default={})
             _vt = _vision_cfg.get("timeout")

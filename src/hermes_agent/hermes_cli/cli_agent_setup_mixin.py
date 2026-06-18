@@ -29,8 +29,8 @@ class CLIAgentSetupMixin:
         are picked up without restarting the CLI.
         Returns True if credentials are ready, False on auth failure.
         """
-        from cli import ChatConsole, _cprint, logger
-        from hermes_cli.runtime_provider import (
+        from hermes_agent.cli import ChatConsole, _cprint, logger
+        from hermes_agent.hermes_cli.runtime_provider import (
             resolve_runtime_provider,
             format_runtime_provider_error,
         )
@@ -48,7 +48,7 @@ class CLIAgentSetupMixin:
 
         # Primary provider auth failed — try fallback providers before giving up.
         if runtime is None and _primary_exc is not None:
-            from hermes_cli.auth import AuthError
+            from hermes_agent.hermes_cli.auth import AuthError
             if isinstance(_primary_exc, AuthError):
                 _fb_chain = self._fallback_model if isinstance(self._fallback_model, list) else []
                 for _fb in _fb_chain:
@@ -148,7 +148,7 @@ class CLIAgentSetupMixin:
         # model so the API call doesn't fail with "model must be non-empty".
         if not self.model and resolved_provider:
             try:
-                from hermes_cli.models import get_default_model_for_provider
+                from hermes_agent.hermes_cli.models import get_default_model_for_provider
                 _default = get_default_model_for_provider(resolved_provider)
                 if _default:
                     self.model = _default
@@ -179,7 +179,7 @@ class CLIAgentSetupMixin:
         Processing / Anthropic fast mode, attach `request_overrides` so the
         API call is marked accordingly.
         """
-        from hermes_cli.models import resolve_fast_mode_overrides
+        from hermes_agent.hermes_cli.models import resolve_fast_mode_overrides
 
         runtime = {
             "api_key": self.api_key,
@@ -223,7 +223,7 @@ class CLIAgentSetupMixin:
         Returns:
             bool: True if successful, False otherwise
         """
-        from cli import AIAgent, ChatConsole, _DIM, _RST, _accent_hex, _cprint, _prepare_deferred_agent_startup, logger
+        from hermes_agent.cli import AIAgent, ChatConsole, _DIM, _RST, _accent_hex, _cprint, _prepare_deferred_agent_startup, logger
         if self.agent is not None:
             return True
 
@@ -234,14 +234,14 @@ class CLIAgentSetupMixin:
         if not self._ensure_runtime_credentials():
             return False
 
-        from hermes_cli.mcp_startup import wait_for_mcp_discovery
+        from hermes_agent.hermes_cli.mcp_startup import wait_for_mcp_discovery
 
         wait_for_mcp_discovery()
 
         # Initialize SQLite session store for CLI sessions (if not already done in __init__)
         if self._session_db is None:
             try:
-                from hermes_state import SessionDB
+                from hermes_agent.hermes_state import SessionDB
                 self._session_db = SessionDB()
             except Exception as e:
                 logger.warning("SQLite session store not available — session will NOT be indexed: %s", e)
@@ -402,7 +402,7 @@ class CLIAgentSetupMixin:
             # notice_callback is bound above → _on_notice renders the line. Idempotent
             # + fail-open inside the helper; harmless for non-Nous providers.
             try:
-                from agent.credits_tracker import seed_credits_at_session_start
+                from hermes_agent.agent.credits_tracker import seed_credits_at_session_start
 
                 seed_credits_at_session_start(self.agent)
             except Exception:
@@ -444,7 +444,7 @@ class CLIAgentSetupMixin:
         The corresponding block in ``_init_agent()`` checks whether history is
         already populated and skips the DB round-trip.
         """
-        from cli import _accent_hex
+        from hermes_agent.cli import _accent_hex
         if not self._resumed or not self._session_db:
             return False
 
@@ -520,7 +520,7 @@ class CLIAgentSetupMixin:
         last ``MAX_DISPLAY_EXCHANGES`` user/assistant exchanges and shows
         an indicator for earlier hidden messages.
         """
-        from cli import CLI_CONFIG, _record_output_history_entry, _strip_reasoning_tags, _suspend_output_history
+        from hermes_agent.cli import CLI_CONFIG, _record_output_history_entry, _strip_reasoning_tags, _suspend_output_history
         if not self.conversation_history:
             return
 
@@ -626,7 +626,7 @@ class CLIAgentSetupMixin:
         from rich.text import Text
 
         try:
-            from hermes_cli.skin_engine import get_active_skin
+            from hermes_agent.hermes_cli.skin_engine import get_active_skin
             _skin = get_active_skin()
             _history_text_c = _skin.get_color("banner_text", "#FFF8DC")
             _session_label_c = _skin.get_color("session_label", "#DAA520")

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from agent.credits_tracker import (
+from hermes_agent.agent.credits_tracker import (
     CREDITS_NOTICE_KIND,
     CREDITS_RESTORED_TTL_MS,
     AgentNotice,
@@ -340,20 +340,20 @@ class TestDepletedFreeModelSuppression:
 
 class TestIsFreeTierModel:
     def test_free_suffix_is_free(self):
-        from agent.credits_tracker import is_free_tier_model
+        from hermes_agent.agent.credits_tracker import is_free_tier_model
 
         assert is_free_tier_model("nvidia/nemotron-3-ultra:free") is True
         assert is_free_tier_model("Hermes-4-70B:free", "https://inference-api.nousresearch.com") is True
 
     def test_empty_or_paid_model_is_not_free(self):
-        from agent.credits_tracker import is_free_tier_model
+        from hermes_agent.agent.credits_tracker import is_free_tier_model
 
         assert is_free_tier_model("") is False
         assert is_free_tier_model("Hermes-4-405B") is False
 
     def test_pricing_cache_peek_zero_priced_model(self, monkeypatch):
-        from agent.credits_tracker import is_free_tier_model
-        import hermes_cli.models as models_mod
+        from hermes_agent.agent.credits_tracker import is_free_tier_model
+        import hermes_agent.hermes_cli.models as models_mod
 
         # The picker keys the cache on the pre-/v1 root (get_pricing_for_provider
         # strips a trailing /v1 before fetch_models_with_pricing).
@@ -377,8 +377,8 @@ class TestIsFreeTierModel:
         assert is_free_tier_model("some/zero-priced", "https://inference-api.nousresearch.com/v1/") is True
 
     def test_cache_miss_is_not_free_and_no_fetch(self, monkeypatch):
-        from agent.credits_tracker import is_free_tier_model
-        import hermes_cli.models as models_mod
+        from hermes_agent.agent.credits_tracker import is_free_tier_model
+        import hermes_agent.hermes_cli.models as models_mod
 
         monkeypatch.setattr(models_mod, "_pricing_cache", {})
 
@@ -391,8 +391,8 @@ class TestIsFreeTierModel:
         assert is_free_tier_model("some/model", "https://inference-api.nousresearch.com/v1") is False
 
     def test_exception_fails_open_to_false(self, monkeypatch):
-        from agent.credits_tracker import is_free_tier_model
-        import hermes_cli.models as models_mod
+        from hermes_agent.agent.credits_tracker import is_free_tier_model
+        import hermes_agent.hermes_cli.models as models_mod
 
         class _Exploding:
             def get(self, *_a, **_kw):

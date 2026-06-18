@@ -368,7 +368,7 @@ class CDPSupervisor:
                         pass
 
             try:
-                from agent.async_utils import safe_schedule_threadsafe
+                from hermes_agent.agent.async_utils import safe_schedule_threadsafe
                 fut = safe_schedule_threadsafe(_close_ws(), loop)
                 if fut is not None:
                     try:
@@ -453,7 +453,7 @@ class CDPSupervisor:
             )
 
         try:
-            from agent.async_utils import safe_schedule_threadsafe
+            from hermes_agent.agent.async_utils import safe_schedule_threadsafe
             fut = safe_schedule_threadsafe(_do_respond(), loop)
             if fut is None:
                 return {"ok": False, "error": "Browser supervisor loop unavailable"}
@@ -511,7 +511,7 @@ class CDPSupervisor:
                 timeout=timeout,
             )
 
-        from agent.async_utils import safe_schedule_threadsafe
+        from hermes_agent.agent.async_utils import safe_schedule_threadsafe
 
         def _run_eval(by_value: bool) -> Dict[str, Any]:
             fut = safe_schedule_threadsafe(_do_eval(by_value), loop)

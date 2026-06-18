@@ -46,10 +46,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Union
 
-from hermes_constants import get_hermes_home
-from utils import env_var_enabled
-from hermes_cli.config import cfg_get
-from hermes_cli.middleware import OBSERVER_SCHEMA_VERSION, VALID_MIDDLEWARE
+from hermes_agent.hermes_constants import get_hermes_home
+from hermes_agent.utils import env_var_enabled
+from hermes_agent.hermes_cli.config import cfg_get
+from hermes_agent.hermes_cli.middleware import OBSERVER_SCHEMA_VERSION, VALID_MIDDLEWARE
 
 
 def get_bundled_plugins_dir() -> Path:
@@ -187,7 +187,7 @@ def _get_disabled_plugins() -> set:
     ``plugins.enabled``.
     """
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         config = load_config()
         disabled = cfg_get(config, "plugins", "disabled", default=[])
         return set(disabled) if isinstance(disabled, list) else set()
@@ -210,7 +210,7 @@ def _get_enabled_plugins() -> Optional[set]:
     * ``set(...)`` — the concrete allow-list.
     """
     try:
-        from hermes_cli.config import load_config
+        from hermes_agent.hermes_cli.config import load_config
         config = load_config()
         plugins_cfg = config.get("plugins")
         if not isinstance(plugins_cfg, dict):
@@ -310,7 +310,7 @@ class PluginContext:
 
         See :mod:`agent.plugin_llm` for the full surface."""
         if self._llm is None:
-            from agent.plugin_llm import PluginLlm
+            from hermes_agent.agent.plugin_llm import PluginLlm
             plugin_id = self.manifest.key or self.manifest.name
             self._llm = PluginLlm(plugin_id=plugin_id)
         return self._llm
@@ -337,7 +337,7 @@ class PluginContext:
         CDP-backed implementation). Without it, attempting to register a name
         already claimed by a different toolset is rejected.
         """
-        from tools.registry import registry
+        from hermes_agent.tools.registry import registry
 
         registry.register(
             name=name,
@@ -447,7 +447,7 @@ class PluginContext:
 
         # Reject if it conflicts with a built-in command
         try:
-            from hermes_cli.commands import resolve_command
+            from hermes_agent.hermes_cli.commands import resolve_command
             if resolve_command(clean) is not None:
                 logger.warning(
                     "Plugin '%s' tried to register command '/%s' which conflicts "
@@ -484,7 +484,7 @@ class PluginContext:
         Returns:
             JSON string from the tool handler (same format as model tool calls).
         """
-        from tools.registry import registry
+        from hermes_agent.tools.registry import registry
 
         # Wire up parent agent context when available (CLI mode).
         # In gateway mode _cli_ref is None — tools degrade gracefully
@@ -515,7 +515,7 @@ class PluginContext:
             )
             return
         # Defer the import to avoid circular deps at module level
-        from agent.context_engine import ContextEngine
+        from hermes_agent.agent.context_engine import ContextEngine
         if not isinstance(engine, ContextEngine):
             logger.warning(
                 "Plugin '%s' tried to register a context engine that does not "
@@ -540,8 +540,8 @@ class PluginContext:
         ``config.yaml`` matches against when routing ``image_generate``
         tool calls.
         """
-        from agent.image_gen_provider import ImageGenProvider
-        from agent.image_gen_registry import register_provider
+        from hermes_agent.agent.image_gen_provider import ImageGenProvider
+        from hermes_agent.agent.image_gen_registry import register_provider
 
         if not isinstance(provider, ImageGenProvider):
             logger.warning(
@@ -571,7 +571,7 @@ class PluginContext:
         cannot crash the host. Same convention as
         ``register_image_gen_provider``.
         """
-        from hermes_cli.dashboard_auth import (
+        from hermes_agent.hermes_cli.dashboard_auth import (
             DashboardAuthProvider, register_provider,
         )
 
@@ -607,8 +607,8 @@ class PluginContext:
         ``config.yaml`` matches against when routing ``video_generate``
         tool calls.
         """
-        from agent.video_gen_provider import VideoGenProvider
-        from agent.video_gen_registry import register_provider as _register_video_provider
+        from hermes_agent.agent.video_gen_provider import VideoGenProvider
+        from hermes_agent.agent.video_gen_registry import register_provider as _register_video_provider
 
         if not isinstance(provider, VideoGenProvider):
             logger.warning(
@@ -635,8 +635,8 @@ class PluginContext:
         matches against when routing ``web_search`` / ``web_extract``
         tool calls.
         """
-        from agent.web_search_provider import WebSearchProvider
-        from agent.web_search_registry import register_provider as _register_web_provider
+        from hermes_agent.agent.web_search_provider import WebSearchProvider
+        from hermes_agent.agent.web_search_registry import register_provider as _register_web_provider
 
         if not isinstance(provider, WebSearchProvider):
             logger.warning(
@@ -667,8 +667,8 @@ class PluginContext:
         subsystem's dispatcher (:func:`tools.browser_tool._get_cloud_provider`)
         consults the registry built up by these calls.
         """
-        from agent.browser_provider import BrowserProvider
-        from agent.browser_registry import register_provider as _register_browser_provider
+        from hermes_agent.agent.browser_provider import BrowserProvider
+        from hermes_agent.agent.browser_registry import register_provider as _register_browser_provider
 
         if not isinstance(provider, BrowserProvider):
             logger.warning(
@@ -705,8 +705,8 @@ class PluginContext:
         Coexists with the command-provider registry rather than
         replacing it — see issue #30398 for the full design rationale.
         """
-        from agent.tts_provider import TTSProvider
-        from agent.tts_registry import register_provider as _register_tts_provider
+        from hermes_agent.agent.tts_provider import TTSProvider
+        from hermes_agent.agent.tts_registry import register_provider as _register_tts_provider
 
         if not isinstance(provider, TTSProvider):
             logger.warning(
@@ -749,8 +749,8 @@ class PluginContext:
         engines (OpenRouter, SenseAudio, Gemini-STT, custom proprietary
         backends).
         """
-        from agent.transcription_provider import TranscriptionProvider
-        from agent.transcription_registry import register_provider as _register_stt_provider
+        from hermes_agent.agent.transcription_provider import TranscriptionProvider
+        from hermes_agent.agent.transcription_registry import register_provider as _register_stt_provider
 
         if not isinstance(provider, TranscriptionProvider):
             logger.warning(
@@ -799,7 +799,7 @@ class PluginContext:
                 setup_fn=irc_interactive_setup,
             )
         """
-        from gateway.platform_registry import platform_registry, PlatformEntry
+        from hermes_agent.gateway.platform_registry import platform_registry, PlatformEntry
 
         entry_kwargs.setdefault("plugin_name", self.manifest.name)
         entry = PlatformEntry(
@@ -947,7 +947,7 @@ class PluginContext:
             )
 
         # Lazy import to avoid circular: hermes_cli.main imports plugins indirectly
-        from hermes_cli.main import _AUX_TASKS as _BUILTIN_AUX_TASKS
+        from hermes_agent.hermes_cli.main import _AUX_TASKS as _BUILTIN_AUX_TASKS
 
         builtin_keys = {k for k, _name, _desc in _BUILTIN_AUX_TASKS}
         if key in builtin_keys:
@@ -1052,7 +1052,7 @@ class PluginContext:
             ValueError: if *name* contains ``':'`` or invalid characters.
             FileNotFoundError: if *path* does not exist.
         """
-        from agent.skill_utils import _NAMESPACE_RE
+        from hermes_agent.agent.skill_utils import _NAMESPACE_RE
 
         if ":" in name:
             raise ValueError(
@@ -2012,7 +2012,7 @@ def get_plugin_toolsets() -> List[tuple]:
         return []
 
     try:
-        from tools.registry import registry
+        from hermes_agent.tools.registry import registry
     except Exception:
         return []
 

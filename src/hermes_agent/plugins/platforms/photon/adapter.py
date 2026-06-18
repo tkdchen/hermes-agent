@@ -53,15 +53,15 @@ else:
         HTTPX_AVAILABLE = False
         httpx = None
 
-from gateway.config import Platform, PlatformConfig
-from gateway.platforms.base import (
+from hermes_agent.gateway.config import Platform, PlatformConfig
+from hermes_agent.gateway.platforms.base import (
     BasePlatformAdapter,
     MessageEvent,
     MessageType,
     ProcessingOutcome,
     SendResult,
 )
-from gateway.platforms.helpers import strip_markdown
+from hermes_agent.gateway.platforms.helpers import strip_markdown
 
 from .auth import load_project_credentials
 
@@ -854,7 +854,7 @@ class PhotonAdapter(BasePlatformAdapter):
         metadata: Optional[Dict[str, Any]] = None,
     ) -> SendResult:
         try:
-            from gateway.platforms.base import cache_image_from_url
+            from hermes_agent.gateway.platforms.base import cache_image_from_url
 
             local_path = await cache_image_from_url(image_url)
         except Exception:
@@ -1358,7 +1358,7 @@ def _cache_inbound_attachment(
         logger.warning("[photon] failed to decode inbound attachment bytes: %s", exc)
         return None
 
-    from gateway.platforms.base import (
+    from hermes_agent.gateway.platforms.base import (
         cache_audio_from_bytes,
         cache_document_from_bytes,
         cache_image_from_bytes,
