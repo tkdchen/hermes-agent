@@ -25,10 +25,12 @@ import sys
 import tempfile
 import threading
 import time
+import toml
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
 
+from hermes_agent import get_source_root
 from hermes_agent.hermes_cli.secret_prompt import masked_secret_prompt
 
 logger = logging.getLogger(__name__)
@@ -384,7 +386,7 @@ def detect_install_method(project_root: Optional[Path] = None) -> str:
     if managed:
         return managed.lower().replace(" ", "-")
     if project_root is None:
-        project_root = Path(__file__).parent.parent.resolve()
+        project_root = get_source_root()
     if (project_root / ".git").is_dir():
         return "git"
     return "pip"
@@ -604,10 +606,6 @@ def get_config_path() -> Path:
 def get_env_path() -> Path:
     """Get the .env file path (for API keys)."""
     return get_hermes_home() / ".env"
-
-def get_project_root() -> Path:
-    """Get the project installation directory."""
-    return Path(__file__).parent.parent.resolve()
 
 def _resolve_hermes_uid_gid() -> tuple[Optional[int], Optional[int]]:
     """Read the HERMES_UID / HERMES_GID env vars set by Docker deployments.

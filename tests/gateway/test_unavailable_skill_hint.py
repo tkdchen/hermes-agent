@@ -158,11 +158,11 @@ def test_optional_skill_uses_frontmatter_slug(
     )
 
     # Point the optional lookup at our tmp dir. The source reads from
-    # ``get_optional_skills_dir(repo_root / "optional-skills")`` — we
-    # can't easily retarget ``repo_root``, so patch the resolver.
+    # ``get_optional_skills_dir()`` — we can't easily retarget ``repo_root``,
+    # so patch the resolver.
     monkeypatch.setattr(
         "hermes_agent.hermes_constants.get_optional_skills_dir",
-        lambda _default: optional,
+        lambda _default = None: optional,
         raising=False,
     )
 

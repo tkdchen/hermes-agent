@@ -11,6 +11,7 @@ Usage:
 """
 
 import importlib.util
+from inspect import getsource
 import logging
 import subprocess
 import sys
@@ -18,7 +19,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from hermes_agent.hermes_cli.config import get_hermes_home, get_config_path, load_config, save_config
+from hermes_agent.hermes_cli.config import get_hermes_home, get_config_path, get_source_root, load_config, save_config
 from hermes_agent.hermes_constants import get_optional_skills_dir
 from hermes_agent.hermes_cli.setup import (
     Colors,
@@ -32,10 +33,8 @@ from hermes_agent.hermes_cli.setup import (
 
 logger = logging.getLogger(__name__)
 
-PROJECT_ROOT = Path(__file__).parent.parent.resolve()
-
 _OPENCLAW_SCRIPT = (
-    get_optional_skills_dir(PROJECT_ROOT / "optional-skills")
+    get_optional_skills_dir()
     / "migration"
     / "openclaw-migration"
     / "scripts"

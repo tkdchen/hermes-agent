@@ -16,6 +16,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from hermes_agent import get_source_root, read_source_file
+
 
 @pytest.fixture()
 def isolated_kanban_home(monkeypatch):
@@ -123,13 +125,8 @@ def test_kanban_swarm_uses_existing_humanizer_skill():
 
     Verify the synthesizer card now uses the bundled 'humanizer' skill
     which actually exists at skills/creative/humanizer/SKILL.md."""
-    import pathlib
 
-    swarm_path = (
-        pathlib.Path(__file__).resolve().parent.parent.parent
-        / "hermes_cli" / "kanban_swarm.py"
-    )
-    src = swarm_path.read_text()
+    src = read_source_file("hermes_cli", "kanban_swarm.py")
     assert "avoid-ai-writing" not in src, (
         "kanban_swarm.py must not reference 'avoid-ai-writing' — that "
         "skill doesn't exist in any registry, crashing synthesizers (#29415)"
@@ -140,10 +137,7 @@ def test_kanban_swarm_uses_existing_humanizer_skill():
     )
 
     # And the replacement skill must actually exist on disk.
-    skills_root = (
-        pathlib.Path(__file__).resolve().parent.parent.parent / "skills"
-    )
-    humanizer_path = skills_root / "creative" / "humanizer" / "SKILL.md"
+    humanizer_path = get_source_root() / "skills" / "creative" / "humanizer" / "SKILL.md"
     assert humanizer_path.is_file(), (
         f"humanizer skill missing at {humanizer_path}; the kanban_swarm fix "
         "for #29415 requires this bundled skill to exist"

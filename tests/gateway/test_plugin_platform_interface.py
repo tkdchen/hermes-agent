@@ -14,7 +14,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-PROJECT_ROOT = Path(__file__).parent.parent.resolve()
+from hermes_agent import PROJECT_ROOT
+
 PLATFORMS_DIR = PROJECT_ROOT / "plugins" / "platforms"
 
 
@@ -80,8 +81,6 @@ class _MockPluginContext:
 def _import_platform_module(name: str) -> ModuleType:
     """Import plugins.platforms.<name> in a test-safe way."""
     # Make sure the project root is on sys.path so relative imports work
-    if str(PROJECT_ROOT) not in sys.path:
-        sys.path.insert(0, str(PROJECT_ROOT))
     module = importlib.import_module(f"hermes_agent.plugins.platforms.{name}")
     return module
 

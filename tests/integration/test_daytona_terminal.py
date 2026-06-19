@@ -11,6 +11,8 @@ from pathlib import Path
 
 import pytest
 
+from hermes_agent import PROJECT_ROOT
+
 pytestmark = pytest.mark.integration
 
 # Skip entire module if no API key
@@ -20,11 +22,8 @@ if not os.getenv("DAYTONA_API_KEY"):
 # Import terminal_tool via importlib to avoid tools/__init__.py side effects
 import importlib.util
 
-parent_dir = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(parent_dir))
-
 spec = importlib.util.spec_from_file_location(
-    "terminal_tool", parent_dir / "tools" / "terminal_tool.py"
+    "terminal_tool", PROJECT_ROOT / "tools" / "terminal_tool.py"
 )
 terminal_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(terminal_module)

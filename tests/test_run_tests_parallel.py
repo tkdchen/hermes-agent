@@ -74,8 +74,9 @@ def test_grandchild_leak_is_killed_by_runner(tmp_path: Path) -> None:
     3. Wait for the grandchild PID to vanish (poll for ~5s).
     4. Assert the runner exited cleanly AND the grandchild is dead.
     """
-    repo_root = Path(__file__).resolve().parent.parent
-    runner = repo_root / "scripts" / "run_tests_parallel.py"
+    from hermes_agent import get_source_root
+    source_root = get_source_root()
+    runner = source_root / "scripts" / "run_tests_parallel.py"
     assert runner.exists(), f"runner missing at {runner}"
 
     # Probe lives in a temp dir, NOT under tests/, so the regular suite
@@ -143,7 +144,7 @@ def test_grandchild_leak_is_killed_by_runner(tmp_path: Path) -> None:
             "--file-timeout",
             "30",
         ],
-        cwd=repo_root,
+        cwd=source_root,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,

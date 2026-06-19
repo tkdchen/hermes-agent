@@ -21,9 +21,12 @@ from pathlib import Path
 
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-INSTALL_SH = REPO_ROOT / "scripts" / "install.sh"
-INSTALL_PS1 = REPO_ROOT / "scripts" / "install.ps1"
+from hermes_agent import get_source_root
+
+
+source_root = get_source_root()
+INSTALL_SH = source_root / "scripts" / "install.sh"
+INSTALL_PS1 = source_root / "scripts" / "install.ps1"
 
 pytestmark = pytest.mark.skipif(
     shutil.which("git") is None or shutil.which("bash") is None,

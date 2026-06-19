@@ -28,12 +28,11 @@ from __future__ import annotations
 
 import importlib.util
 import sys
-from pathlib import Path
 from types import ModuleType
 
+from hermes_agent import PROJECT_ROOT
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-_PLUGINS_DIR = _REPO_ROOT / "plugins" / "platforms"
+_PLUGINS_DIR = PROJECT_ROOT / "plugins" / "platforms"
 
 
 def load_plugin_adapter(plugin_name: str) -> ModuleType:

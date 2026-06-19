@@ -27,6 +27,8 @@ import textwrap
 
 import pytest
 
+from hermes_agent import PROJECT_ROOT
+
 
 # Import the module under test via an import-time side-effect check path.
 # We need to be able to reset its state between tests, so we import it
@@ -37,7 +39,6 @@ def _fresh_import():
     Drops any cached copy from sys.modules first so module-level code
     runs again and the platform check re-evaluates.
     """
-    sys.modules.pop("hermes_bootstrap", None)
     sys.modules.pop("hermes_agent.hermes_bootstrap", None)
     import hermes_agent.hermes_bootstrap as hermes_bootstrap  # noqa: WPS433
     return hermes_bootstrap
@@ -242,11 +243,11 @@ class TestEntryPointsImportBootstrap:
     # import hermes_bootstrap before doing any file I/O or stdout writes.
     ENTRY_POINTS = [
         "hermes_cli/main.py",   # hermes CLI (console_script)
-        "hermes_agent.run_agent.py",          # hermes-agent (console_script)
+        "run_agent.py",          # hermes-agent (console_script)
         "acp_adapter/entry.py",  # hermes-acp (console_script)
         "gateway/run.py",        # gateway
-        "hermes_agent.batch_runner.py",       # batch mode
-        "hermes_agent.cli.py",                # legacy direct-launch CLI
+        "batch_runner.py",       # batch mode
+        "cli.py",                # legacy direct-launch CLI
     ]
 
     @pytest.mark.parametrize("path", ENTRY_POINTS)
@@ -269,10 +270,7 @@ class TestEntryPointsImportBootstrap:
         """
         # Resolve relative to the hermes-agent repo root.  Tests live
         # at tests/test_hermes_bootstrap.py, so go up one dir.
-        import pathlib
-        here = pathlib.Path(__file__).resolve()
-        repo_root = here.parent.parent  # tests/ -> repo root
-        full_path = repo_root / path
+        full_path = PROJECT_ROOT / path
         assert full_path.exists(), f"entry point missing: {full_path}"
 
         source = full_path.read_text(encoding="utf-8")
@@ -306,7 +304,7 @@ class TestEntryPointsImportBootstrap:
         else:  # ImportFrom
             first_import_name = first_import_node.module or ""
 
-        assert first_import_name == "hermes_bootstrap", (
+        assert first_import_name == "hermes_agent.hermes_bootstrap", (
             f"{path}: first top-level import is {first_import_name!r}, "
             f"but it must be 'hermes_bootstrap' so UTF-8 stdio is "
             f"configured before anything else initializes.  Move the "

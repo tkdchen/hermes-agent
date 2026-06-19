@@ -56,6 +56,7 @@ from hermes_agent.agent.async_utils import safe_schedule_threadsafe
 from hermes_agent.agent.i18n import t
 from hermes_agent.hermes_cli.config import cfg_get
 from hermes_agent.hermes_cli.fallback_config import get_fallback_chain
+from hermes_agent import get_source_root
 
 # --- Agent cache tuning ---------------------------------------------------
 # Bounds the per-session AIAgent cache to prevent unbounded growth in
@@ -149,11 +150,13 @@ def _ensure_windows_gateway_venv_imports() -> None:
     if sys.platform != "win32":
         return
 
-    project_root = Path(__file__).resolve().parent.parent
+    source_root = get_source_root()
+
+    # project_root = Path(__file__).resolve().parent.parent
     candidates: list[Path] = []
     if os.environ.get("VIRTUAL_ENV"):
         candidates.append(Path(os.environ["VIRTUAL_ENV"]))
-    candidates.append(project_root / "venv")
+    candidates.append(source_root / "venv")
 
     seen: set[str] = set()
     for venv_dir in candidates:
@@ -171,11 +174,12 @@ def _ensure_windows_gateway_venv_imports() -> None:
             continue
 
         project_entry = str(project_root)
-        site_entry = str(site_packages)
         if project_entry not in sys.path:
             sys.path.insert(0, project_entry)
+
         # addsitepackages() semantics matter here: pywin32, used by the MCP
         # SDK on Windows, relies on .pth processing to expose pywintypes.
+        site_entry = str(site_packages)
         site.addsitedir(site_entry)
         if site_entry in sys.path:
             sys.path.remove(site_entry)
@@ -1150,9 +1154,6 @@ os.environ["_HERMES_GATEWAY"] = "1"
 
 _ensure_ssl_certs()
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 # Resolve Hermes home directory (respects HERMES_HOME override)
 from hermes_agent.hermes_constants import get_hermes_home
 from hermes_agent.utils import atomic_json_write, atomic_yaml_write, base_url_host_matches, is_truthy_value
@@ -1837,8 +1838,7 @@ def _check_unavailable_skill(command_name: str) -> str | None:
 
         # Check optional skills (shipped with repo but not installed)
         from hermes_agent.hermes_constants import get_optional_skills_dir
-        repo_root = Path(__file__).resolve().parent.parent
-        optional_dir = get_optional_skills_dir(repo_root / "optional-skills")
+        optional_dir = get_optional_skills_dir()
         if optional_dir.exists():
             for skill_md in optional_dir.rglob("SKILL.md"):
                 if is_excluded_skill_path(skill_md):
@@ -4587,12 +4587,11 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
             # inherits the gateway marker, `hermes gateway restart` refuses to
             # run as a self-restart loop guard and the gateway stays stopped.
             watcher_env.pop("_HERMES_GATEWAY", None)
-            project_root = Path(__file__).resolve().parent.parent
-            venv_dir = Path(watcher_env.get("VIRTUAL_ENV") or project_root / "venv")
+            venv_dir = Path(watcher_env.get("VIRTUAL_ENV") or get_source_root() / "venv")
             site_packages = venv_dir / "Lib" / "site-packages"
             if site_packages.exists():
                 watcher_env["VIRTUAL_ENV"] = str(venv_dir)
-                pythonpath = [str(project_root), str(site_packages)]
+                pythonpath = [str(site_packages)]
                 if watcher_env.get("PYTHONPATH"):
                     pythonpath.append(watcher_env["PYTHONPATH"])
                 watcher_env["PYTHONPATH"] = os.pathsep.join(dict.fromkeys(pythonpath))

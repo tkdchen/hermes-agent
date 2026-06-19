@@ -21,11 +21,6 @@ from pathlib import Path
 import pytest
 import yaml
 
-# Ensure the repo root is importable when running via `pytest tests/...`.
-_REPO_ROOT = Path(__file__).resolve().parent.parent
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
-
 from hermes_agent.utils import atomic_json_write, atomic_replace, atomic_yaml_write
 
 

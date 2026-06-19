@@ -14,6 +14,7 @@ Usage:
 """
 
 import pytest
+
 pytestmark = pytest.mark.integration
 
 import os
@@ -21,13 +22,17 @@ import sys
 import json
 from pathlib import Path
 
+from hermes_agent import get_source_root, PROJECT_ROOT
+
+source_root = get_source_root()
+
 # Try to load .env file if python-dotenv is available
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     # Manually load .env if dotenv not available
-    env_file = Path(__file__).parent.parent.parent / ".env"
+    env_file = source_root / ".env"
     if env_file.exists():
         with open(env_file) as f:
             for line in f:
@@ -38,13 +43,9 @@ except ImportError:
                     value = value.strip().strip('"').strip("'")
                     os.environ.setdefault(key.strip(), value)
 
-# Add project root to path for imports
-parent_dir = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(parent_dir))
-
 # Import terminal_tool module directly using importlib to avoid tools/__init__.py
 import importlib.util
-terminal_tool_path = parent_dir / "tools" / "terminal_tool.py"
+terminal_tool_path = PROJECT_ROOT / "tools" / "terminal_tool.py"
 spec = importlib.util.spec_from_file_location("terminal_tool", terminal_tool_path)
 terminal_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(terminal_module)

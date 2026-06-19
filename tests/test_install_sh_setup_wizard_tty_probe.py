@@ -20,8 +20,11 @@ from pathlib import Path
 
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-INSTALL_SH = REPO_ROOT / "scripts" / "install.sh"
+from hermes_agent import get_source_root
+
+
+source_root = get_source_root()
+INSTALL_SH = source_root / "scripts" / "install.sh"
 
 # Every function in scripts/install.sh that previously gated on a bare
 # ``[ -e /dev/tty ]`` check before redirecting stdin from ``/dev/tty``.

@@ -9,6 +9,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from hermes_agent.hermes_cli.main import PROJECT_ROOT
+
 
 def test_version_string_no_v_prefix():
     """__version__ should be bare semver without a 'v' prefix."""
@@ -150,8 +152,7 @@ def test_check_for_updates_fallback_to_project_root(tmp_path, monkeypatch):
     """Dev install: falls back to Path(__file__).parent.parent when HERMES_HOME has no git repo."""
     import hermes_agent.hermes_cli.banner as banner
 
-    project_root = Path(banner.__file__).parent.parent.resolve()
-    if not (project_root / ".git").exists():
+    if not (PROJECT_ROOT / ".git").exists():
         pytest.skip("Not running from a git checkout")
 
     # Point HERMES_HOME at a temp dir with no hermes-agent/.git

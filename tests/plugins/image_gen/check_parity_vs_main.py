@@ -32,30 +32,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-
-REPO_ROOT = Path(__file__).resolve().parents[3]
-
-
-# Pin one path to current main, one to the PR worktree.
-# ``REPO_ROOT`` is ``.../.worktrees/<name>``; the main checkout lives
-# two levels up. When running directly from a regular clone (no
-# worktree), ``MAIN_DIR`` falls back to a sibling ``hermes-agent-main``
-# checkout if one exists.
-def _resolve_main_dir() -> Path:
-    candidate = REPO_ROOT.parent.parent
-    if (candidate / "tools" / "image_generation_tool.py").exists() and candidate != REPO_ROOT:
-        return candidate
-    sibling = REPO_ROOT.parent / "hermes-agent-main"
-    if (sibling / "tools" / "image_generation_tool.py").exists():
-        return sibling
-    return REPO_ROOT
+from hermes_agent import PROJECT_ROOT, get_source_root, read_source_file
 
 
-MAIN_DIR = _resolve_main_dir()
-PR_DIR = REPO_ROOT
-assert (PR_DIR / "tools" / "image_generation_tool.py").exists(), (
-    f"PR_DIR={PR_DIR} doesn't look like a hermes-agent checkout"
-)
+MAIN_DIR = get_source_root()
+PR_DIR = PROJECT_ROOT
+
+assert read_source_file("tools", "image_generation_tool.py")
 
 
 SUBPROCESS_SCRIPT = r"""

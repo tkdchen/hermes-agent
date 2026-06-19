@@ -27,9 +27,10 @@ from pathlib import Path
 
 import pytest
 
+from hermes_agent import PROJECT_ROOT
+
 # Repo root: tests/plugins/<this file> → ../../
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-_PLUGINS_DIR = _REPO_ROOT / "plugins"
+_PLUGINS_DIR = PROJECT_ROOT / "plugins"
 
 # The forbidden global. Reading it directly bypasses the gated-mode auth path.
 _FORBIDDEN = "__HERMES_SESSION_TOKEN__"
@@ -61,10 +62,10 @@ def test_there_are_plugin_bundles_to_check() -> None:
 @pytest.mark.parametrize(
     "bundle",
     _plugin_frontend_bundles(),
-    ids=lambda p: str(p.relative_to(_REPO_ROOT)),
+    ids=lambda p: str(p.relative_to(PROJECT_ROOT)),
 )
 def test_plugin_bundle_does_not_read_session_token(bundle: Path) -> None:
-    rel = str(bundle.relative_to(_REPO_ROOT))
+    rel = str(bundle.relative_to(PROJECT_ROOT))
     text = bundle.read_text(encoding="utf-8", errors="replace")
 
     if rel in _ALLOWED_FILES:

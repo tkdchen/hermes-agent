@@ -13,10 +13,12 @@ node/npm/npx), scoped to the bundled Node via its prefix-local global npmrc.
 
 from pathlib import Path
 
+from hermes_agent import get_source_root
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-INSTALL_SH = REPO_ROOT / "scripts" / "install.sh"
-NODE_BOOTSTRAP = REPO_ROOT / "scripts" / "lib" / "node-bootstrap.sh"
+
+source_root = get_source_root()
+INSTALL_SH = source_root / "scripts" / "install.sh"
+NODE_BOOTSTRAP = source_root / "scripts" / "lib" / "node-bootstrap.sh"
 
 
 def test_install_sh_redirects_bundled_npm_global_prefix_to_link_dir() -> None:

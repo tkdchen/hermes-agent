@@ -7,9 +7,11 @@ must sanitize those vars both during installation and at runtime launch.
 
 from pathlib import Path
 
+from hermes_agent import get_source_root
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-INSTALL_SH = REPO_ROOT / "scripts" / "install.sh"
+
+source_root = get_source_root()
+INSTALL_SH = source_root / "scripts" / "install.sh"
 
 
 def test_install_script_unsets_pythonpath_and_pythonhome_early() -> None:

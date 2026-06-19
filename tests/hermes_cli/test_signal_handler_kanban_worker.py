@@ -30,6 +30,8 @@ import time
 
 import pytest
 
+from hermes_agent import read_source_file
+
 
 def _synthetic_worker_script() -> str:
     """A standalone script that mirrors cli.py's single-query SIGTERM handler.
@@ -208,12 +210,7 @@ def test_real_handler_uses_os_exit_for_kanban_workers():
     drops the env-gated exit, restoring the bug. Reading cli.py directly is
     cheap and avoids the heavy CLI import.
     """
-    import pathlib
-
-    cli_path = (
-        pathlib.Path(__file__).resolve().parent.parent.parent / "hermes_agent.cli.py"
-    )
-    src = cli_path.read_text()
+    src = read_source_file("cli.py")
     # Locate the handler body.
     start = src.find("def _signal_handler_q(signum, frame):")
     assert start != -1, "hermes_agent.cli.py is missing _signal_handler_q"

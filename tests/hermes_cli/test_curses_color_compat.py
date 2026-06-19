@@ -21,10 +21,7 @@ import re
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-
-
-# Path to the source files under test
-_SRC_ROOT = Path(__file__).parent.parent.parent / "hermes_cli"
+from hermes_agent import read_source_file
 
 
 class TestInitPairClampingBehavior:
@@ -116,21 +113,21 @@ class TestSourceCodeGuardrails:
     _RAW_COLOR_8_PATTERN = re.compile(r'init_pair\(\d+,\s*8\s*,')
 
     def test_no_raw_color_8_in_plugins_cmd(self):
-        source = (_SRC_ROOT / "plugins_cmd.py").read_text()
+        source = read_source_file("hermes_cli", "plugins_cmd.py")
         matches = self._RAW_COLOR_8_PATTERN.findall(source)
         assert not matches, (
             f"plugins_cmd.py contains unclamped color 8: {matches}"
         )
 
     def test_no_raw_color_8_in_main(self):
-        source = (_SRC_ROOT / "main.py").read_text()
+        source = read_source_file("hermes_cli", "main.py")
         matches = self._RAW_COLOR_8_PATTERN.findall(source)
         assert not matches, (
             f"main.py contains unclamped color 8: {matches}"
         )
 
     def test_no_raw_color_8_in_curses_ui(self):
-        source = (_SRC_ROOT / "curses_ui.py").read_text()
+        source = read_source_file("hermes_cli", "curses_ui.py")
         matches = self._RAW_COLOR_8_PATTERN.findall(source)
         assert not matches, (
             f"curses_ui.py contains unclamped color 8: {matches}"

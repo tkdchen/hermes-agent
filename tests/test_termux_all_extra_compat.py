@@ -2,10 +2,12 @@
 
 from pathlib import Path
 
+from hermes_agent import get_source_root
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-PYPROJECT = REPO_ROOT / "pyproject.toml"
-INSTALL_SH = REPO_ROOT / "scripts" / "install.sh"
+
+source_root = get_source_root()
+PYPROJECT = source_root / "pyproject.toml"
+INSTALL_SH = source_root / "scripts" / "install.sh"
 
 
 def test_pyproject_defines_termux_all_without_known_blockers() -> None:

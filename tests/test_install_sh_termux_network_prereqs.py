@@ -2,9 +2,11 @@
 
 from pathlib import Path
 
+from hermes_agent import get_source_root
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-INSTALL_SH = REPO_ROOT / "scripts" / "install.sh"
+
+source_root = get_source_root()
+INSTALL_SH = source_root / "scripts" / "install.sh"
 
 
 def test_termux_pkg_list_includes_network_basics() -> None:

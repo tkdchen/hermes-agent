@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any, Callable
 from enum import Enum
 
+from hermes_agent import PROJECT_ROOT
 from hermes_agent.hermes_cli.config import get_hermes_home
 from hermes_agent.utils import is_truthy_value
 
@@ -214,7 +215,7 @@ class Platform(Enum):
         """Return names of bundled platform plugins under ``plugins/platforms/``."""
         names: set = set()
         try:
-            platforms_dir = Path(__file__).parent.parent / "plugins" / "platforms"
+            platforms_dir = PROJECT_ROOT / "plugins" / "platforms"
             if platforms_dir.is_dir():
                 for child in platforms_dir.iterdir():
                     if (

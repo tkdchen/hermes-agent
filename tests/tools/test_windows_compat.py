@@ -8,6 +8,9 @@ import ast
 import pytest
 from pathlib import Path
 
+from hermes_agent import PROJECT_ROOT
+
+
 # Files that must have Windows-safe process management
 GUARDED_FILES = [
     "tools/environments/local.py",
@@ -15,8 +18,6 @@ GUARDED_FILES = [
     "tools/code_execution_tool.py",
     "gateway/platforms/whatsapp.py",
 ]
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 def _get_preexec_fn_values(filepath: Path) -> list:

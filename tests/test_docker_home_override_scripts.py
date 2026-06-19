@@ -2,11 +2,12 @@
 
 from pathlib import Path
 
+from hermes_agent import read_source_file
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-DASHBOARD_RUN = REPO_ROOT / "docker" / "s6-rc.d" / "dashboard" / "run"
-MAIN_WRAPPER = REPO_ROOT / "docker" / "main-wrapper.sh"
-STAGE2_HOOK = REPO_ROOT / "docker" / "stage2-hook.sh"
+
+DASHBOARD_RUN = "docker/s6-rc.d/dashboard/run"
+MAIN_WRAPPER = "docker/main-wrapper.sh"
+STAGE2_HOOK = "docker/stage2-hook.sh"
 
 
 def test_main_wrapper_preserves_docker_workdir() -> None:
@@ -14,7 +15,7 @@ def test_main_wrapper_preserves_docker_workdir() -> None:
     directory so the container starts in the Docker ``-w`` directory,
     not /opt/data.  Regression test for #35472.
     """
-    text = MAIN_WRAPPER.read_text(encoding="utf-8")
+    text = read_source_file(MAIN_WRAPPER)
 
     # Must save original cwd before cd /opt/data.
     assert "_hermes_orig_cwd" in text, (
@@ -40,7 +41,7 @@ def test_main_wrapper_preserves_docker_workdir() -> None:
 
 
 def test_dashboard_run_resets_home_before_dropping_privileges() -> None:
-    text = DASHBOARD_RUN.read_text(encoding="utf-8")
+    text = read_source_file(DASHBOARD_RUN)
 
     assert "#!/command/with-contenv sh" in text
     assert "export HOME=/opt/data" in text
@@ -57,7 +58,7 @@ def test_dashboard_run_does_not_derive_insecure_from_bind_host() -> None:
     The opt-in is now explicit: ``HERMES_DASHBOARD_INSECURE=1`` (truthy).
     The auth gate is the authority on whether non-loopback binds are safe.
     """
-    text = DASHBOARD_RUN.read_text(encoding="utf-8")
+    text = read_source_file(DASHBOARD_RUN)
 
     # No legacy host-derived flip.
     assert '127.0.0.1|localhost' not in text, (
@@ -82,7 +83,7 @@ def test_dashboard_run_does_not_derive_insecure_from_bind_host() -> None:
 
 def test_stage2_hook_repairs_profiles_and_cron_ownership_on_every_boot() -> None:
     """profiles/ and cron/ must both be reclaimed after root-context writes."""
-    text = STAGE2_HOOK.read_text(encoding="utf-8")
+    text = read_source_file(STAGE2_HOOK)
 
     assert 'if [ -d "$HERMES_HOME/profiles" ]; then' in text
     assert 'chown -R hermes:hermes "$HERMES_HOME/profiles" 2>/dev/null || true' in text

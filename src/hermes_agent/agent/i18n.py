@@ -38,6 +38,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from hermes_agent import get_source_root
+
 logger = logging.getLogger(__name__)
 
 SUPPORTED_LANGUAGES: tuple[str, ...] = (
@@ -115,7 +117,7 @@ def _locales_dir() -> Path:
         )
 
     # agent/i18n.py -> agent/ -> repo root (source checkout, editable install)
-    source_dir = Path(__file__).resolve().parent.parent / "locales"
+    source_dir = get_source_root() / "locales"
     if source_dir.is_dir():
         return source_dir
 

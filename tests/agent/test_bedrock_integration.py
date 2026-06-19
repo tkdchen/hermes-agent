@@ -13,6 +13,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from hermes_agent import read_source_file
+
 
 class TestProviderRegistry:
     """Verify Bedrock is registered in PROVIDER_REGISTRY."""
@@ -256,9 +258,8 @@ class TestPackaging:
     @staticmethod
     def _optional_dependencies():
         import tomllib
-        from pathlib import Path
 
-        content = (Path(__file__).parent.parent.parent / "pyproject.toml").read_text()
+        content = read_source_file("pyproject.toml")
         return tomllib.loads(content)["project"]["optional-dependencies"]
 
     def test_bedrock_extra_exists(self):

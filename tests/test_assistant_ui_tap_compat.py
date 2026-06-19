@@ -35,8 +35,9 @@ from pathlib import Path
 
 import pytest
 
+from hermes_agent import get_source_root
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+
 TAP = "@assistant-ui/tap"
 
 
@@ -77,7 +78,7 @@ def _caret_satisfies(version: str, spec: str) -> bool:
 
 
 def _lock_packages() -> dict:
-    lock_path = REPO_ROOT / "package-lock.json"
+    lock_path = get_source_root() / "package-lock.json"
     if not lock_path.exists():
         pytest.skip("package-lock.json not materialized in this CI shard")
     with lock_path.open("r", encoding="utf-8") as fh:

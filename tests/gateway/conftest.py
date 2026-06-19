@@ -38,6 +38,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from hermes_agent import get_source_root
+
 
 def _ensure_telegram_mock() -> None:
     """Install a comprehensive telegram mock in sys.modules.
@@ -359,7 +361,7 @@ def _run_adapter_antipattern_scan() -> list[str]:
         offenses = _scan_for_plugin_adapter_antipattern(source)
         if offenses:
             violations.append(
-                f"  {path.relative_to(_GATEWAY_DIR.parent.parent)}:\n    "
+                f"  {path.relative_to(get_source_root())}:\n    "
                 + "\n    ".join(offenses)
             )
     return violations

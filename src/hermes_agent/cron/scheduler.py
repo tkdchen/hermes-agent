@@ -32,11 +32,6 @@ except ImportError:
 from pathlib import Path
 from typing import List, Optional
 
-# Add parent directory to path for imports BEFORE repo-level imports.
-# Without this, standalone invocations (e.g. after `hermes update` reloads
-# the module) fail with ModuleNotFoundError for hermes_time et al.
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from hermes_agent.hermes_constants import get_hermes_home
 from hermes_agent.hermes_cli._subprocess_compat import windows_hide_flags
 from hermes_agent.hermes_cli.config import load_config, _expand_env_vars

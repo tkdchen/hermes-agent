@@ -25,12 +25,13 @@ Behaviour:
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Optional
+
+from hermes_agent import PROJECT_ROOT
 
 # Path is resolved relative to this module so it works regardless of cwd —
 # matches the pattern used by ``banner._resolve_repo_dir``.
-_BUILD_SHA_FILE = Path(__file__).parent.parent / ".hermes_build_sha"
+_BUILD_SHA_FILE = PROJECT_ROOT / ".hermes_build_sha"
 
 
 def get_build_sha(short: int = 8) -> Optional[str]:

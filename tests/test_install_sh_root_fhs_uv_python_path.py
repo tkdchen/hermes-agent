@@ -9,9 +9,11 @@ and the shared ``/usr/local/bin/hermes`` wrapper fails for non-root users with
 
 from pathlib import Path
 
+from hermes_agent import get_source_root
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-INSTALL_SH = REPO_ROOT / "scripts" / "install.sh"
+
+source_root = get_source_root()
+INSTALL_SH = source_root / "scripts" / "install.sh"
 
 
 def _resolve_install_layout_body() -> str:

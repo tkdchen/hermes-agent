@@ -25,9 +25,10 @@ from pathlib import Path
 
 import pytest
 
+from hermes_agent import get_source_root
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-ELECTRON_DIR = REPO_ROOT / "apps" / "desktop" / "electron"
+
+ELECTRON_DIR = get_source_root() / "apps" / "desktop" / "electron"
 MAIN_PLIST = ELECTRON_DIR / "entitlements.mac.plist"
 INHERIT_PLIST = ELECTRON_DIR / "entitlements.mac.inherit.plist"
 

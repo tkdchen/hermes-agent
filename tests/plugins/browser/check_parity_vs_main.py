@@ -23,21 +23,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+from hermes_agent import PROJECT_ROOT, get_source_root, read_source_file
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
 
+MAIN_DIR = get_source_root()
+PR_DIR = PROJECT_ROOT
 
-# Pin one path to current main, one to the PR worktree.
-# ``REPO_ROOT`` is ``.../.worktrees/browser-providers-plugin``; the main
-# checkout lives two levels up at ``~/.hermes/hermes-agent``.
-MAIN_DIR = REPO_ROOT.parent.parent  # ~/.hermes/hermes-agent
-PR_DIR = REPO_ROOT  # the worktree we're in
-assert (MAIN_DIR / "tools" / "browser_tool.py").exists(), (
-    f"MAIN_DIR={MAIN_DIR} doesn't look like a hermes-agent checkout"
-)
-assert (PR_DIR / "tools" / "browser_tool.py").exists(), (
-    f"PR_DIR={PR_DIR} doesn't look like a hermes-agent checkout"
-)
+assert read_source_file("tools", "browser_tool.py")
 
 
 # Reduced shape comparison — exact instance addresses obviously differ

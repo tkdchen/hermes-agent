@@ -22,16 +22,18 @@ import pathlib
 
 import pytest
 
+from hermes_agent import get_source_root
+
 try:
     import tomllib  # Python 3.11+
 except ImportError:  # pragma: no cover — 3.10 and earlier
     import tomli as tomllib  # type: ignore
 
-REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
+source_root = get_source_root()
 
 
 def _load_pyproject() -> dict:
-    with open(REPO_ROOT / "pyproject.toml", "rb") as fh:
+    with open(source_root / "pyproject.toml", "rb") as fh:
         return tomllib.load(fh)
 
 
@@ -68,7 +70,7 @@ class TestRuffConfig:
 
 
 class TestLintWorkflow:
-    WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "lint.yml"
+    WORKFLOW_PATH = source_root / ".github" / "workflows" / "lint.yml"
 
     def test_workflow_exists(self):
         assert self.WORKFLOW_PATH.exists(), (

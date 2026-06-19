@@ -4,11 +4,14 @@ Import-safe module with no dependencies — can be imported from anywhere
 without risk of circular imports.
 """
 
+from importlib.abc import SourceLoader
 import os
 import sys
 import sysconfig
 from contextvars import ContextVar, Token
 from pathlib import Path
+
+from hermes_agent import get_source_root
 
 
 _profile_fallback_warned: bool = False
@@ -168,8 +171,14 @@ def _get_packaged_data_dir(name: str) -> Path | None:
 def get_optional_skills_dir(default: Path | None = None) -> Path:
     """Return the optional-skills directory, honoring package-manager wrappers.
 
-    Packaged installs may ship ``optional-skills`` outside the Python package
-    tree and expose it via ``HERMES_OPTIONAL_SKILLS``.
+    The optional-skills directory is discovered in the following order:
+
+    - Path set via environment variable HERMES_OPTIONAL_SKILLS
+    - Package data directory from an installation. It is outside the installed
+      hermes_agent package directory.
+    - From project source directory.
+    - Use default if passed.
+    - Fallback to ``<hermes_home>/optional-skills/``.
     """
     override = os.getenv("HERMES_OPTIONAL_SKILLS", "").strip()
     if override:
@@ -177,6 +186,9 @@ def get_optional_skills_dir(default: Path | None = None) -> Path:
     packaged = _get_packaged_data_dir("optional-skills")
     if packaged is not None:
         return packaged
+    if from_source_root := get_source_root() / "optional-skills":
+        if from_source_root.exists():
+            return from_source_root
     if default is not None:
         return default
     return get_hermes_home() / "optional-skills"

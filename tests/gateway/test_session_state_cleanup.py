@@ -19,6 +19,8 @@ leaving WAL locks in place until Python actually exited.
 import threading
 from unittest.mock import MagicMock
 
+from hermes_agent import read_source_file
+
 
 
 def _make_runner():
@@ -120,10 +122,9 @@ class TestNoMoreBareDeleteSites:
     """
 
     def test_no_bare_del_of_running_agents_in_gateway_run(self):
-        from pathlib import Path
         import re
 
-        gateway_run = (Path(__file__).parent.parent.parent / "gateway" / "run.py").read_text()
+        gateway_run = read_source_file("gateway", "run.py")
         # Match `del self._running_agents[...]` that is NOT inside a
         # triple-quoted docstring.  We scan non-docstring lines only.
         lines = gateway_run.splitlines()

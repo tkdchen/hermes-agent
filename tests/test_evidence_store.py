@@ -2,9 +2,11 @@ import pytest
 from pathlib import Path
 import importlib.util
 
+from hermes_agent import get_source_root
+
 # Load the hyphenated script name dynamically
-repo_root = Path(__file__).parent.parent
-script_path = repo_root / "optional-skills" / "security" / "oss-forensics" / "scripts" / "evidence-store.py"
+source_root = get_source_root()
+script_path = source_root / "optional-skills" / "security" / "oss-forensics" / "scripts" / "evidence-store.py"
 
 spec = importlib.util.spec_from_file_location("evidence_store", str(script_path))
 evidence_store = importlib.util.module_from_spec(spec)

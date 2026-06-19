@@ -28,6 +28,7 @@ import os
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
+from hermes_agent import get_source_root
 from hermes_agent.hermes_constants import get_bundled_skills_dir, get_hermes_home, get_optional_skills_dir
 from hermes_agent.agent.skill_utils import is_excluded_skill_path
 from typing import Dict, List, Tuple
@@ -57,12 +58,12 @@ def _get_bundled_dir() -> Path:
     then a wheel-installed data dir, then falls back to the relative
     path from this source file.
     """
-    return get_bundled_skills_dir(Path(__file__).parent.parent / "skills")
+    return get_bundled_skills_dir(get_source_root() / "skills")
 
 
 def _get_optional_dir() -> Path:
     """Locate the official optional-skills/ directory."""
-    return get_optional_skills_dir(Path(__file__).parent.parent / "optional-skills")
+    return get_optional_skills_dir()
 
 
 def _read_manifest() -> Dict[str, str]:

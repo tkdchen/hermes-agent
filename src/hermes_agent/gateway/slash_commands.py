@@ -29,12 +29,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Union
 
+from hermes_agent import get_source_root
 from hermes_agent.agent.account_usage import fetch_account_usage, render_account_usage_lines
 from hermes_agent.agent.i18n import t
 from hermes_agent.gateway.config import HomeChannel, Platform, PlatformConfig
 from hermes_agent.gateway.platforms.base import EphemeralReply, MessageEvent, MessageType
 from hermes_agent.gateway.session import SessionSource, build_session_key
-from hermes_agent.hermes_cli.config import cfg_get
 from hermes_agent.utils import (
     atomic_json_write,
     atomic_yaml_write,
@@ -3702,9 +3702,12 @@ class GatewaySlashCommandsMixin:
         if is_managed():
             return f"✗ {format_managed_message('update Hermes Agent')}"
 
-        project_root = Path(__file__).parent.parent.resolve()
-        git_dir = project_root / '.git'
-
+        try:
+            source_root = get_source_root()
+        except RuntimeError as e:
+            logger.warning("Cannot get source root directory: %r", e)
+            return t("hermes_agent.gateway.update.hermes_cmd_not_found")
+        git_dir = source_root / '.git'
         if not git_dir.exists():
             return t("hermes_agent.gateway.update.not_git_repo")
 

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Set
 
+from hermes_agent import get_source_root
 from hermes_agent.hermes_cli.config import get_env_value, load_config
 from hermes_agent.hermes_cli.nous_account import (
     NousPortalAccountInfo,
@@ -160,9 +161,7 @@ def _has_agent_browser() -> bool:
     import shutil
 
     agent_browser_bin = shutil.which("agent-browser")
-    local_bin = (
-        Path(__file__).parent.parent / "node_modules" / ".bin" / "agent-browser"
-    )
+    local_bin = get_source_root() / "node_modules" / ".bin" / "agent-browser"
     return bool(agent_browser_bin or local_bin.exists())
 
 

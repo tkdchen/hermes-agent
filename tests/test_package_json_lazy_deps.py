@@ -33,12 +33,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from hermes_agent import get_source_root
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+source_root = get_source_root()
 
 
 def _root_package_json() -> dict:
-    with (REPO_ROOT / "package.json").open("r", encoding="utf-8") as fh:
+    with (source_root / "package.json").open("r", encoding="utf-8") as fh:
         return json.load(fh)
 
 
@@ -68,7 +69,7 @@ def test_agent_browser_stays_eager() -> None:
 
 def test_root_lockfile_has_no_camofox_entries() -> None:
     """Regenerated lockfiles should not contain Camofox tree entries."""
-    lock_path = REPO_ROOT / "package-lock.json"
+    lock_path = source_root / "package-lock.json"
     if not lock_path.exists():
         # Some CI matrix shards skip lockfile materialization.
         return

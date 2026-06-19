@@ -32,13 +32,13 @@ from hermes_agent.tui_gateway.transport import (
     current_transport,
     reset_transport,
 )
+from hermes_agent import get_source_root
 
 logger = logging.getLogger(__name__)
 
 _hermes_home = get_hermes_home()
-load_hermes_dotenv(
-    hermes_home=_hermes_home, project_env=Path(__file__).parent.parent / ".env"
-)
+project_env = get_source_root() / ".env"
+load_hermes_dotenv(hermes_home=_hermes_home, project_env=project_env)
 
 
 # ── Panic logger ─────────────────────────────────────────────────────

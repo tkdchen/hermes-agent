@@ -21,14 +21,13 @@ import copy
 from pathlib import Path
 from typing import Optional, Dict, Any
 
+from hermes_agent import PROJECT_ROOT
 from hermes_agent.hermes_cli.nous_subscription import get_nous_subscription_features
 from hermes_agent.tools.tool_backend_helpers import managed_nous_tools_enabled
 from hermes_agent.utils import base_url_hostname
 from hermes_agent.hermes_constants import get_optional_skills_dir
 
 logger = logging.getLogger(__name__)
-
-PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 
 _DOCS_BASE = "https://hermes-agent.nousresearch.com/docs"
 
@@ -2549,7 +2548,7 @@ def _skip_configured_section(
 
 
 _OPENCLAW_SCRIPT = (
-    get_optional_skills_dir(PROJECT_ROOT / "optional-skills")
+    get_optional_skills_dir()
     / "migration"
     / "openclaw-migration"
     / "scripts"

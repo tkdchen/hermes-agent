@@ -15,6 +15,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from hermes_agent import read_source_file
+
 
 class TestAsyncClientLazyCreation:
     """hermes_agent.trajectory_compressor.py — _get_async_client()"""
@@ -88,10 +90,7 @@ class TestSourceLineVerification:
 
     @staticmethod
     def _read_file() -> str:
-        import os
-        base = os.path.dirname(os.path.dirname(__file__))
-        with open(os.path.join(base, "hermes_agent.trajectory_compressor.py")) as f:
-            return f.read()
+        return read_source_file("trajectory_compressor.py")
 
     def test_no_eager_async_openai_in_init(self):
         """__init__ should NOT create AsyncOpenAI eagerly."""

@@ -10,9 +10,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from hermes_agent import read_source_file
+
 
 def _dockerfile_text() -> str:
-    return (Path(__file__).parent.parent / "Dockerfile").read_text(encoding="utf-8")
+    return read_source_file("Dockerfile")
 
 
 def test_tini_compat_symlink_present():
