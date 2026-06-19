@@ -272,7 +272,7 @@ def setup_isolated_home(enabled: bool) -> Path:
         # hand — it never materializes the secret in a local variable in
         # this module, which both avoids a hand-rolled parser bug and keeps
         # static analysis from tainting the transcript records with the key.
-        from hermes_cli.env_loader import load_hermes_dotenv
+        from hermes_agent.hermes_cli.env_loader import load_hermes_dotenv
         load_hermes_dotenv(hermes_home=str(Path.home() / ".hermes"))
 
     cfg = {
@@ -304,7 +304,7 @@ def _yaml_dump(obj: Any) -> str:
 
 def register_fake_tools() -> int:
     """Register the FAKE_MCP_TOOLS into the live tool registry."""
-    from tools.registry import registry
+    from hermes_agent.tools.registry import registry
 
     def make_handler(tool_def):
         def _handler(*args, **kwargs):
@@ -368,7 +368,7 @@ def run_one_scenario(scenario: Dict[str, Any], enabled: bool, out_dir: Path) -> 
     # extracted from the message transcript after the run.
     tool_call_log: List[Dict[str, Any]] = []
 
-    from tools.registry import registry
+    from hermes_agent.tools.registry import registry
     original_dispatch = registry.dispatch
 
     def logging_dispatch(name, args, **kw):
@@ -382,7 +382,7 @@ def run_one_scenario(scenario: Dict[str, Any], enabled: bool, out_dir: Path) -> 
     final_response = ""
     messages_out = []
     try:
-        from run_agent import AIAgent
+        from hermes_agent.run_agent import AIAgent
         agent = AIAgent(
             provider="openrouter",
             model="anthropic/claude-haiku-4.5",

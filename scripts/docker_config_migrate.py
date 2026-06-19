@@ -8,13 +8,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
-from hermes_cli.config import (
+from hermes_agent.hermes_cli.config import (
     check_config_version,
     get_config_path,
     get_env_path,
     migrate_config,
 )
-from utils import env_var_enabled
+from hermes_agent.utils import env_var_enabled
 
 
 def _backup_path(path: Path, stamp: str) -> Path:
